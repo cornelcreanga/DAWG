@@ -24,13 +24,14 @@ package com.boxofc.mdag;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -75,34 +76,34 @@ public class DAWGTest
     @Test
     public void dawgBGetMinimizationIndexTest()
     {
-       assert dawg1.calculateMinimizationProcessingStartIndex("", "") == -1;
-       assert dawg1.calculateMinimizationProcessingStartIndex("abcd", "efg") == 0;
-       assert dawg1.calculateMinimizationProcessingStartIndex("abcd", "ab") == 2;
-       assert dawg1.calculateMinimizationProcessingStartIndex("abcd", "abcd") == -1;
-       assert dawg1.calculateMinimizationProcessingStartIndex("abcd", "abd") == 2;
-       assert dawg1.calculateMinimizationProcessingStartIndex("abcd", "abcr") == 3;
-       assert dawg1.calculateMinimizationProcessingStartIndex("abcd", "") == 0;
-       assert dawg1.calculateMinimizationProcessingStartIndex("", "abcd") == -1;
+       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("", ""), -1);
+       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "efg"), 0);
+       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "ab"), 2);
+       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "abcd"), -1);
+       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "abd"), 2);
+       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "abcr"), 3);
+       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", ""), 0);
+       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("", "abcd"), -1);
     }
     
     @Test
     public void dawgBGetLongestStoredSubsequenceTest()
     {  
-        assert(dawg1.determineLongestPrefixInMDAG("do").equals("do"));
-        assert(dawg1.determineLongestPrefixInMDAG("doggy").equals("doggy"));
-        assert(dawg1.determineLongestPrefixInMDAG("c").equals("c"));
-        assert(dawg1.determineLongestPrefixInMDAG("catsing").equals("cats"));
-        assert(dawg1.determineLongestPrefixInMDAG("brolic").equals("bro"));
-        assert(dawg1.determineLongestPrefixInMDAG("1234").equals(""));
-        assert(dawg1.determineLongestPrefixInMDAG("Czechoslovakians").equals("Czechoslovakians"));
+        assertEquals(dawg1.determineLongestPrefixInMDAG("do"), "do");
+        assertEquals(dawg1.determineLongestPrefixInMDAG("doggy"), "doggy");
+        assertEquals(dawg1.determineLongestPrefixInMDAG("c"), "c");
+        assertEquals(dawg1.determineLongestPrefixInMDAG("catsing"), "cats");
+        assertEquals(dawg1.determineLongestPrefixInMDAG("brolic"), "bro");
+        assertEquals(dawg1.determineLongestPrefixInMDAG("1234"), "");
+        assertEquals(dawg1.determineLongestPrefixInMDAG("Czechoslovakians"), "Czechoslovakians");
     }
     
     @Test
     public void dawgBGetTransitionPathFirstConfluenceNodeDataTest()
     {
-        assert(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "caution").get("confluenceNode") != null);
-        assert(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "abated").get("confluenceNode") != null);
-        assert(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "watching").get("confluenceNode") != null);
+        assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "caution").get("confluenceNode"));
+        assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "abated").get("confluenceNode"));
+        assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "watching").get("confluenceNode"));
     }
     
     
@@ -111,14 +112,14 @@ public class DAWGTest
     {
         for(String currentWord : wordArrayList)
         {
-            assert dawg1.contains(currentWord) : "dawg1 does not contain " + currentWord;
-            assert dawg2.contains(currentWord) : "dawg2 does not contain " + currentWord;
+            assertTrue("dawg1 does not contain " + currentWord, dawg1.contains(currentWord));
+            assertTrue("dawg2 does not contain " + currentWord, dawg2.contains(currentWord));
         }
             
     }
     
     @Test
-    public void removeWordTest() throws IOException
+    public void removeWordTest()
     {
         int numberOfRuns = 20;
         int wordArrayListSize = wordArrayList.size();
@@ -134,9 +135,9 @@ public class DAWGTest
             wordArrayList.remove((int)wordIndex);
             MDAG controlTestDAWG = new MDAG(wordArrayList);
 
-            assert testDAWG.getNodeCount() == controlTestDAWG.getNodeCount() : "Removed word: " + toBeRemovedWord;
-            assert testDAWG.getEquivalenceClassCount() == controlTestDAWG.getEquivalenceClassCount() : "Removed word: " + toBeRemovedWord;
-            assert testDAWG.getTransitionCount() == controlTestDAWG.getTransitionCount() : "Removed word: " + toBeRemovedWord;
+            assertEquals("Removed word: " + toBeRemovedWord, testDAWG.getNodeCount(), controlTestDAWG.getNodeCount());
+            assertEquals("Removed word: " + toBeRemovedWord, testDAWG.getEquivalenceClassCount(), controlTestDAWG.getEquivalenceClassCount());
+            assertEquals("Removed word: " + toBeRemovedWord, testDAWG.getTransitionCount(), controlTestDAWG.getTransitionCount());
         }
     }
     
@@ -169,7 +170,7 @@ public class DAWGTest
     
     
     @Test
-    public void removeWord2() throws IOException
+    public void removeWord2()
     {
         for (int interval[] : removeWord2DataProvider()) {
             initializer();
@@ -186,9 +187,9 @@ public class DAWGTest
 
             MDAG controlTestDAWG = new MDAG(wordArrayList);
 
-            assert testDAWG.getNodeCount() == controlTestDAWG.getNodeCount();
-            assert testDAWG.getEquivalenceClassCount() == controlTestDAWG.getEquivalenceClassCount();
-            assert testDAWG.getTransitionCount() == controlTestDAWG.getTransitionCount();
+            assertEquals(testDAWG.getNodeCount(), controlTestDAWG.getNodeCount());
+            assertEquals(testDAWG.getEquivalenceClassCount(), controlTestDAWG.getEquivalenceClassCount());
+            assertEquals(testDAWG.getTransitionCount(), controlTestDAWG.getTransitionCount());
         }
     }
     
@@ -201,8 +202,8 @@ public class DAWGTest
     {
         HashSet<String> wordHashSet1 = dawg1.getAllStrings();
         HashSet<String> wordHashSet2 = dawg2.getAllStrings();
-        assert wordHashSet1.containsAll(wordArrayList);
-        assert wordHashSet2.containsAll(wordArrayList);
+        assertTrue(wordHashSet1.containsAll(wordArrayList));
+        assertTrue(wordHashSet2.containsAll(wordArrayList));
         
     }
     
@@ -212,13 +213,13 @@ public class DAWGTest
     {
         for(int i = 0; i < 100; i++)
         {
-            assert dawg1.contains(wordArrayList.get(i));
-            assert dawg2.contains(wordArrayList.get(i));
+            assertTrue(dawg1.contains(wordArrayList.get(i)));
+            assertTrue(dawg2.contains(wordArrayList.get(i)));
         }
     }
     
     @Test
-    public void getAllWordsWithPrefixTest() throws IOException
+    public void getAllWordsWithPrefixTest()
     {
         for (String prefixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
             initializer();
@@ -230,14 +231,14 @@ public class DAWGTest
                     controlSet.add(str);
             }
 
-            assert dawg1.getStringsStartingWith(prefixStr).equals(controlSet);
-            assert dawg2.getStringsStartingWith(prefixStr).equals(controlSet);
+            assertEquals(dawg1.getStringsStartingWith(prefixStr), controlSet);
+            assertEquals(dawg2.getStringsStartingWith(prefixStr), controlSet);
         }
     }
     
     
     @Test
-    public void getStringsWithSubstringTest() throws IOException
+    public void getStringsWithSubstringTest()
     {
         for (String substringStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
             initializer();
@@ -249,14 +250,14 @@ public class DAWGTest
                     controlSet.add(str);
             }
 
-            assert dawg1.getStringsWithSubstring(substringStr).equals(controlSet);
-            assert dawg2.getStringsWithSubstring(substringStr).equals(controlSet);
+            assertEquals(dawg1.getStringsWithSubstring(substringStr), controlSet);
+            assertEquals(dawg2.getStringsWithSubstring(substringStr), controlSet);
         }
     }
     
     
     @Test
-    public void getStringsEndingWithTest() throws IOException
+    public void getStringsEndingWithTest()
     {
         for (String suffixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
             initializer();
@@ -268,8 +269,8 @@ public class DAWGTest
                     controlSet.add(str);
             }
 
-            assert dawg1.getStringsEndingWith(suffixStr).equals(controlSet);
-            assert dawg2.getStringsEndingWith(suffixStr).equals(controlSet);
+            assertEquals(dawg1.getStringsEndingWith(suffixStr), controlSet);
+            assertEquals(dawg2.getStringsEndingWith(suffixStr), controlSet);
         }
     }
 }
