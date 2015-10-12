@@ -23,6 +23,11 @@
 package com.boxofc.mdag;
 
 import java.util.TreeMap;
+import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
@@ -41,10 +46,10 @@ public class DAWGNodeTest
         
         TreeMap<Character, MDAGNode> outgoingTransitionTreeMap = node1.getOutgoingTransitions();
         
-        assert outgoingTransitionTreeMap.size() == 3;
-        assert outgoingTransitionTreeMap.get('a').isAcceptNode() == true;
-        assert outgoingTransitionTreeMap.get('b').isAcceptNode() == false;
-        assert outgoingTransitionTreeMap.get('b').isAcceptNode() == false;
+        assertEquals(outgoingTransitionTreeMap.size(), 3);
+        assertTrue(outgoingTransitionTreeMap.get('a').isAcceptNode());
+        assertFalse(outgoingTransitionTreeMap.get('b').isAcceptNode());
+        assertFalse(outgoingTransitionTreeMap.get('b').isAcceptNode());
     }
     
     @Test
@@ -60,15 +65,15 @@ public class DAWGNodeTest
         node2.addOutgoingTransition('d', true);
         MDAGNode cloneNode2 = node2.clone();
         
-        assert node1 != cloneNode1;
-        assert node1.getIncomingTransitionCount() == cloneNode1.getIncomingTransitionCount();
-        assert node1.isAcceptNode() == cloneNode1.isAcceptNode();
-        assert node1.getOutgoingTransitions().equals(cloneNode1.getOutgoingTransitions());
+        assertTrue(node1 != cloneNode1);
+        assertEquals(node1.getIncomingTransitionCount(), cloneNode1.getIncomingTransitionCount());
+        assertEquals(node1.isAcceptNode(), cloneNode1.isAcceptNode());
+        assertEquals(node1.getOutgoingTransitions(), cloneNode1.getOutgoingTransitions());
         
-        assert node2 != cloneNode2;
-        assert node2.getIncomingTransitionCount() == cloneNode2.getIncomingTransitionCount();
-        assert node2.isAcceptNode() == cloneNode2.isAcceptNode();
-        assert node2.getOutgoingTransitions().equals(cloneNode2.getOutgoingTransitions());
+        assertTrue(node2 != cloneNode2);
+        assertEquals(node2.getIncomingTransitionCount(), cloneNode2.getIncomingTransitionCount());
+        assertEquals(node2.isAcceptNode(), cloneNode2.isAcceptNode());
+        assertEquals(node2.getOutgoingTransitions(), cloneNode2.getOutgoingTransitions());
     }
     
     @Test
@@ -84,7 +89,7 @@ public class DAWGNodeTest
         
         String alphaStr = new String(alphabet);
         
-        assert node1.transition(alphaStr) != null;
+        assertNotNull(node1.transition(alphaStr));
     }
     
     @Test
@@ -108,17 +113,17 @@ public class DAWGNodeTest
         MDAGNode node5 = new MDAGNode(true);
         node1.reassignOutgoingTransition('d', node1.transition('d'), node5);
         
-        assert node1.transition('a') == node2;
-        assert node2.getIncomingTransitionCount() == 1;
+        assertTrue(node1.transition('a') == node2);
+        assertEquals(node2.getIncomingTransitionCount(), 1);
         
-        assert node1.transition('b') == node3;
-        assert node3.getIncomingTransitionCount() == 1;
+        assertTrue(node1.transition('b') == node3);
+        assertEquals(node3.getIncomingTransitionCount(), 1);
         
-        assert node1.transition('c') == node4;
-        assert node4.getIncomingTransitionCount() == 1;
+        assertTrue(node1.transition('c') == node4);
+        assertEquals(node4.getIncomingTransitionCount(), 1);
         
-        assert node1.transition('d') == node5;
-        assert node5.getIncomingTransitionCount() == 1;
+        assertTrue(node1.transition('d') == node5);
+        assertEquals(node5.getIncomingTransitionCount(), 1);
     }
     
     @Test
@@ -133,14 +138,14 @@ public class DAWGNodeTest
         
         MDAGNode node3 = node2.clone(node1, '\0');
         
-        assert node2 != node3;
-        assert node2.hasOutgoingTransition('a') && node3.hasOutgoingTransition('a');
-        assert node2.hasOutgoingTransition('b') && node3.hasOutgoingTransition('b');
-        assert node2.hasOutgoingTransition('c') && node3.hasOutgoingTransition('c');
+        assertTrue(node2 != node3);
+        assertTrue(node2.hasOutgoingTransition('a') && node3.hasOutgoingTransition('a'));
+        assertTrue(node2.hasOutgoingTransition('b') && node3.hasOutgoingTransition('b'));
+        assertTrue(node2.hasOutgoingTransition('c') && node3.hasOutgoingTransition('c'));
         
-        assert node1.getOutgoingTransitions().size() == 1;
-        assert node3.getIncomingTransitionCount() == 1;
-        assert node2.getIncomingTransitionCount() == 0;
+        assertEquals(node1.getOutgoingTransitions().size(), 1);
+        assertEquals(node3.getIncomingTransitionCount(), 1);
+        assertEquals(node2.getIncomingTransitionCount(), 0);
     }
     
     @Test
@@ -163,11 +168,11 @@ public class DAWGNodeTest
            currentNode2 = currentNode2.addOutgoingTransition(alphabet[i], i % 2 == 0); 
         }
             
-        assert node1.equals(node2);
-        assert node3.equals(node4);
+        assertEquals(node1, node2);
+        assertEquals(node3, node4);
         
-        assert !node1.equals(node3);
-        assert !node2.equals(node4);
+        assertFalse(node1.equals(node3));
+        assertFalse(node2.equals(node4));
     }
     
     @Test
@@ -190,9 +195,9 @@ public class DAWGNodeTest
            currentNode2 = currentNode2.addOutgoingTransition(alphabet[i], i % 2 == 0); 
         }
         
-        assert node1.hashCode() == node2.hashCode();
-        assert node3.hashCode() == node4.hashCode();
-        assert node1.hashCode() != node3.hashCode();
+        assertEquals(node1.hashCode(), node2.hashCode());
+        assertEquals(node3.hashCode(), node4.hashCode());
+        assertTrue(node1.hashCode() != node3.hashCode());
         
     }
 }
