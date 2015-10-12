@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-package com.BoxOfC.MDAG;
+package com.boxofc.mdag;
 
 
 

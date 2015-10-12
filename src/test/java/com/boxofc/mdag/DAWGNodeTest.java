@@ -20,9 +20,9 @@
  * limitations under the License.
  */
 
-package com.BoxOfC.MDAGTest;
+package com.boxofc.mdagTest;
 
-import com.BoxOfC.MDAG.MDAGNode;
+import com.boxofc.mdag.MDAGNode;
 import java.util.TreeMap;
 import org.testng.annotations.Test;
 

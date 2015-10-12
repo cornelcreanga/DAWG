@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-package com.BoxOfC.MDAGTest;
+package com.boxofc.mdagTest;
 
 import org.testng.Assert;
 import org.testng.TestNG;

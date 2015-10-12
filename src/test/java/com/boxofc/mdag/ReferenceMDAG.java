@@ -20,11 +20,11 @@
  * limitations under the License.
  */
 
-package com.BoxOfC.MDAGTest;
+package com.boxofc.mdagTest;
 
-import com.BoxOfC.MDAG.MDAGNode;
-import com.BoxOfC.MDAG.SimpleMDAGNode;
-import com.BoxOfC.MDAG.SimpleMDAGNode;
+import com.boxofc.mdag.MDAGNode;
+import com.boxofc.mdag.SimpleMDAGNode;
+import com.boxofc.mdag.SimpleMDAGNode;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
