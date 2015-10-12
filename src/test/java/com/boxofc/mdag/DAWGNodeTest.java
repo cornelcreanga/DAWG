@@ -20,20 +20,18 @@
  * limitations under the License.
  */
 
-package com.boxofc.mdagTest;
+package com.boxofc.mdag;
 
-import com.boxofc.mdag.MDAGNode;
 import java.util.TreeMap;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 /**
  *
  * @author Kevin
  */
-@Test(enabled = false)
 public class DAWGNodeTest 
 {
-    
+    @Test
     public void addOutgoingTransitionTest()
     {
         MDAGNode node1 = new MDAGNode(false);
@@ -49,7 +47,7 @@ public class DAWGNodeTest
         assert outgoingTransitionTreeMap.get('b').isAcceptNode() == false;
     }
     
-    
+    @Test
     public void cloneTest()
     {
         MDAGNode node1 = new MDAGNode(false);
@@ -73,7 +71,7 @@ public class DAWGNodeTest
         assert node2.getOutgoingTransitions().equals(cloneNode2.getOutgoingTransitions());
     }
     
-
+    @Test
     public void transitionTest1()
     {
         MDAGNode node1= new MDAGNode(false);
@@ -89,6 +87,7 @@ public class DAWGNodeTest
         assert node1.transition(alphaStr) != null;
     }
     
+    @Test
     public void reassignOutgoingTransitionTest()
     {
         MDAGNode node1 = new MDAGNode(false);
@@ -122,6 +121,7 @@ public class DAWGNodeTest
         assert node5.getIncomingTransitionCount() == 1;
     }
     
+    @Test
     public void cloneTest2()
     {
         MDAGNode node1 = new MDAGNode(false);
@@ -143,6 +143,7 @@ public class DAWGNodeTest
         assert node2.getIncomingTransitionCount() == 0;
     }
     
+    @Test
     public void equalsTest()
     {
         MDAGNode node1= new MDAGNode(false);
@@ -169,6 +170,7 @@ public class DAWGNodeTest
         assert !node2.equals(node4);
     }
     
+    @Test
     public void hashTest()
     {
         MDAGNode node1= new MDAGNode(false);
