@@ -40,30 +40,24 @@ import org.junit.Test;
  * @author Kevin
  */
 public class DAWGTest {
-    private static ArrayList<String> initialWordArrayList;
-    
-    private ArrayList<String> wordArrayList;
-    private MDAG dawg1;
-    private MDAG dawg2;
+    private static ArrayList<String> wordArrayList;
+    private static MDAG dawg1;
+    private static MDAG dawg2;
     
     @BeforeClass
     public static void initClass() throws IOException {
-        initialWordArrayList = new ArrayList<>(100000);
+        wordArrayList = new ArrayList<>(100000);
         try (FileReader freader = new FileReader("words.txt");
              BufferedReader breader = new BufferedReader(freader)) {
             String currentWord;
             while ((currentWord = breader.readLine()) != null)
-                initialWordArrayList.add(currentWord);
+                wordArrayList.add(currentWord);
         }
-    }
-    
-    @Before
-    public void init() {
-        wordArrayList = new ArrayList<>(initialWordArrayList);
         dawg1 = new MDAG(wordArrayList);
         
-        Collections.shuffle(wordArrayList);
-        dawg2 = new MDAG(wordArrayList);
+        ArrayList<String> wordArrayList2 = new ArrayList<>(wordArrayList);
+        Collections.shuffle(wordArrayList2);
+        dawg2 = new MDAG(wordArrayList2);
         dawg2.simplify();
     }
     
@@ -113,14 +107,14 @@ public class DAWGTest {
         int wordArrayListSize = wordArrayList.size();
         
         for (int i = 0; i < numberOfRuns; i++) {
-            wordArrayList = new ArrayList<>(initialWordArrayList);
-            Collections.shuffle(wordArrayList);
+            ArrayList<String> wordArrayList2 = new ArrayList<>(wordArrayList);
+            Collections.shuffle(wordArrayList2);
             int wordIndex = (int)(Math.random() * wordArrayListSize);
 
-            MDAG testDAWG = new MDAG(wordArrayList);
-            String toBeRemovedWord = wordArrayList.remove(wordIndex);
+            MDAG testDAWG = new MDAG(wordArrayList2);
+            String toBeRemovedWord = wordArrayList2.remove(wordIndex);
             testDAWG.remove(toBeRemovedWord);
-            MDAG controlTestDAWG = new MDAG(wordArrayList);
+            MDAG controlTestDAWG = new MDAG(wordArrayList2);
 
             assertEquals("Removed word: " + toBeRemovedWord, controlTestDAWG.getNodeCount(), testDAWG.getNodeCount());
             assertEquals("Removed word: " + toBeRemovedWord, controlTestDAWG.getEquivalenceClassCount(), testDAWG.getEquivalenceClassCount());
@@ -155,19 +149,21 @@ public class DAWGTest {
     @Test
     public void removeWord2() {
         for (int interval[] : removeWord2DataProvider()) {
-            init();
+            ArrayList<String> wordArrayList2 = new ArrayList<>(wordArrayList);
+            Collections.shuffle(wordArrayList2);
+            
             int intervalBegin = interval[0];
             int onePastIntervalEnd = interval[1];
-            MDAG testDAWG = new MDAG(wordArrayList);
+            MDAG testDAWG = new MDAG(wordArrayList2);
 
             int intervalSize = onePastIntervalEnd - intervalBegin;
             for (int i = 0; i < intervalSize; i++)
-                testDAWG.remove(wordArrayList.get(intervalBegin + i));
+                testDAWG.remove(wordArrayList2.get(intervalBegin + i));
 
             for (int i = 0; i < intervalSize; i++)
-                wordArrayList.remove(intervalBegin);
+                wordArrayList2.remove(intervalBegin);
 
-            MDAG controlTestDAWG = new MDAG(wordArrayList);
+            MDAG controlTestDAWG = new MDAG(wordArrayList2);
 
             assertEquals(controlTestDAWG.getNodeCount(), testDAWG.getNodeCount());
             assertEquals(controlTestDAWG.getEquivalenceClassCount(), testDAWG.getEquivalenceClassCount());
@@ -195,7 +191,6 @@ public class DAWGTest {
     @Test
     public void getAllWordsWithPrefixTest() {
         for (String prefixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            init();
             HashSet<String> controlSet = new HashSet<>();
 
             for (String str : wordArrayList) {
@@ -211,7 +206,6 @@ public class DAWGTest {
     @Test
     public void getStringsWithSubstringTest() {
         for (String substringStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            init();
             HashSet<String> controlSet = new HashSet<>();
 
             for (String str : wordArrayList) {
@@ -227,7 +221,6 @@ public class DAWGTest {
     @Test
     public void getStringsEndingWithTest() {
         for (String suffixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            init();
             HashSet<String> controlSet = new HashSet<>();
 
             for (String str : wordArrayList) {
