@@ -140,6 +140,12 @@ public class MDAG {
     }
     
     /**
+     * Creates empty MDAG. Use {@link #addString} to fill it.
+     */
+    public MDAG() {
+    }
+    
+    /**
      * Adds a Collection of Strings to the MDAG.
      
      * @param strCollection     a {@link java.util.Collection} containing Strings to be added to the MDAG
