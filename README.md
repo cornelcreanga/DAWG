@@ -1,5 +1,5 @@
 ##About
-**MDAG** (Minimalistic Directed Acyclic Graph) is a **Java library** capable of constructing character-sequence-storing, directed acyclic graphs of minimal size. 
+**MDAG** (Minimalistic Directed Acyclic Graph) is a **Java library** capable of constructing character-sequence-storing, directed acyclic graphs of minimal size.
 
 The library is small, deceptively simple, fast, and powerful. It differs from other libraries capable of creating minimal directed acyclic graphs
 (also known as **MA-FSA** (Minimal Acyclic Finite State Automata) or **DAWG**s (directed acyclic word graphs)) in the following ways:
@@ -11,8 +11,8 @@ The library is small, deceptively simple, fast, and powerful. It differs from ot
 - Graphs can be "simplified" in to an array for even more space-savings
 - Out of the box convenience methods are provided for perusing the graph:
 
-The code well structured, easy to follow, and extensively commented for the 
-benefit of developers seeking to understand the data structure, as well as 
+The code well structured, easy to follow, and extensively commented for the
+benefit of developers seeking to understand the data structure, as well as
 developers seeking to add homogeneous, functionality-extending code with ease.
 
 The code has also been fully tested for correct functionality and performance.

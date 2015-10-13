@@ -1,7 +1,7 @@
 /**
  * MDAG is a Java library capable of constructing character-sequence-storing,
- * directed acyclic graphs of minimal size. 
- * 
+ * directed acyclic graphs of minimal size.
+ *
  *  Copyright (C) 2012 Kevin Lawson <Klawson88@gmail.com>
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,7 +23,6 @@
 package com.boxofc.mdag;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,55 +39,49 @@ import org.junit.Test;
  *
  * @author Kevin
  */
-public class DAWGTest 
-{
-    static ArrayList<String> initialWordArrayList;
-    ArrayList<String> wordArrayList;
-    MDAG dawg1;
-    MDAG dawg2;
+public class DAWGTest {
+    private static ArrayList<String> initialWordArrayList;
     
+    private ArrayList<String> wordArrayList;
+    private MDAG dawg1;
+    private MDAG dawg2;
     
     @BeforeClass
-    public static void init() throws IOException
-    {
-        initialWordArrayList = new ArrayList<String>(100000);
-        BufferedReader breader = new BufferedReader(new FileReader(new File("words.txt")));
-        String currentWord;
-        
-        while((currentWord = breader.readLine()) != null)
-            initialWordArrayList.add(currentWord);
+    public static void initClass() throws IOException {
+        initialWordArrayList = new ArrayList<>(100000);
+        try (FileReader freader = new FileReader("words.txt");
+             BufferedReader breader = new BufferedReader(freader)) {
+            String currentWord;
+            while ((currentWord = breader.readLine()) != null)
+                initialWordArrayList.add(currentWord);
+        }
     }
     
-    
     @Before
-    public void initializer()
-    {
-        wordArrayList = new ArrayList<String>(initialWordArrayList);
+    public void init() {
+        wordArrayList = new ArrayList<>(initialWordArrayList);
         dawg1 = new MDAG(wordArrayList);
         
         Collections.shuffle(wordArrayList);
         dawg2 = new MDAG(wordArrayList);
-
         dawg2.simplify();
     }
     
     
     @Test
-    public void dawgBGetMinimizationIndexTest()
-    {
-       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("", ""), -1);
-       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "efg"), 0);
-       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "ab"), 2);
-       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "abcd"), -1);
-       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "abd"), 2);
-       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "abcr"), 3);
-       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", ""), 0);
-       assertEquals(dawg1.calculateMinimizationProcessingStartIndex("", "abcd"), -1);
+    public void dawgBGetMinimizationIndexTest() {
+        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("", ""), -1);
+        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "efg"), 0);
+        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "ab"), 2);
+        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "abcd"), -1);
+        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "abd"), 2);
+        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "abcr"), 3);
+        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", ""), 0);
+        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("", "abcd"), -1);
     }
     
     @Test
-    public void dawgBGetLongestStoredSubsequenceTest()
-    {  
+    public void dawgBGetLongestStoredSubsequenceTest() {
         assertEquals(dawg1.determineLongestPrefixInMDAG("do"), "do");
         assertEquals(dawg1.determineLongestPrefixInMDAG("doggy"), "doggy");
         assertEquals(dawg1.determineLongestPrefixInMDAG("c"), "c");
@@ -99,8 +92,7 @@ public class DAWGTest
     }
     
     @Test
-    public void dawgBGetTransitionPathFirstConfluenceNodeDataTest()
-    {
+    public void dawgBGetTransitionPathFirstConfluenceNodeDataTest() {
         assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "caution").get("confluenceNode"));
         assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "abated").get("confluenceNode"));
         assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "watching").get("confluenceNode"));
@@ -108,24 +100,20 @@ public class DAWGTest
     
     
     @Test
-    public void dawgBBuildTest()
-    {
-        for(String currentWord : wordArrayList)
-        {
+    public void dawgBBuildTest() {
+        for (String currentWord : wordArrayList) {
             assertTrue("dawg1 does not contain " + currentWord, dawg1.contains(currentWord));
             assertTrue("dawg2 does not contain " + currentWord, dawg2.contains(currentWord));
         }
-            
     }
     
     @Test
-    public void removeWordTest()
-    {
+    public void removeWordTest() {
         int numberOfRuns = 20;
         int wordArrayListSize = wordArrayList.size();
         
         for (int i = 0; i < numberOfRuns; i++) {
-            initializer();
+            init();
             int wordIndex = (int)(Math.random() * wordArrayListSize);
             String toBeRemovedWord = wordArrayList.get(wordIndex);
 
@@ -141,20 +129,17 @@ public class DAWGTest
         }
     }
     
-    public int[][] removeWord2DataProvider()
-    {
+    public int[][] removeWord2DataProvider() {
         int numberOfRuns = 20;
         int intervalSize = 20;
-        
         int[][] parameterObjectDoubleArray = new int[numberOfRuns][];
-
         int wordArrayListSize = wordArrayList.size();
-        for(int i = 0; i < numberOfRuns; i++, wordArrayListSize -= intervalSize)
-        {
+        
+        for (int i = 0; i < numberOfRuns; i++, wordArrayListSize -= intervalSize) {
             int intervalBoundaryIndex1 = (int)(Math.random() * wordArrayListSize);
             int intervalBoundaryIndex2;
             
-            if(intervalBoundaryIndex1 + intervalSize >= wordArrayListSize)
+            if (intervalBoundaryIndex1 + intervalSize >= wordArrayListSize)
                 intervalBoundaryIndex2 = intervalBoundaryIndex1 - intervalSize;
             else
                 intervalBoundaryIndex2 = intervalBoundaryIndex1 + intervalSize;
@@ -164,25 +149,23 @@ public class DAWGTest
             currentParameterArray[1] = Math.max(intervalBoundaryIndex1, intervalBoundaryIndex2);
             parameterObjectDoubleArray[i] = currentParameterArray;
         }
-        
         return parameterObjectDoubleArray;
     }
     
     
     @Test
-    public void removeWord2()
-    {
+    public void removeWord2() {
         for (int interval[] : removeWord2DataProvider()) {
-            initializer();
+            init();
             int intervalBegin = interval[0];
             int onePastIntervalEnd = interval[1];
             MDAG testDAWG = new MDAG(wordArrayList);
 
             int intervalSize = onePastIntervalEnd - intervalBegin;
-            for(int i = 0; i < intervalSize; i++)
+            for (int i = 0; i < intervalSize; i++)
                 testDAWG.removeString(wordArrayList.get(intervalBegin + i));
 
-            for(int i = 0; i < intervalSize; i++)
+            for (int i = 0; i < intervalSize; i++)
                 wordArrayList.remove(intervalBegin);
 
             MDAG controlTestDAWG = new MDAG(wordArrayList);
@@ -193,41 +176,31 @@ public class DAWGTest
         }
     }
     
-    
-
-    
-    
     @Test
-    public void getAllWordsTest()
-    {
+    public void getAllWordsTest() {
         HashSet<String> wordHashSet1 = dawg1.getAllStrings();
         HashSet<String> wordHashSet2 = dawg2.getAllStrings();
         assertTrue(wordHashSet1.containsAll(wordArrayList));
         assertTrue(wordHashSet2.containsAll(wordArrayList));
-        
     }
     
     
     @Test
-    public void containsTest()
-    {
-        for(int i = 0; i < 100; i++)
-        {
+    public void containsTest() {
+        for (int i = 0; i < 100; i++) {
             assertTrue(dawg1.contains(wordArrayList.get(i)));
             assertTrue(dawg2.contains(wordArrayList.get(i)));
         }
     }
     
     @Test
-    public void getAllWordsWithPrefixTest()
-    {
+    public void getAllWordsWithPrefixTest() {
         for (String prefixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            initializer();
-            HashSet<String> controlSet = new HashSet<String>();
+            init();
+            HashSet<String> controlSet = new HashSet<>();
 
-            for(String str : wordArrayList)
-            {
-                if(str.startsWith(prefixStr))
+            for (String str : wordArrayList) {
+                if (str.startsWith(prefixStr))
                     controlSet.add(str);
             }
 
@@ -236,17 +209,14 @@ public class DAWGTest
         }
     }
     
-    
     @Test
-    public void getStringsWithSubstringTest()
-    {
+    public void getStringsWithSubstringTest() {
         for (String substringStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            initializer();
-            HashSet<String> controlSet = new HashSet<String>();
+            init();
+            HashSet<String> controlSet = new HashSet<>();
 
-            for(String str : wordArrayList)
-            {
-                if(str.contains(substringStr))
+            for (String str : wordArrayList) {
+                if (str.contains(substringStr))
                     controlSet.add(str);
             }
 
@@ -255,17 +225,14 @@ public class DAWGTest
         }
     }
     
-    
     @Test
-    public void getStringsEndingWithTest()
-    {
+    public void getStringsEndingWithTest() {
         for (String suffixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            initializer();
-            HashSet<String> controlSet = new HashSet<String>();
+            init();
+            HashSet<String> controlSet = new HashSet<>();
 
-            for(String str : wordArrayList)
-            {
-                if(str.endsWith(suffixStr))
+            for (String str : wordArrayList) {
+                if (str.endsWith(suffixStr))
                     controlSet.add(str);
             }
 
