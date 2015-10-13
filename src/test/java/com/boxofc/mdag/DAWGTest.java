@@ -118,7 +118,7 @@ public class DAWGTest {
             String toBeRemovedWord = wordArrayList.get(wordIndex);
 
             MDAG testDAWG = new MDAG(wordArrayList);
-            testDAWG.removeString(wordArrayList.get(wordIndex));
+            testDAWG.remove(wordArrayList.get(wordIndex));
 
             wordArrayList.remove((int)wordIndex);
             MDAG controlTestDAWG = new MDAG(wordArrayList);
@@ -163,7 +163,7 @@ public class DAWGTest {
 
             int intervalSize = onePastIntervalEnd - intervalBegin;
             for (int i = 0; i < intervalSize; i++)
-                testDAWG.removeString(wordArrayList.get(intervalBegin + i));
+                testDAWG.remove(wordArrayList.get(intervalBegin + i));
 
             for (int i = 0; i < intervalSize; i++)
                 wordArrayList.remove(intervalBegin);

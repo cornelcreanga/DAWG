@@ -33,7 +33,8 @@ import java.util.Stack;
  * @author Kevin
  */
 public class MDAGNode {
-    public int id;
+    @Deprecated
+    int id;
     
     //The boolean denoting the accept state status of this node
     private boolean isAcceptNode;
@@ -42,13 +43,13 @@ public class MDAGNode {
     private final TreeMap<Character, MDAGNode> outgoingTransitionTreeMap;
 
     //The int representing this node's incoming transition node count
-    private int incomingTransitionCount = 0;
+    private int incomingTransitionCount;
     
     //The int denoting index in a simplified mdag data array that this node's transition set begins at
     private int transitionSetBeginIndex = -1;
     
     //The int which will store this node's hash code after its been calculated (necessary due to how expensive the hashing calculation is)
-    private Integer storedHashCode = null;
+    private Integer storedHashCode;
     
     /**
      * Constructs an MDAGNode.
@@ -73,21 +74,6 @@ public class MDAGNode {
         //Loop through the nodes in this node's outgoing transition set, incrementing the number of
         //incoming transitions of each by 1 (to account for this newly created node's outgoing transitions)
         for (Entry<Character, MDAGNode> transitionKeyValuePair : outgoingTransitionTreeMap.entrySet())
-            transitionKeyValuePair.getValue().incomingTransitionCount++;
-    }
-    
-    public MDAGNode(boolean isAcceptNode, int id) {
-        this.id = id;
-        this.isAcceptNode = isAcceptNode;
-        outgoingTransitionTreeMap = new TreeMap<>();
-    }
-    
-    private MDAGNode(MDAGNode node, int id) {
-        this.id = id;
-        isAcceptNode = node.isAcceptNode;
-        outgoingTransitionTreeMap = new TreeMap<>(node.outgoingTransitionTreeMap);
-        
-        for (Map.Entry<Character, MDAGNode> transitionKeyValuePair : outgoingTransitionTreeMap.entrySet())
             transitionKeyValuePair.getValue().incomingTransitionCount++;
     }
     
@@ -125,10 +111,6 @@ public class MDAGNode {
      */
     public int getTransitionSetBeginIndex() {
         return transitionSetBeginIndex;
-    }
-    
-    public Map.Entry<Character, MDAGNode> getLastTransition() {
-        return outgoingTransitionTreeMap.lastEntry();
     }
     
     /**
@@ -172,9 +154,12 @@ public class MDAGNode {
      * Sets this node's accept state status.
      *
      * @param isAcceptNode     a boolean representing the desired accept state status
+     * @return true if and only if the accept state status has changed as a result of this call
      */
-    public void setAcceptStateStatus(boolean isAcceptNode) {
+    public boolean setAcceptStateStatus(boolean isAcceptNode) {
+        boolean result = this.isAcceptNode != isAcceptNode;
         this.isAcceptNode = isAcceptNode;
+        return result;
     }
     
     /**
@@ -313,15 +298,6 @@ public class MDAGNode {
         return newTargetNode;
     }
     
-    public MDAGNode addOutgoingTransition(char letter, boolean isEndOfWord, int id) {
-        MDAGNode newTargetNode = new MDAGNode(isEndOfWord, id);
-        newTargetNode.incomingTransitionCount++;
-        newTargetNode.id = id;
-        
-        outgoingTransitionTreeMap.put(letter, newTargetNode);
-        return newTargetNode;
-    }
-    
     /**
      * Removes a transition labeled with a given char. This only removes the connection
      * between this node and the transition's target node; the target node is not deleted.
@@ -340,7 +316,7 @@ public class MDAGNode {
      * @return                                  true if the set of transition paths from {@code node1}
      *                                          and {@code node2} are equivalent
      */
-    public static boolean haveSameTransitions(MDAGNode node1, MDAGNode node2) {
+    private static boolean haveSameTransitions(MDAGNode node1, MDAGNode node2) {
         //TreeMaps containing entries collectively representing all of a node's outgoing transitions
         TreeMap<Character, MDAGNode> outgoingTransitionTreeMap1 = node1.outgoingTransitionTreeMap;
         TreeMap<Character, MDAGNode> outgoingTransitionTreeMap2 = node2.outgoingTransitionTreeMap;

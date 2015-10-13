@@ -23,13 +23,15 @@
 package com.boxofc.mdag;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.Collection;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -97,46 +99,21 @@ public class MDAG {
     };
     
     /**
-     * Creates an MDAG from a newline delimited file containing the data of interest.
+     * Creates an MDAG from a collection of Strings.
      
-     * @param dataFile          a {@link java.io.File} representation of a file
-     *                          containing the Strings that the MDAG will contain
-     * @throws IOException      if {@code datafile} cannot be opened, or a read operation on it cannot be carried out
+     * @param strCollection     a {@link java.util.Iterable} containing Strings that the MDAG will contain
      */
-    public MDAG(File dataFile) throws IOException {
-        BufferedReader dataFileBufferedReader = new BufferedReader(new FileReader(dataFile));
-        String currentString;
-        String previousString = "";
-        
-        //Read all the lines in dataFile and add the String contained in each to the MDAG.
-        while ((currentString = dataFileBufferedReader.readLine()) != null) {
-            int mpsIndex = calculateMinimizationProcessingStartIndex(previousString, currentString);
-            
-            //If the transition path of the previousString needs to be examined for minimization or
-            //equivalence class representation after a certain point, call replaceOrRegister to do so.
-            if (mpsIndex != -1) {
-                String transitionSubstring = previousString.substring(0, mpsIndex);
-                String minimizationProcessingSubstring = previousString.substring(mpsIndex);
-                replaceOrRegister(sourceNode.transition(transitionSubstring), minimizationProcessingSubstring);
-            }
-
-            addStringInternal(currentString);
-            previousString = currentString;
-        }
-
-        //Since we delay the minimization of the previously-added String
-        //until after we read the next one, we need to have a seperate
-        //statement to minimize the absolute last String.
-        replaceOrRegister(sourceNode, previousString);
+    public MDAG(Iterable<? extends String> strCollection) {
+        addAll(strCollection);
     }
     
     /**
      * Creates an MDAG from a collection of Strings.
      
-     * @param strCollection     a {@link java.util.Collection} containing Strings that the MDAG will contain
+     * @param strCollection     a {@link java.util.Iterable} containing Strings that the MDAG will contain
      */
-    public MDAG(Collection<String> strCollection) {
-        addStrings(strCollection);
+    public MDAG(String... strCollection) {
+        addAll(strCollection);
     }
     
     /**
@@ -146,12 +123,75 @@ public class MDAG {
     }
     
     /**
+     * Creates a MDAG from a newline delimited file containing the data of interest.
+     
+     * @param dataFile          a {@link java.io.InputStream} representation of a file
+     *                          containing the Strings that the MDAG will contain
+     * @return true if and only if this MDAG was changed as a result of this call
+     * @throws IOException      if {@code datafile} cannot be opened, or a read operation on it cannot be carried out
+     */
+    public boolean addAll(InputStream dataFile) throws IOException {
+        final IOException exceptionToThrow[] = new IOException[1];
+        try (InputStreamReader isr = new InputStreamReader(dataFile);
+             final BufferedReader br = new BufferedReader(isr)) {
+            return addAll(new Iterable<String>() {
+                @Override
+                public Iterator<String> iterator() {
+                    return new Iterator<String>() {
+                        String nextLine;
+
+                        @Override
+                        public boolean hasNext() {
+                            if (nextLine == null) {
+                                try {
+                                    nextLine = br.readLine();
+                                    return nextLine != null;
+                                } catch (IOException e) {
+                                    exceptionToThrow[0] = e;
+                                    throw new RuntimeException(e);
+                                }
+                            } else
+                                return true;
+                        }
+
+                        @Override
+                        public String next() {
+                            if (nextLine != null || hasNext()) {
+                                String line = nextLine;
+                                nextLine = null;
+                                return line;
+                            } else
+                                throw new NoSuchElementException();
+                        }
+                    };
+                }
+            });
+        } catch (RuntimeException e) {
+            if (e.getCause() == exceptionToThrow[0] && exceptionToThrow[0] != null)
+                throw exceptionToThrow[0];
+            throw e;
+        }
+    }
+    
+    /**
      * Adds a Collection of Strings to the MDAG.
      
      * @param strCollection     a {@link java.util.Collection} containing Strings to be added to the MDAG
+     * @return true if and only if this MDAG was changed as a result of this call
      */
-    public final void addStrings(Collection<String> strCollection) {
+    public final boolean addAll(String... strCollection) {
+        return addAll(Arrays.asList(strCollection));
+    }
+    
+    /**
+     * Adds a Collection of Strings to the MDAG.
+     
+     * @param strCollection     a {@link java.util.Iterable} containing Strings to be added to the MDAG
+     * @return true if and only if this MDAG was changed as a result of this call
+     */
+    public final boolean addAll(Iterable<? extends String> strCollection) {
         if (sourceNode != null) {
+            boolean result = false;
             String previousString = "";
         
             //Add all the Strings in strCollection to the MDAG.
@@ -166,7 +206,7 @@ public class MDAG {
                     replaceOrRegister(sourceNode.transition(transitionSubstring), minimizationProcessingSubString);
                 }
 
-                addStringInternal(currentString);
+                result |= addStringInternal(currentString);
                 previousString = currentString;
             }
 
@@ -174,6 +214,7 @@ public class MDAG {
             //until after we read the next one, we need to have a seperate
             //statement to minimize the absolute last String.
             replaceOrRegister(sourceNode, previousString);
+            return result;
         } else
             throw new UnsupportedOperationException("MDAG is simplified. Unable to add additional Strings.");
     }
@@ -182,11 +223,13 @@ public class MDAG {
      * Adds a string to the MDAG.
      
      * @param str       the String to be added to the MDAG
+     * @return true if MDAG didn't contain this string yet
      */
-    public void addString(String str) {
+    public boolean add(String str) {
         if (sourceNode != null) {
-            addStringInternal(str);
+            boolean result = addStringInternal(str);
             replaceOrRegister(sourceNode, str);
+            return result;
         } else
             throw new UnsupportedOperationException("MDAG is simplified. Unable to add additional Strings.");
     }
@@ -238,8 +281,9 @@ public class MDAG {
      * Removes a String from the MDAG.
      
      * @param str       the String to be removed from the MDAG
+     * @return true if MDAG already contained this string
      */
-    public void removeString(String str) {
+    public boolean remove(String str) {
         if (sourceNode != null) {
             //Split the transition path corresponding to str to ensure that
             //any other transition paths sharing nodes with it are not affected
@@ -267,9 +311,11 @@ public class MDAG {
                     
                     replaceOrRegister(sourceNode, str.substring(0, toBeRemovedTransitionLabelCharIndex));
                 }
+                return true;
             } else {
-                strEndNode.setAcceptStateStatus(false);
+                boolean result = strEndNode.setAcceptStateStatus(false);
                 replaceOrRegister(sourceNode, str);
+                return result;
             }
         } else
             throw new UnsupportedOperationException("MDAG is simplified. Unable to remove any Strings.");
@@ -344,7 +390,7 @@ public class MDAG {
      *                              - an int denoting the length of the path to the first confluence node in the transition path of interest
      *                              - the MDAGNode which is the first confluence node in the transition path of interest (or null if one does not exist)
      */
-    public HashMap<String, Object> getTransitionPathFirstConfluenceNodeData(MDAGNode originNode, String str) {
+    HashMap<String, Object> getTransitionPathFirstConfluenceNodeData(MDAGNode originNode, String str) {
         int currentIndex = 0;
         int charCount = str.length();
         MDAGNode currentNode = originNode;
@@ -413,8 +459,9 @@ public class MDAG {
      
      * @param originNode    the MDAGNode which will serve as the start point of the to-be-created transition path
      * @param str           the String to be used to create a new transition path from {@code originNode}
+     * @return true if and only if MDAG has changed as a result of this call
      */
-    private void addTransitionPath(MDAGNode originNode, String str) {
+    private boolean addTransitionPath(MDAGNode originNode, String str) {
         if (!str.isEmpty()) {
             MDAGNode currentNode = originNode;
             int charCount = str.length();
@@ -428,8 +475,9 @@ public class MDAG {
                 
                 charTreeSet.add(currentChar);
             }
+            return true;
         } else
-            originNode.setAcceptStateStatus(true);
+            return originNode.setAcceptStateStatus(true);
     }
     
     /**
@@ -502,8 +550,9 @@ public class MDAG {
      * Adds a String to the MDAG (called by addString to do actual MDAG manipulation).
      
      * @param str       the String to be added to the MDAG
+     * @return true if and only if MDAG has changed as a result of this call
      */
-    private void addStringInternal(String str) {
+    private boolean addStringInternal(String str) {
         String prefixString = determineLongestPrefixInMDAG(str);
         String suffixString = str.substring(prefixString.length());
 
@@ -528,7 +577,7 @@ public class MDAG {
         }
         
         //Add the transition based on suffixString to the end of the (possibly duplicated) transition path corresponding to prefixString
-        addTransitionPath(sourceNode.transition(prefixString), suffixString);
+        return addTransitionPath(sourceNode.transition(prefixString), suffixString);
     }
 
     /**
@@ -746,19 +795,8 @@ public class MDAG {
     
      * @return      the MDAGNode or SimpleMDAGNode functioning as the MDAG's source node.
      */
-    public Object getSourceNode() {
+    Object getSourceNode() {
         return sourceNode != null ? sourceNode : simplifiedSourceNode;
-    }
-    
-    /**
-     * Returns the array of SimpleMDAGNodes collectively containing the
-     * data of this MDAG, or null if it hasn't been simplified yet.
-     
-     * @return      the array of SimpleMDAGNodes collectively containing the data of this MDAG
-     *              if this MDAG has been simplified, or null if it has not
-     */
-    public SimpleMDAGNode[] getSimpleMDAGArray() {
-        return mdagDataArray;
     }
     
     /**
@@ -770,27 +808,7 @@ public class MDAG {
         return charTreeSet;
     }
     
-    /**
-     * Determines if a child node object is accepting.
-      
-     * @param nodeObj                       an Object
-     * @return                              if {@code nodeObj} is either an MDAGNode or a SimplifiedMDAGNode,
-     *                                      true if the node is accepting, false otherwise
-     * throws IllegalArgumentException      if {@code nodeObj} is not an MDAGNode or SimplifiedMDAGNode
-     */
-    public static boolean isAcceptNode(Object nodeObj) {
-        if (nodeObj != null) {
-            Class nodeObjClass = nodeObj.getClass();
-            
-            if (nodeObjClass.equals(MDAGNode.class))
-                return ((MDAGNode)nodeObj).isAcceptNode();
-            else if (nodeObjClass.equals(SimpleMDAGNode.class))
-                return ((SimpleMDAGNode)nodeObj).isAcceptNode();
-        }
-        
-        throw new IllegalArgumentException("Argument is not an MDAGNode or SimpleMDAGNode");
-    }
-    
+    @Deprecated
     private int countNodes(MDAGNode originNode, HashSet<Integer> nodeIDHashSet) {
         if (originNode != sourceNode)
             nodeIDHashSet.add(originNode.id);

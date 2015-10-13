@@ -108,7 +108,7 @@ public class SimpleMDAGNode {
      * @return                  the SimpleMDAGNode that is the target of the transition labeled with {@code letter},
      *                          or null if there is no such labeled transition from this node
      */
-    public SimpleMDAGNode transition(SimpleMDAGNode[] mdagDataArray, char letter) {
+    private SimpleMDAGNode transition(SimpleMDAGNode[] mdagDataArray, char letter) {
         int onePastTransitionSetEndIndex = transitionSetBeginIndex + transitionSetSize;
         SimpleMDAGNode targetNode = null;
         
@@ -132,7 +132,7 @@ public class SimpleMDAGNode {
      * @return                  the SimpleMDAGNode at the end of the transition path corresponding to
      *                          {@code str}, or null if such a transition path is not present in the MDAG
      */
-    public SimpleMDAGNode transition(SimpleMDAGNode[] mdagDataArray, String str) {
+    private SimpleMDAGNode transition(SimpleMDAGNode[] mdagDataArray, String str) {
         SimpleMDAGNode currentNode = this;
         int numberOfChars = str.length();
         
