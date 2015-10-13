@@ -31,7 +31,6 @@ import java.util.HashSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -92,6 +91,12 @@ public class DAWGTest {
         assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "watching").get("confluenceNode"));
     }
     
+    @Test
+    public void size() {
+        assertEquals(wordArrayList.size(), dawg1.size());
+        assertEquals(wordArrayList.size(), dawg2.size());
+    }
+    
     
     @Test
     public void dawgBBuildTest() {
@@ -116,6 +121,8 @@ public class DAWGTest {
             testDAWG.remove(toBeRemovedWord);
             MDAG controlTestDAWG = new MDAG(wordArrayList2);
 
+            assertEquals("Removed word: " + toBeRemovedWord, wordArrayList.size() - 1, testDAWG.size());
+            assertEquals("Removed word: " + toBeRemovedWord, controlTestDAWG.size(), testDAWG.size());
             assertEquals("Removed word: " + toBeRemovedWord, controlTestDAWG.getNodeCount(), testDAWG.getNodeCount());
             assertEquals("Removed word: " + toBeRemovedWord, controlTestDAWG.getEquivalenceClassCount(), testDAWG.getEquivalenceClassCount());
             assertEquals("Removed word: " + toBeRemovedWord, controlTestDAWG.getTransitionCount(), testDAWG.getTransitionCount());
@@ -165,6 +172,8 @@ public class DAWGTest {
 
             MDAG controlTestDAWG = new MDAG(wordArrayList2);
 
+            assertEquals(wordArrayList.size() - intervalSize, testDAWG.size());
+            assertEquals(controlTestDAWG.size(), testDAWG.size());
             assertEquals(controlTestDAWG.getNodeCount(), testDAWG.getNodeCount());
             assertEquals(controlTestDAWG.getEquivalenceClassCount(), testDAWG.getEquivalenceClassCount());
             assertEquals(controlTestDAWG.getTransitionCount(), testDAWG.getTransitionCount());

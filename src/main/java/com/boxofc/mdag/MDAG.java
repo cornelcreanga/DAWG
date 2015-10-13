@@ -62,6 +62,9 @@ public class MDAG {
     //An int denoting the total number of transitions between the nodes of the MDAG
     private int transitionCount;
     
+    //Total number of words contained in this MDAG.
+    private int size;
+    
     //Enum containing fields collectively denoting the set of all conditions that can be applied to a search on the MDAG
     private static enum SearchCondition {
         NO_SEARCH_CONDITION, PREFIX_SEARCH_CONDITION, SUBSTRING_SEARCH_CONDITION, SUFFIX_SEARCH_CONDITION;
@@ -311,10 +314,13 @@ public class MDAG {
                     
                     replaceOrRegister(sourceNode, str.substring(0, toBeRemovedTransitionLabelCharIndex));
                 }
+                size--;
                 return true;
             } else {
                 boolean result = strEndNode.setAcceptStateStatus(false);
                 replaceOrRegister(sourceNode, str);
+                if (result)
+                    size--;
                 return result;
             }
         } else
@@ -475,9 +481,13 @@ public class MDAG {
                 
                 charTreeSet.add(currentChar);
             }
+            size++;
+            return true;
+        } else if (originNode.setAcceptStateStatus(true)) {
+            size++;
             return true;
         } else
-            return originNode.setAcceptStateStatus(true);
+            return false;
     }
     
     /**
@@ -831,5 +841,9 @@ public class MDAG {
     
     public int getTransitionCount() {
         return transitionCount;
+    }
+    
+    public int size() {
+        return size;
     }
 }
