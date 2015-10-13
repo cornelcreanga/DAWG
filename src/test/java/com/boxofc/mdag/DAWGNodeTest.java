@@ -37,9 +37,9 @@ public class DAWGNodeTest {
     @Test
     public void addOutgoingTransitionTest() {
         MDAGNode node1 = new MDAGNode(false, 0);
-        node1.addOutgoingTransition('a', true);
-        node1.addOutgoingTransition('b', false);
-        node1.addOutgoingTransition('c', false);
+        node1.addOutgoingTransition('a', true, 0);
+        node1.addOutgoingTransition('b', false, 0);
+        node1.addOutgoingTransition('c', false, 0);
         
         TreeMap<Character, MDAGNode> outgoingTransitionTreeMap = node1.getOutgoingTransitions();
         
@@ -52,13 +52,13 @@ public class DAWGNodeTest {
     @Test
     public void cloneTest() {
         MDAGNode node1 = new MDAGNode(false, 0);
-        node1.addOutgoingTransition('a', false);
-        node1.addOutgoingTransition('b', true);
+        node1.addOutgoingTransition('a', false, 0);
+        node1.addOutgoingTransition('b', true, 0);
         MDAGNode cloneNode1 = new MDAGNode(node1, 0);
         
         MDAGNode node2 = new MDAGNode(true, 0);
-        node2.addOutgoingTransition('c', false);
-        node2.addOutgoingTransition('d', true);
+        node2.addOutgoingTransition('c', false, 0);
+        node2.addOutgoingTransition('d', true, 0);
         MDAGNode cloneNode2 = new MDAGNode(node2, 0);
         
         assertTrue(node1 != cloneNode1);
@@ -80,7 +80,7 @@ public class DAWGNodeTest {
         char[] alphabet = {'a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k'};
         
         for (int i = 0; i < alphabet.length; i++)
-            currentNode = currentNode.addOutgoingTransition(alphabet[i], i % 2 == 0);
+            currentNode = currentNode.addOutgoingTransition(alphabet[i], i % 2 == 0, 0);
         
         String alphaStr = new String(alphabet);
         
@@ -90,10 +90,10 @@ public class DAWGNodeTest {
     @Test
     public void reassignOutgoingTransitionTest() {
         MDAGNode node1 = new MDAGNode(false, 0);
-        node1.addOutgoingTransition('a', true);
-        node1.addOutgoingTransition('b', false);
-        node1.addOutgoingTransition('c', true);
-        node1.addOutgoingTransition('d', false);
+        node1.addOutgoingTransition('a', true, 0);
+        node1.addOutgoingTransition('b', false, 0);
+        node1.addOutgoingTransition('c', true, 0);
+        node1.addOutgoingTransition('d', false, 0);
         
         MDAGNode node2 = new MDAGNode(true, 0);
         node1.reassignOutgoingTransition('a', node1.transition('a'), node2);
@@ -124,10 +124,10 @@ public class DAWGNodeTest {
     public void cloneTest2() {
         MDAGNode node1 = new MDAGNode(false, 0);
         
-        MDAGNode node2 = node1.addOutgoingTransition('\0', false);
-        node2.addOutgoingTransition('a', false);
-        node2.addOutgoingTransition('b', false);
-        node2.addOutgoingTransition('c', false);
+        MDAGNode node2 = node1.addOutgoingTransition('\0', false, 0);
+        node2.addOutgoingTransition('a', false, 0);
+        node2.addOutgoingTransition('b', false, 0);
+        node2.addOutgoingTransition('c', false, 0);
         
         MDAGNode node3 = node2.clone(node1, '\0', 0);
         
@@ -155,8 +155,8 @@ public class DAWGNodeTest {
         char[] alphabet = {'a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
         
         for (int i = 0; i < alphabet.length; i++) {
-           currentNode1 = currentNode1.addOutgoingTransition(alphabet[i], i % 2 == 0);
-           currentNode2 = currentNode2.addOutgoingTransition(alphabet[i], i % 2 == 0);
+           currentNode1 = currentNode1.addOutgoingTransition(alphabet[i], i % 2 == 0, 0);
+           currentNode2 = currentNode2.addOutgoingTransition(alphabet[i], i % 2 == 0, 0);
         }
             
         assertEquals(node1, node2);
@@ -180,8 +180,8 @@ public class DAWGNodeTest {
         char[] alphabet = {'a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
         
         for (int i = 0; i < alphabet.length; i++) {
-           currentNode1 = currentNode1.addOutgoingTransition(alphabet[i], i % 2 == 0);
-           currentNode2 = currentNode2.addOutgoingTransition(alphabet[i], i % 2 == 0);
+           currentNode1 = currentNode1.addOutgoingTransition(alphabet[i], i % 2 == 0, 0);
+           currentNode2 = currentNode2.addOutgoingTransition(alphabet[i], i % 2 == 0, 0);
         }
         
         assertEquals(node1.hashCode(), node2.hashCode());

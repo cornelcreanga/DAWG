@@ -26,8 +26,11 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.NavigableSet;
+import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -182,10 +185,10 @@ public class DAWGTest {
     
     @Test
     public void getAllWordsTest() {
-        HashSet<String> wordHashSet1 = dawg1.getAllStrings();
-        HashSet<String> wordHashSet2 = dawg2.getAllStrings();
-        assertTrue(wordHashSet1.containsAll(wordArrayList));
-        assertTrue(wordHashSet2.containsAll(wordArrayList));
+        NavigableSet<String> wordNavigableSet1 = dawg1.getAllStrings();
+        NavigableSet<String> wordNavigableSet2 = dawg2.getAllStrings();
+        assertTrue(wordNavigableSet1.containsAll(wordArrayList));
+        assertTrue(wordNavigableSet2.containsAll(wordArrayList));
     }
     
     
@@ -200,7 +203,7 @@ public class DAWGTest {
     @Test
     public void getAllWordsWithPrefixTest() {
         for (String prefixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            HashSet<String> controlSet = new HashSet<>();
+            Set<String> controlSet = new HashSet<>();
 
             for (String str : wordArrayList) {
                 if (str.startsWith(prefixStr))
@@ -215,7 +218,7 @@ public class DAWGTest {
     @Test
     public void getStringsWithSubstringTest() {
         for (String substringStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            HashSet<String> controlSet = new HashSet<>();
+            Set<String> controlSet = new HashSet<>();
 
             for (String str : wordArrayList) {
                 if (str.contains(substringStr))
@@ -230,7 +233,7 @@ public class DAWGTest {
     @Test
     public void getStringsEndingWithTest() {
         for (String suffixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            HashSet<String> controlSet = new HashSet<>();
+            Set<String> controlSet = new HashSet<>();
 
             for (String str : wordArrayList) {
                 if (str.endsWith(suffixStr))

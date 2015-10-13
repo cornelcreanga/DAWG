@@ -26,11 +26,25 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.NavigableSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.Stack;
 import java.util.TreeMap;
@@ -59,7 +73,7 @@ public class MDAG {
     //Array that will contain a space-saving version of the MDAG after a call to simplify().
     private SimpleMDAGNode[] mdagDataArray;
     
-    //HashSet which will contain the set of unique characters used as transition labels in the MDAG
+    //NavigableSet which will contain the set of unique characters used as transition labels in the MDAG
     private final TreeSet<Character> charTreeSet = new TreeSet<>();
     
     //An int denoting the total number of transitions between the nodes of the MDAG
@@ -480,7 +494,7 @@ public class MDAG {
             for (int i = 0; i < charCount; i++, transitionCount++) {
                 char currentChar = str.charAt(i);
                 boolean isLastChar = i == charCount - 1;
-                currentNode = currentNode.addOutgoingTransition(currentChar, isLastChar);
+                currentNode = currentNode.addOutgoingTransition(currentChar, isLastChar, id++);
                 
                 charTreeSet.add(currentChar);
             }
@@ -665,7 +679,7 @@ public class MDAG {
     /**
      * Retrieves Strings corresponding to all valid transition paths from a given node that satisfy a given condition.
      
-     * @param strHashSet                a HashSet of Strings to contain all those in the MDAG satisfying
+     * @param strNavigableSet                a NavigableSet of Strings to contain all those in the MDAG satisfying
      *                                  {@code searchCondition} with {@code conditionString}
      * @param searchCondition           the SearchCondition enum field describing the type of relationship that Strings contained in the MDAG
      *                                  must have with {@code conditionString} in order to be included in the result set
@@ -674,25 +688,25 @@ public class MDAG {
      * @param prefixString              the String corresponding to the currently traversed transition path
      * @param transitionTreeMap         a TreeMap of Characters to MDAGNodes collectively representing an MDAGNode's transition set
      */
-    private void getStrings(HashSet<String> strHashSet, SearchCondition searchCondition, String searchConditionString, String prefixString, TreeMap<Character, MDAGNode> transitionTreeMap) {
+    private void getStrings(NavigableSet<String> strNavigableSet, SearchCondition searchCondition, String searchConditionString, String prefixString, TreeMap<Character, MDAGNode> transitionTreeMap) {
         //Traverse all the valid transition paths beginning from each transition in transitionTreeMap, inserting the
-        //corresponding Strings in to strHashSet that have the relationship with conditionString denoted by searchCondition
+        //corresponding Strings in to strNavigableSet that have the relationship with conditionString denoted by searchCondition
         for (Entry<Character, MDAGNode> transitionKeyValuePair : transitionTreeMap.entrySet()) {
             String newPrefixString = prefixString + transitionKeyValuePair.getKey();
             MDAGNode currentNode = transitionKeyValuePair.getValue();
 
             if (currentNode.isAcceptNode() && searchCondition.satisfiesCondition(newPrefixString, searchConditionString))
-                strHashSet.add(newPrefixString);
+                strNavigableSet.add(newPrefixString);
             
             //Recursively call this to traverse all the valid transition paths from currentNode
-            getStrings(strHashSet, searchCondition, searchConditionString, newPrefixString, currentNode.getOutgoingTransitions());
+            getStrings(strNavigableSet, searchCondition, searchConditionString, newPrefixString, currentNode.getOutgoingTransitions());
         }
     }
     
     /**
      * Retrieves Strings corresponding to all valid transition paths from a given node that satisfy a given condition.
      
-     * @param strHashSet                    a HashSet of Strings to contain all those in the MDAG satisfying
+     * @param strNavigableSet                    a NavigableSet of Strings to contain all those in the MDAG satisfying
      *                                      {@code searchCondition} with {@code conditionString}
      * @param searchCondition               the SearchCondition enum field describing the type of relationship that Strings contained in the MDAG
      *                                      must have with {@code conditionString} in order to be included in the result set
@@ -702,48 +716,48 @@ public class MDAG {
      * @param transitionSetBegin            an int denoting the starting index of a SimpleMDAGNode's transition set in mdagDataArray
      * @param onePastTransitionSetEnd       an int denoting one past the last index of a simpleMDAGNode's transition set in mdagDataArray
      */
-    private void getStrings(HashSet<String> strHashSet, SearchCondition searchCondition, String searchConditionString, String prefixString, SimpleMDAGNode node) {
+    private void getStrings(NavigableSet<String> strNavigableSet, SearchCondition searchCondition, String searchConditionString, String prefixString, SimpleMDAGNode node) {
         int transitionSetBegin = node.getTransitionSetBeginIndex();
         int onePastTransitionSetEnd = transitionSetBegin +  node.getOutgoingTransitionSetSize();
         
         //Traverse all the valid transition paths beginning from each transition in transitionTreeMap, inserting the
-        //corresponding Strings in to strHashSet that have the relationship with conditionString denoted by searchCondition
+        //corresponding Strings in to strNavigableSet that have the relationship with conditionString denoted by searchCondition
         for (int i = transitionSetBegin; i < onePastTransitionSetEnd; i++) {
             SimpleMDAGNode currentNode = mdagDataArray[i];
             String newPrefixString = prefixString + currentNode.getLetter();
             
             if (currentNode.isAcceptNode() && searchCondition.satisfiesCondition(newPrefixString, searchConditionString))
-                strHashSet.add(newPrefixString);
+                strNavigableSet.add(newPrefixString);
             
             //Recursively call this to traverse all the valid transition paths from currentNode
-            getStrings(strHashSet, searchCondition, searchConditionString, newPrefixString, currentNode);
+            getStrings(strNavigableSet, searchCondition, searchConditionString, newPrefixString, currentNode);
         }
     }
     
     /**
      * Retrieves all the valid Strings that have been inserted in to the MDAG.
      
-     * @return      a HashSet containing all the Strings that have been inserted into the MDAG
+     * @return      a NavigableSet containing all the Strings that have been inserted into the MDAG
      */
-    public HashSet<String> getAllStrings() {
-        HashSet<String> strHashSet = new HashSet<>();
+    public NavigableSet<String> getAllStrings() {
+        NavigableSet<String> strNavigableSet = new TreeSet<>();
         
         if (sourceNode != null)
-            getStrings(strHashSet, SearchCondition.NO_SEARCH_CONDITION, null, "", sourceNode.getOutgoingTransitions());
+            getStrings(strNavigableSet, SearchCondition.NO_SEARCH_CONDITION, null, "", sourceNode.getOutgoingTransitions());
         else
-            getStrings(strHashSet, SearchCondition.NO_SEARCH_CONDITION, null, "", simplifiedSourceNode);
+            getStrings(strNavigableSet, SearchCondition.NO_SEARCH_CONDITION, null, "", simplifiedSourceNode);
         
-        return strHashSet;
+        return strNavigableSet;
     }
     
     /**
      * Retrieves all the Strings in the MDAG that begin with a given String.
      
      * @param prefixStr     a String that is the prefix for all the desired Strings
-     * @return              a HashSet containing all the Strings present in the MDAG that begin with {@code prefixString}
+     * @return              a NavigableSet containing all the Strings present in the MDAG that begin with {@code prefixString}
      */
-    public HashSet<String> getStringsStartingWith(String prefixStr) {
-        HashSet<String> strHashSet = new HashSet<>();
+    public NavigableSet<String> getStringsStartingWith(String prefixStr) {
+        NavigableSet<String> strNavigableSet = new TreeSet<>();
         
         //if the MDAG hasn't been simplified
         if (sourceNode != null) {
@@ -752,8 +766,8 @@ public class MDAG {
             //if there a transition path corresponding to prefixString (one or more stored Strings begin with prefixString)
             if (originNode != null) {
                 if (originNode.isAcceptNode())
-                    strHashSet.add(prefixStr);
-                getStrings(strHashSet, SearchCondition.PREFIX_SEARCH_CONDITION, prefixStr, prefixStr, originNode.getOutgoingTransitions());   //retrieve all Strings that extend the transition path denoted by prefixStr
+                    strNavigableSet.add(prefixStr);
+                getStrings(strNavigableSet, SearchCondition.PREFIX_SEARCH_CONDITION, prefixStr, prefixStr, originNode.getOutgoingTransitions());   //retrieve all Strings that extend the transition path denoted by prefixStr
             }
         } else {
             SimpleMDAGNode originNode = SimpleMDAGNode.traverseMDAG(mdagDataArray, simplifiedSourceNode, prefixStr);      //attempt to transition down the path denoted by prefixStr
@@ -761,46 +775,46 @@ public class MDAG {
             //if there a transition path corresponding to prefixString (one or more stored Strings begin with prefixStr)
             if (originNode != null) {
                 if (originNode.isAcceptNode())
-                    strHashSet.add(prefixStr);
-                getStrings(strHashSet, SearchCondition.PREFIX_SEARCH_CONDITION, prefixStr, prefixStr, originNode);        //retrieve all Strings that extend the transition path denoted by prefixString
+                    strNavigableSet.add(prefixStr);
+                getStrings(strNavigableSet, SearchCondition.PREFIX_SEARCH_CONDITION, prefixStr, prefixStr, originNode);        //retrieve all Strings that extend the transition path denoted by prefixString
             }
         }
         
-        return strHashSet;
+        return strNavigableSet;
     }
     
     /**
      * Retrieves all the Strings in the MDAG that contain a given String.
      
      * @param str       a String that is contained in all the desired Strings
-     * @return          a HashSet containing all the Strings present in the MDAG that begin with {@code prefixString}
+     * @return          a NavigableSet containing all the Strings present in the MDAG that begin with {@code prefixString}
      */
-    public HashSet<String> getStringsWithSubstring(String str) {
-        HashSet<String> strHashSet = new HashSet<>();
+    public NavigableSet<String> getStringsWithSubstring(String str) {
+        NavigableSet<String> strNavigableSet = new TreeSet<>();
          
         if (sourceNode != null)      //if the MDAG hasn't been simplified
-            getStrings(strHashSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", sourceNode.getOutgoingTransitions());
+            getStrings(strNavigableSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", sourceNode.getOutgoingTransitions());
         else
-            getStrings(strHashSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", simplifiedSourceNode);
+            getStrings(strNavigableSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", simplifiedSourceNode);
             
-        return strHashSet;
+        return strNavigableSet;
     }
     
      /**
      * Retrieves all the Strings in the MDAG that begin with a given String.
      
      * @param suffixStr         a String that is the suffix for all the desired Strings
-     * @return                  a HashSet containing all the Strings present in the MDAG that end with {@code suffixStr}
+     * @return                  a NavigableSet containing all the Strings present in the MDAG that end with {@code suffixStr}
      */
-    public HashSet<String> getStringsEndingWith(String suffixStr) {
-        HashSet<String> strHashSet = new HashSet<>();
+    public NavigableSet<String> getStringsEndingWith(String suffixStr) {
+        NavigableSet<String> strNavigableSet = new TreeSet<>();
         
         if (sourceNode != null)      //if the MDAG hasn't been simplified
-            getStrings(strHashSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", sourceNode.getOutgoingTransitions());
+            getStrings(strNavigableSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", sourceNode.getOutgoingTransitions());
         else
-            getStrings(strHashSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", simplifiedSourceNode);
+            getStrings(strNavigableSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", simplifiedSourceNode);
 
-         return strHashSet;
+         return strNavigableSet;
     }
     
     /**
@@ -847,5 +861,59 @@ public class MDAG {
     
     public int size() {
         return size;
+    }
+  
+    public String toGraphViz(boolean withNodeIds) {
+        StringBuilder dot = new StringBuilder("digraph dawg {\n");
+        dot.append("graph [rankdir=LR, ratio=fill];\n");
+        dot.append("node [fontsize=14, shape=circle];\n");
+        dot.append("edge [fontsize=12];\n");
+        Deque<MDAGNode> stack = new LinkedList<>();
+        BitSet visited = new BitSet();
+        stack.add(sourceNode);
+        visited.set(sourceNode.getId());
+        while (true) {
+            MDAGNode node = stack.pollLast();
+            if (node == null)
+                break;
+            dot.append('n').append(node.getId()).append(" [label=\"").append(node.isAcceptNode() ? 'O' : ' ').append('\"');
+            if (withNodeIds) {
+                dot.append(", xlabel=\"");
+                if (node.getId() == 0)
+                    dot.append("START");
+                else
+                    dot.append(node.getId());
+                dot.append('\"');
+            }
+            dot.append("];\n");
+            for (Map.Entry<Character, MDAGNode> e : node.getOutgoingTransitions().entrySet()) {
+                MDAGNode nextNode = e.getValue();
+                dot.append('n').append(node.getId()).append(" -> n").append(nextNode.getId()).append(" [label=\"").append(e.getKey()).append("\"];\n");
+                if (!visited.get(nextNode.getId())) {
+                    stack.addLast(nextNode);
+                    visited.set(nextNode.getId());
+                }
+            }
+        }
+        dot.append('}');
+        return dot.toString();
+    }
+
+    public void saveAsImage(boolean withNodeIds) throws IOException {
+        String graphViz = toGraphViz(withNodeIds);
+        Path dotFile = Files.createTempFile("dawg", ".dot");
+        Files.write(dotFile, graphViz.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+        Path dir = Paths.get("temp");
+        if (!Files.exists(dir))
+            dir = Files.createDirectory(dir);
+        Path imageFile = Files.createTempFile(dir, "dawg" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssn")), ".png");
+        ProcessBuilder pb = new ProcessBuilder("C:\\Program Files\\GraphViz\\bin\\dot.exe", "-Tpng", dotFile.toFile().getAbsolutePath(), "-o", imageFile.toFile().getAbsolutePath());
+        try {
+            pb.start().waitFor();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            Files.deleteIfExists(dotFile);
+        }
     }
 }

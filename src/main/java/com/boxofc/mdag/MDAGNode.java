@@ -70,6 +70,7 @@ public class MDAGNode {
      * @param id        identifier of the cloned node
      */
     public MDAGNode(MDAGNode node, int id) {
+        System.out.println("i "+id);
         this.id = id;
         isAcceptNode = node.isAcceptNode;
         outgoingTransitionTreeMap = new TreeMap<>(node.outgoingTransitionTreeMap);
@@ -285,10 +286,11 @@ public class MDAGNode {
      
      * @param letter                        a char representing the desired label of the transition
      * @param targetAcceptStateStatus       a boolean representing to-be-created transition target node's accept status
+     * @param id                            identifier of the new node
      * @return                              the (newly created) MDAGNode that is the target of the created transition
      */
-    public MDAGNode addOutgoingTransition(char letter, boolean targetAcceptStateStatus) {
-        MDAGNode newTargetNode = new MDAGNode(targetAcceptStateStatus, id++);
+    public MDAGNode addOutgoingTransition(char letter, boolean targetAcceptStateStatus, int id) {
+        MDAGNode newTargetNode = new MDAGNode(targetAcceptStateStatus, id);
         newTargetNode.incomingTransitionCount++;
         
         outgoingTransitionTreeMap.put(letter, newTargetNode);

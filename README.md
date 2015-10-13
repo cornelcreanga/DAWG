@@ -34,16 +34,16 @@ The code has also been fully tested for correct functionality and performance.
     boolean doesContain = myMDAG.contains("str0"); //false
     
     //Get all Strings starting with "str1" (O(n) based on input)
-    HashSet<String> startingWithSet = myMDAG.getStringsStartingWith("str1"); //{"str1"}
+    NavigableSet<String> startingWithSet = myMDAG.getStringsStartingWith("str1"); //{"str1"}
 
     //Get all String ending with "2" (O(n) based on dictionary)
-    HashSet<String> endingWithSet = myMDAG.geStringsEndingWith("2"); //{"str2"}
+    NavigableSet<String> endingWithSet = myMDAG.geStringsEndingWith("2"); //{"str2"}
     
     //Get all String containing "r3" (O(n) based on dictionary)
-    HashSet<String> containingSet = myMDAG.getStringsWithSubstring("r3"); //{"str3"}
+    NavigableSet<String> containingSet = myMDAG.getStringsWithSubstring("r3"); //{"str3"}
     
     //Get all Strings
-    HashSet<String> entireSet = myMDAG.getAllStrings(); //{"str1", "str2", "str3"}
+    NavigableSet<String> entireSet = myMDAG.getAllStrings(); //{"str1", "str2", "str3"}
     
     //Simpify graph structure in to an array (further space reduction)
     myMDAG.simplify();
