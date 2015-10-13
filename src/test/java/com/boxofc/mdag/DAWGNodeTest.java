@@ -43,7 +43,7 @@ public class DAWGNodeTest {
         
         TreeMap<Character, MDAGNode> outgoingTransitionTreeMap = node1.getOutgoingTransitions();
         
-        assertEquals(outgoingTransitionTreeMap.size(), 3);
+        assertEquals(3, outgoingTransitionTreeMap.size());
         assertTrue(outgoingTransitionTreeMap.get('a').isAcceptNode());
         assertFalse(outgoingTransitionTreeMap.get('b').isAcceptNode());
         assertFalse(outgoingTransitionTreeMap.get('b').isAcceptNode());
@@ -108,16 +108,16 @@ public class DAWGNodeTest {
         node1.reassignOutgoingTransition('d', node1.transition('d'), node5);
         
         assertTrue(node1.transition('a') == node2);
-        assertEquals(node2.getIncomingTransitionCount(), 1);
+        assertEquals(1, node2.getIncomingTransitionCount());
         
         assertTrue(node1.transition('b') == node3);
-        assertEquals(node3.getIncomingTransitionCount(), 1);
+        assertEquals(1, node3.getIncomingTransitionCount());
         
         assertTrue(node1.transition('c') == node4);
-        assertEquals(node4.getIncomingTransitionCount(), 1);
+        assertEquals(1, node4.getIncomingTransitionCount());
         
         assertTrue(node1.transition('d') == node5);
-        assertEquals(node5.getIncomingTransitionCount(), 1);
+        assertEquals(1, node5.getIncomingTransitionCount());
     }
     
     @Test
@@ -136,14 +136,14 @@ public class DAWGNodeTest {
         assertTrue(node2.hasOutgoingTransition('b') && node3.hasOutgoingTransition('b'));
         assertTrue(node2.hasOutgoingTransition('c') && node3.hasOutgoingTransition('c'));
         
-        assertEquals(node1.getOutgoingTransitions().size(), 1);
-        assertEquals(node3.getIncomingTransitionCount(), 1);
-        assertEquals(node2.getIncomingTransitionCount(), 0);
+        assertEquals(1, node1.getOutgoingTransitions().size());
+        assertEquals(1, node3.getIncomingTransitionCount());
+        assertEquals(0, node2.getIncomingTransitionCount());
     }
     
     @Test
     public void equalsTest() {
-        MDAGNode node1= new MDAGNode(false);
+        MDAGNode node1 = new MDAGNode(false);
         MDAGNode node2 = new MDAGNode(false);
         
         MDAGNode node3 = new MDAGNode(true);
@@ -168,7 +168,7 @@ public class DAWGNodeTest {
     
     @Test
     public void hashTest() {
-        MDAGNode node1= new MDAGNode(false);
+        MDAGNode node1 = new MDAGNode(false);
         MDAGNode node2 = new MDAGNode(false);
         
         MDAGNode node3 = new MDAGNode(true);
@@ -187,5 +187,6 @@ public class DAWGNodeTest {
         assertEquals(node1.hashCode(), node2.hashCode());
         assertEquals(node3.hashCode(), node4.hashCode());
         assertTrue(node1.hashCode() != node3.hashCode());
+        assertTrue(node2.hashCode() != node4.hashCode());
     }
 }

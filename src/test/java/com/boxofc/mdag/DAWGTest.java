@@ -70,25 +70,25 @@ public class DAWGTest {
     
     @Test
     public void dawgBGetMinimizationIndexTest() {
-        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("", ""), -1);
-        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "efg"), 0);
-        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "ab"), 2);
-        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "abcd"), -1);
-        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "abd"), 2);
-        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", "abcr"), 3);
-        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("abcd", ""), 0);
-        assertEquals(dawg1.calculateMinimizationProcessingStartIndex("", "abcd"), -1);
+        assertEquals(-1, dawg1.calculateMinimizationProcessingStartIndex("", ""));
+        assertEquals(0, dawg1.calculateMinimizationProcessingStartIndex("abcd", "efg"));
+        assertEquals(2, dawg1.calculateMinimizationProcessingStartIndex("abcd", "ab"));
+        assertEquals(-1, dawg1.calculateMinimizationProcessingStartIndex("abcd", "abcd"));
+        assertEquals(2, dawg1.calculateMinimizationProcessingStartIndex("abcd", "abd"));
+        assertEquals(3, dawg1.calculateMinimizationProcessingStartIndex("abcd", "abcr"));
+        assertEquals(0, dawg1.calculateMinimizationProcessingStartIndex("abcd", ""));
+        assertEquals(-1, dawg1.calculateMinimizationProcessingStartIndex("", "abcd"));
     }
     
     @Test
     public void dawgBGetLongestStoredSubsequenceTest() {
-        assertEquals(dawg1.determineLongestPrefixInMDAG("do"), "do");
-        assertEquals(dawg1.determineLongestPrefixInMDAG("doggy"), "doggy");
-        assertEquals(dawg1.determineLongestPrefixInMDAG("c"), "c");
-        assertEquals(dawg1.determineLongestPrefixInMDAG("catsing"), "cats");
-        assertEquals(dawg1.determineLongestPrefixInMDAG("brolic"), "bro");
-        assertEquals(dawg1.determineLongestPrefixInMDAG("1234"), "");
-        assertEquals(dawg1.determineLongestPrefixInMDAG("Czechoslovakians"), "Czechoslovakians");
+        assertEquals("do", dawg1.determineLongestPrefixInMDAG("do"));
+        assertEquals("doggy", dawg1.determineLongestPrefixInMDAG("doggy"));
+        assertEquals("c", dawg1.determineLongestPrefixInMDAG("c"));
+        assertEquals("cats", dawg1.determineLongestPrefixInMDAG("catsing"));
+        assertEquals("bro", dawg1.determineLongestPrefixInMDAG("brolic"));
+        assertEquals("", dawg1.determineLongestPrefixInMDAG("1234"));
+        assertEquals("Czechoslovakians", dawg1.determineLongestPrefixInMDAG("Czechoslovakians"));
     }
     
     @Test
@@ -113,19 +113,18 @@ public class DAWGTest {
         int wordArrayListSize = wordArrayList.size();
         
         for (int i = 0; i < numberOfRuns; i++) {
-            init();
+            wordArrayList = new ArrayList<>(initialWordArrayList);
+            Collections.shuffle(wordArrayList);
             int wordIndex = (int)(Math.random() * wordArrayListSize);
-            String toBeRemovedWord = wordArrayList.get(wordIndex);
 
             MDAG testDAWG = new MDAG(wordArrayList);
-            testDAWG.remove(wordArrayList.get(wordIndex));
-
-            wordArrayList.remove((int)wordIndex);
+            String toBeRemovedWord = wordArrayList.remove(wordIndex);
+            testDAWG.remove(toBeRemovedWord);
             MDAG controlTestDAWG = new MDAG(wordArrayList);
 
-            assertEquals("Removed word: " + toBeRemovedWord, testDAWG.getNodeCount(), controlTestDAWG.getNodeCount());
-            assertEquals("Removed word: " + toBeRemovedWord, testDAWG.getEquivalenceClassCount(), controlTestDAWG.getEquivalenceClassCount());
-            assertEquals("Removed word: " + toBeRemovedWord, testDAWG.getTransitionCount(), controlTestDAWG.getTransitionCount());
+            assertEquals("Removed word: " + toBeRemovedWord, controlTestDAWG.getNodeCount(), testDAWG.getNodeCount());
+            assertEquals("Removed word: " + toBeRemovedWord, controlTestDAWG.getEquivalenceClassCount(), testDAWG.getEquivalenceClassCount());
+            assertEquals("Removed word: " + toBeRemovedWord, controlTestDAWG.getTransitionCount(), testDAWG.getTransitionCount());
         }
     }
     
@@ -170,9 +169,9 @@ public class DAWGTest {
 
             MDAG controlTestDAWG = new MDAG(wordArrayList);
 
-            assertEquals(testDAWG.getNodeCount(), controlTestDAWG.getNodeCount());
-            assertEquals(testDAWG.getEquivalenceClassCount(), controlTestDAWG.getEquivalenceClassCount());
-            assertEquals(testDAWG.getTransitionCount(), controlTestDAWG.getTransitionCount());
+            assertEquals(controlTestDAWG.getNodeCount(), testDAWG.getNodeCount());
+            assertEquals(controlTestDAWG.getEquivalenceClassCount(), testDAWG.getEquivalenceClassCount());
+            assertEquals(controlTestDAWG.getTransitionCount(), testDAWG.getTransitionCount());
         }
     }
     
@@ -204,8 +203,8 @@ public class DAWGTest {
                     controlSet.add(str);
             }
 
-            assertEquals(dawg1.getStringsStartingWith(prefixStr), controlSet);
-            assertEquals(dawg2.getStringsStartingWith(prefixStr), controlSet);
+            assertEquals(controlSet, dawg1.getStringsStartingWith(prefixStr));
+            assertEquals(controlSet, dawg2.getStringsStartingWith(prefixStr));
         }
     }
     
@@ -220,8 +219,8 @@ public class DAWGTest {
                     controlSet.add(str);
             }
 
-            assertEquals(dawg1.getStringsWithSubstring(substringStr), controlSet);
-            assertEquals(dawg2.getStringsWithSubstring(substringStr), controlSet);
+            assertEquals(controlSet, dawg1.getStringsWithSubstring(substringStr));
+            assertEquals(controlSet, dawg2.getStringsWithSubstring(substringStr));
         }
     }
     
@@ -236,8 +235,8 @@ public class DAWGTest {
                     controlSet.add(str);
             }
 
-            assertEquals(dawg1.getStringsEndingWith(suffixStr), controlSet);
-            assertEquals(dawg2.getStringsEndingWith(suffixStr), controlSet);
+            assertEquals(controlSet, dawg1.getStringsEndingWith(suffixStr));
+            assertEquals(controlSet, dawg2.getStringsEndingWith(suffixStr));
         }
     }
 }
