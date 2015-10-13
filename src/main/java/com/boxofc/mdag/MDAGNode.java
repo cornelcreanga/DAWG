@@ -33,8 +33,7 @@ import java.util.Stack;
  * @author Kevin
  */
 public class MDAGNode {
-    @Deprecated
-    int id;
+    private int id;
     
     //The boolean denoting the accept state status of this node
     private boolean isAcceptNode;
@@ -55,8 +54,10 @@ public class MDAGNode {
      * Constructs an MDAGNode.
      
      * @param isAcceptNode     a boolean denoting the accept state status of this node
+     * @param id               identifier of this node
      */
-    public MDAGNode(boolean isAcceptNode) {
+    public MDAGNode(boolean isAcceptNode, int id) {
+        this.id = id;
         this.isAcceptNode = isAcceptNode;
         outgoingTransitionTreeMap = new TreeMap<>();
     }
@@ -66,8 +67,10 @@ public class MDAGNode {
      
      * @param node      the MDAGNode possessing the accept state status and
      *                  outgoing transitions that the to-be-created MDAGNode is to take on
+     * @param id        identifier of the cloned node
      */
-    private MDAGNode(MDAGNode node) {
+    public MDAGNode(MDAGNode node, int id) {
+        this.id = id;
         isAcceptNode = node.isAcceptNode;
         outgoingTransitionTreeMap = new TreeMap<>(node.outgoingTransitionTreeMap);
         
@@ -78,25 +81,16 @@ public class MDAGNode {
     }
     
     /**
-     * Creates an MDAGNode possessing the same accept state status and outgoing transitions as this node.
-     
-     * @return      an MDAGNode possessing the same accept state status and outgoing transitions as this node
-     */
-    @Override
-    public MDAGNode clone() {
-        return new MDAGNode(this);
-    }
-    
-    /**
      * Creates an MDAGNode possessing the same accept state status ant transition set
      * (incoming & outgoing) as this node. outgoing transitions as this node.
      
      * @param soleParentNode                        the MDAGNode possessing the only transition that targets this node
      * @param parentToCloneTransitionLabelChar      the char which labels the transition from {@code soleParentNode} to this node
+     * @param id                                    identifier of the cloned node
      * @return                                      an MDAGNode possessing the same accept state status and transition set as this node.
      */
-    public MDAGNode clone(MDAGNode soleParentNode, char parentToCloneTransitionLabelChar) {
-        MDAGNode cloneNode = new MDAGNode(this);
+    public MDAGNode clone(MDAGNode soleParentNode, char parentToCloneTransitionLabelChar, int id) {
+        MDAGNode cloneNode = new MDAGNode(this, id);
         soleParentNode.reassignOutgoingTransition(parentToCloneTransitionLabelChar, this, cloneNode);
         
         return cloneNode;
@@ -111,6 +105,10 @@ public class MDAGNode {
      */
     public int getTransitionSetBeginIndex() {
         return transitionSetBeginIndex;
+    }
+
+    public int getId() {
+        return id;
     }
     
     /**
@@ -215,8 +213,7 @@ public class MDAGNode {
         MDAGNode currentNode = this;
         
         //Iteratively transition through the MDAG using the chars in str
-        for (int i = 0; i < charCount; i++)
-        {
+        for (int i = 0; i < charCount; i++) {
             currentNode = currentNode.transition(str.charAt(i));
             if (currentNode == null)
                 break;
@@ -291,7 +288,7 @@ public class MDAGNode {
      * @return                              the (newly created) MDAGNode that is the target of the created transition
      */
     public MDAGNode addOutgoingTransition(char letter, boolean targetAcceptStateStatus) {
-        MDAGNode newTargetNode = new MDAGNode(targetAcceptStateStatus);
+        MDAGNode newTargetNode = new MDAGNode(targetAcceptStateStatus, id++);
         newTargetNode.incomingTransitionCount++;
         
         outgoingTransitionTreeMap.put(letter, newTargetNode);

@@ -42,8 +42,11 @@ import java.util.TreeSet;
  * @author Kevin
  */
 public class MDAG {
+    //Increment for node identifiers.
+    private int id;
+    
     //MDAGNode from which all others in the structure are reachable (all manipulation and non-simplified MDAG search operations begin from this).
-    private MDAGNode sourceNode = new MDAGNode(false);
+    private MDAGNode sourceNode = new MDAGNode(false, id++);
 
     //SimpleMDAGNode from which all others in the structure are reachable (will be defined if this MDAG is simplified)
     private SimpleMDAGNode simplifiedSourceNode;
@@ -244,7 +247,7 @@ public class MDAG {
         
         if (firstConfluenceNode != null) {
             MDAGNode firstConfluenceNodeParent = originNode.transition(storedStringSubstr.substring(0, toFirstConfluenceNodeTransitionCharIndex));
-            MDAGNode firstConfluenceNodeClone = firstConfluenceNode.clone(firstConfluenceNodeParent, storedStringSubstr.charAt(toFirstConfluenceNodeTransitionCharIndex));
+            MDAGNode firstConfluenceNodeClone = firstConfluenceNode.clone(firstConfluenceNodeParent, storedStringSubstr.charAt(toFirstConfluenceNodeTransitionCharIndex), id++);
             transitionCount += firstConfluenceNodeClone.getOutgoingTransitionCount();
             String unprocessedSubString = storedStringSubstr.substring(toFirstConfluenceNodeTransitionCharIndex + 1);
             splitTransitionPath(firstConfluenceNodeClone, unprocessedSubString);
@@ -536,9 +539,9 @@ public class MDAG {
                 //Clone pivotConfluenceNode in a way that reassigns the transition of its parent node (in transitionStringToConfluenceNode's path) to the clone.
                 String transitionStringToPivotNodeParent = transitionStringToPivotNode.substring(0, transitionStringToPivotNode.length() - 1);
                 char parentTransitionLabelChar = transitionStringToPivotNode.charAt(transitionStringToPivotNode.length() - 1);
-                clonedNode = pivotConfluenceNode.clone(sourceNode.transition(transitionStringToPivotNodeParent), parentTransitionLabelChar);
+                clonedNode = pivotConfluenceNode.clone(sourceNode.transition(transitionStringToPivotNodeParent), parentTransitionLabelChar, id++);
             } else
-                clonedNode = currentTargetNode.clone();     //simply clone curentTargetNode
+                clonedNode = new MDAGNode(currentTargetNode, id++);     //simply clone curentTargetNode
 
             transitionCount += clonedNode.getOutgoingTransitionCount();
 
@@ -575,7 +578,7 @@ public class MDAG {
         //Remove the register entries of all the nodes in the prefixString transition path up to the first confluence node
         //(those past the confluence node will not need to be removed since they will be cloned and unaffected by the
         //addition of suffixString). If there is no confluence node in prefixString, then remove the register entries in prefixString's entire transition path
-        removeTransitionPathRegisterEntries((toFirstConfluenceNodeTransitionCharIndex == null ? prefixString : prefixString.substring(0, toFirstConfluenceNodeTransitionCharIndex)));
+        removeTransitionPathRegisterEntries(toFirstConfluenceNodeTransitionCharIndex == null ? prefixString : prefixString.substring(0, toFirstConfluenceNodeTransitionCharIndex));
                 
         //If there is a confluence node in the prefix, we must duplicate the transition path
         //of the prefix starting from that node, before we add suffixString (to the duplicate path).
@@ -818,10 +821,9 @@ public class MDAG {
         return charTreeSet;
     }
     
-    @Deprecated
     private int countNodes(MDAGNode originNode, HashSet<Integer> nodeIDHashSet) {
         if (originNode != sourceNode)
-            nodeIDHashSet.add(originNode.id);
+            nodeIDHashSet.add(originNode.getId());
         
         TreeMap<Character, MDAGNode> transitionTreeMap = originNode.getOutgoingTransitions();
         
