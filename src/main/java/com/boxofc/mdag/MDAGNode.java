@@ -22,7 +22,6 @@
 
 package com.boxofc.mdag;
 
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.Stack;
@@ -70,7 +69,6 @@ public class MDAGNode {
      * @param id        identifier of the cloned node
      */
     public MDAGNode(MDAGNode node, int id) {
-        System.out.println("i "+id);
         this.id = id;
         isAcceptNode = node.isAcceptNode;
         outgoingTransitionTreeMap = new TreeMap<>(node.outgoingTransitionTreeMap);
