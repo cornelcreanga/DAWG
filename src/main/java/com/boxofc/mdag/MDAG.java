@@ -23,6 +23,8 @@
 package com.boxofc.mdag;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -53,7 +55,7 @@ import java.util.TreeSet;
  
  * @author Kevin
  */
-public class MDAG {
+public class MDAG implements Iterable<String> {
     //Increment for node identifiers.
     private int id;
     
@@ -126,18 +128,23 @@ public class MDAG {
     }
     
     /**
-     * Creates an MDAG from a collection of Strings.
-     
-     * @param strCollection     a {@link java.util.Iterable} containing Strings that the MDAG will contain
-     */
-    public MDAG(String... strCollection) {
-        addAll(strCollection);
-    }
-    
-    /**
      * Creates empty MDAG. Use {@link #addString} to fill it.
      */
     public MDAG() {
+    }
+    
+    /**
+     * Creates a MDAG from a newline delimited file containing the data of interest.
+     
+     * @param dataFile          a {@link java.io.File} representation of a file
+     *                          containing the Strings that the MDAG will contain
+     * @return true if and only if this MDAG was changed as a result of this call
+     * @throws IOException      if {@code datafile} cannot be opened, or a read operation on it cannot be carried out
+     */
+    public boolean addAll(File dataFile) throws IOException {
+        try (FileInputStream fis = new FileInputStream(dataFile)) {
+            return addAll(fis);
+        }
     }
     
     /**
@@ -731,6 +738,11 @@ public class MDAG {
             getStrings(strNavigableSet, searchCondition, searchConditionString, newPrefixString, currentNode);
         }
     }
+
+    @Override
+    public Iterator<String> iterator() {
+        return getAllStrings().iterator();
+    }
     
     /**
      * Retrieves all the valid Strings that have been inserted in to the MDAG.
@@ -834,8 +846,7 @@ public class MDAG {
     }
     
     private int countNodes(MDAGNode originNode, HashSet<Integer> nodeIDHashSet) {
-        if (originNode != sourceNode)
-            nodeIDHashSet.add(originNode.getId());
+        nodeIDHashSet.add(originNode.getId());
         
         TreeMap<Character, MDAGNode> transitionTreeMap = originNode.getOutgoingTransitions();
         
