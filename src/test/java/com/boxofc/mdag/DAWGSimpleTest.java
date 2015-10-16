@@ -371,58 +371,65 @@ public class DAWGSimpleTest {
 
         Set<String> expected = new HashSet<>(Arrays.asList("", "add"));
         Set<String> actual = new HashSet<>();
-        for ( String word : dawg.getStringsEndingWith( "" ) )
-            actual.add( word );
-        assertEquals( expected, actual );
+        for (String word : dawg.getStringsEndingWith(""))
+            actual.add(word);
+        assertEquals(expected, actual);
 
-        dawg.add( "a" );
-        expected = new HashSet<>( Arrays.asList( "", "a", "add" ) );
+        dawg.add("a");
+        expected = new HashSet<>(Arrays.asList("", "a", "add"));
         actual = new HashSet<>();
-        for ( String word : dawg.getStringsEndingWith( "" ) )
-            actual.add( word );
-        assertEquals( expected, actual );
+        for (String word : dawg.getStringsEndingWith(""))
+            actual.add(word);
+        assertEquals(expected, actual);
 
-        dawg.add( "ad" );
-        expected = new HashSet<>( Arrays.asList( "", "a", "ad", "add" ) );
+        dawg.add("ad");
+        expected = new HashSet<>(Arrays.asList("", "a", "ad", "add"));
         actual = new HashSet<>();
-        for ( String word : dawg.getStringsEndingWith( "" ) )
-            actual.add( word );
-        assertEquals( expected, actual );
+        for (String word : dawg.getStringsEndingWith(""))
+            actual.add(word);
+        assertEquals(expected, actual);
+        
+        dawg.remove("");
+        expected = new HashSet<>(Arrays.asList("a", "ad", "add"));
+        actual = new HashSet<>();
+        for (String word : dawg.getStringsEndingWith(""))
+            actual.add(word);
+        assertEquals(expected, actual);
     }
-/*
+
     @Test
     public void shortWordWithBlank() {
-      DAWG dawg = new DAWG();
-      dawg.add( "" );
-      dawg.add( "a" );
+        MDAG dawg = new MDAG();
+        dawg.add("");
+        dawg.add("a");
 
-      Iterator< String > iterator = dawg.iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "", iterator.next() );
-      assertTrue( iterator.hasNext() );
-      assertEquals( "a", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        Iterator<String> iterator = dawg.iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("a", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      Set< String > expected = new HashSet<>( Arrays.asList( "", "a" ) );
-      Set< String > actual = new HashSet<>();
-      for ( String word : dawg.getWordsEndingWith( "" ) )
-        actual.add( word );
-      assertEquals( expected, actual );
+        Set<String> expected = new HashSet<>(Arrays.asList("", "a"));
+        Set<String> actual = new HashSet<>();
+        for (String word : dawg.getStringsEndingWith(""))
+            actual.add(word);
+        assertEquals(expected, actual);
 
-      iterator = dawg.getWordsStartingWith( "a" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "a", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsStartingWith("a").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("a", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      iterator = dawg.getWordsEndingWith( "a" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "a", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsEndingWith("a").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("a", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      assertFalse( dawg.getWordsStartingWith( "b" ).iterator().hasNext() );
-      assertFalse( dawg.getWordsEndingWith( "b" ).iterator().hasNext() );
+        assertFalse(dawg.getStringsStartingWith("b").iterator().hasNext());
+        assertFalse(dawg.getStringsEndingWith("b").iterator().hasNext());
     }
-
+/*
     @Test
     public void zeroWithBlank() {
       DAWG dawg = new DAWG();
