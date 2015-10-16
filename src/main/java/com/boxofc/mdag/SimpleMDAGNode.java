@@ -155,6 +155,9 @@ public class SimpleMDAGNode {
      *                          {@code str}, or null if such a transition path is not present in the MDAG
      */
     public static SimpleMDAGNode traverseMDAG(SimpleMDAGNode[] mdagDataArray, SimpleMDAGNode sourceNode, String str) {
+        if (str.isEmpty())
+            return sourceNode;
+        
         char firstLetter = str.charAt(0);
 
         //Loop through the SimpleMDAGNodes in the processing MDAG's source node's transition set,
