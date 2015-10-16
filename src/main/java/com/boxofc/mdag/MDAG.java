@@ -56,6 +56,16 @@ import java.util.TreeSet;
  * @author Kevin
  */
 public class MDAG implements Iterable<String> {
+    /**
+     * Folder where to save images when {@link #saveAsImage} is called. Default is the relative directory named "temp".
+     */
+    private static String imagesPath = "temp";
+    
+    /**
+     * Path to GraphViz dot executable. Default is "dot" (works if added to environment variables).
+     */
+    private static String dotExecutablePath = "dot";
+    
     //Increment for node identifiers.
     private int id;
     
@@ -84,7 +94,7 @@ public class MDAG implements Iterable<String> {
     
     //Enum containing fields collectively denoting the set of all conditions that can be applied to a search on the MDAG
     private static enum SearchCondition {
-        NO_SEARCH_CONDITION, PREFIX_SEARCH_CONDITION, SUBSTRING_SEARCH_CONDITION, SUFFIX_SEARCH_CONDITION;
+        NO_SEARCH_CONDITION, SUBSTRING_SEARCH_CONDITION, SUFFIX_SEARCH_CONDITION;
         
         /**
         * Determines whether two Strings have a given type of relationship.
@@ -100,9 +110,6 @@ public class MDAG implements Iterable<String> {
             boolean satisfiesSearchCondition;
          
             switch (this) {
-                case PREFIX_SEARCH_CONDITION:
-                    satisfiesSearchCondition = str1.startsWith(str2);
-                    break;
                 case SUBSTRING_SEARCH_CONDITION:
                     satisfiesSearchCondition = str1.contains(str2);
                     break;
@@ -131,6 +138,22 @@ public class MDAG implements Iterable<String> {
      * Creates empty MDAG. Use {@link #addString} to fill it.
      */
     public MDAG() {
+    }
+
+    public static String getImagesPath() {
+        return imagesPath;
+    }
+
+    public static void setImagesPath(String imagesPath) {
+        MDAG.imagesPath = imagesPath;
+    }
+
+    public static String getDotExecutablePath() {
+        return dotExecutablePath;
+    }
+
+    public static void setDotExecutablePath(String dotExecutablePath) {
+        MDAG.dotExecutablePath = dotExecutablePath;
     }
     
     /**
@@ -217,10 +240,12 @@ public class MDAG implements Iterable<String> {
     public final boolean addAll(Iterable<? extends String> strCollection) {
         if (sourceNode != null) {
             boolean result = false;
+            boolean empty = true;
             String previousString = "";
         
             //Add all the Strings in strCollection to the MDAG.
             for (String currentString : strCollection) {
+                empty = false;
                 int mpsIndex = calculateMinimizationProcessingStartIndex(previousString, currentString);
 
                 //If the transition path of the previousString needs to be examined for minimization or
@@ -235,10 +260,13 @@ public class MDAG implements Iterable<String> {
                 previousString = currentString;
             }
 
-            //Since we delay the minimization of the previously-added String
-            //until after we read the next one, we need to have a seperate
-            //statement to minimize the absolute last String.
-            replaceOrRegister(sourceNode, previousString);
+            if (!empty) {
+                //Since we delay the minimization of the previously-added String
+                //until after we read the next one, we need to have a seperate
+                //statement to minimize the absolute last String.
+                if (!previousString.isEmpty())
+                    replaceOrRegister(sourceNode, previousString);
+            }
             return result;
         } else
             throw new UnsupportedOperationException("MDAG is simplified. Unable to add additional Strings.");
@@ -253,7 +281,8 @@ public class MDAG implements Iterable<String> {
     public boolean add(String str) {
         if (sourceNode != null) {
             boolean result = addStringInternal(str);
-            replaceOrRegister(sourceNode, str);
+            if (!str.isEmpty())
+                replaceOrRegister(sourceNode, str);
             return result;
         } else
             throw new UnsupportedOperationException("MDAG is simplified. Unable to add additional Strings.");
@@ -319,6 +348,10 @@ public class MDAG implements Iterable<String> {
 
             //Get the last node in the transition path corresponding to str
             MDAGNode strEndNode = sourceNode.transition(str);
+            
+            //Removing non-existent word.
+            if (strEndNode == null)
+                return false;
 
             if (!strEndNode.hasOutgoingTransitions()) {
                 int soleInternalTransitionPathLength = calculateSoleTransitionPathLength(str);
@@ -329,7 +362,7 @@ public class MDAG implements Iterable<String> {
                     transitionCount -= str.length();
                 } else {
                     //Remove the sub-path in str's transition path that is only used by str
-                    int toBeRemovedTransitionLabelCharIndex = (internalTransitionPathLength - soleInternalTransitionPathLength);
+                    int toBeRemovedTransitionLabelCharIndex = internalTransitionPathLength - soleInternalTransitionPathLength;
                     MDAGNode latestNonSoloTransitionPathNode = sourceNode.transition(str.substring(0, toBeRemovedTransitionLabelCharIndex));
                     latestNonSoloTransitionPathNode.removeOutgoingTransition(str.charAt(toBeRemovedTransitionLabelCharIndex));
                     transitionCount -= str.substring(toBeRemovedTransitionLabelCharIndex).length();
@@ -340,7 +373,8 @@ public class MDAG implements Iterable<String> {
                 return true;
             } else {
                 boolean result = strEndNode.setAcceptStateStatus(false);
-                replaceOrRegister(sourceNode, str);
+                if (!str.isEmpty())
+                    replaceOrRegister(sourceNode, str);
                 if (result)
                     size--;
                 return result;
@@ -524,6 +558,11 @@ public class MDAG implements Iterable<String> {
         
         for (int i = 0; i < charCount; i++) {
             currentNode = currentNode.transition(str.charAt(i));
+            
+            //Removing non-existent word.
+            if (currentNode == null)
+                break;
+            
             if (equivalenceClassMDAGNodeHashMap.get(currentNode) == currentNode)
                 equivalenceClassMDAGNodeHashMap.remove(currentNode);
             
@@ -700,11 +739,17 @@ public class MDAG implements Iterable<String> {
             String newPrefixString = prefixString + transitionKeyValuePair.getKey();
             MDAGNode currentNode = transitionKeyValuePair.getValue();
 
-            if (currentNode.isAcceptNode() && searchCondition.satisfiesCondition(newPrefixString, searchConditionString))
-                strNavigableSet.add(newPrefixString);
+            SearchCondition childrenSearchCondition = searchCondition;
+            if (searchCondition.satisfiesCondition(newPrefixString, searchConditionString)) {
+                if (currentNode.isAcceptNode())
+                    strNavigableSet.add(newPrefixString);
+                //If the parent node satisfies the search condition then all its child nodes also satisfy this condition.
+                if (searchCondition == SearchCondition.SUBSTRING_SEARCH_CONDITION)
+                    childrenSearchCondition = SearchCondition.NO_SEARCH_CONDITION;
+            }
             
             //Recursively call this to traverse all the valid transition paths from currentNode
-            getStrings(strNavigableSet, searchCondition, searchConditionString, newPrefixString, currentNode.getOutgoingTransitions());
+            getStrings(strNavigableSet, childrenSearchCondition, searchConditionString, newPrefixString, currentNode.getOutgoingTransitions());
         }
     }
     
@@ -731,11 +776,17 @@ public class MDAG implements Iterable<String> {
             SimpleMDAGNode currentNode = mdagDataArray[i];
             String newPrefixString = prefixString + currentNode.getLetter();
             
-            if (currentNode.isAcceptNode() && searchCondition.satisfiesCondition(newPrefixString, searchConditionString))
-                strNavigableSet.add(newPrefixString);
+            SearchCondition childrenSearchCondition = searchCondition;
+            if (searchCondition.satisfiesCondition(newPrefixString, searchConditionString)) {
+                if (currentNode.isAcceptNode())
+                    strNavigableSet.add(newPrefixString);
+                //If the parent node satisfies the search condition then all its child nodes also satisfy this condition.
+                if (searchCondition == SearchCondition.SUBSTRING_SEARCH_CONDITION)
+                    childrenSearchCondition = SearchCondition.NO_SEARCH_CONDITION;
+            }
             
             //Recursively call this to traverse all the valid transition paths from currentNode
-            getStrings(strNavigableSet, searchCondition, searchConditionString, newPrefixString, currentNode);
+            getStrings(strNavigableSet, childrenSearchCondition, searchConditionString, newPrefixString, currentNode);
         }
     }
 
@@ -750,14 +801,7 @@ public class MDAG implements Iterable<String> {
      * @return      a NavigableSet containing all the Strings that have been inserted into the MDAG
      */
     public NavigableSet<String> getAllStrings() {
-        NavigableSet<String> strNavigableSet = new TreeSet<>();
-        
-        if (sourceNode != null)
-            getStrings(strNavigableSet, SearchCondition.NO_SEARCH_CONDITION, null, "", sourceNode.getOutgoingTransitions());
-        else
-            getStrings(strNavigableSet, SearchCondition.NO_SEARCH_CONDITION, null, "", simplifiedSourceNode);
-        
-        return strNavigableSet;
+        return getStringsStartingWith("");
     }
     
     /**
@@ -777,7 +821,7 @@ public class MDAG implements Iterable<String> {
             if (originNode != null) {
                 if (originNode.isAcceptNode())
                     strNavigableSet.add(prefixStr);
-                getStrings(strNavigableSet, SearchCondition.PREFIX_SEARCH_CONDITION, prefixStr, prefixStr, originNode.getOutgoingTransitions());   //retrieve all Strings that extend the transition path denoted by prefixStr
+                getStrings(strNavigableSet, SearchCondition.NO_SEARCH_CONDITION, prefixStr, prefixStr, originNode.getOutgoingTransitions());   //retrieve all Strings that extend the transition path denoted by prefixStr
             }
         } else {
             SimpleMDAGNode originNode = SimpleMDAGNode.traverseMDAG(mdagDataArray, simplifiedSourceNode, prefixStr);      //attempt to transition down the path denoted by prefixStr
@@ -786,7 +830,7 @@ public class MDAG implements Iterable<String> {
             if (originNode != null) {
                 if (originNode.isAcceptNode())
                     strNavigableSet.add(prefixStr);
-                getStrings(strNavigableSet, SearchCondition.PREFIX_SEARCH_CONDITION, prefixStr, prefixStr, originNode);        //retrieve all Strings that extend the transition path denoted by prefixString
+                getStrings(strNavigableSet, SearchCondition.NO_SEARCH_CONDITION, prefixStr, prefixStr, originNode);        //retrieve all Strings that extend the transition path denoted by prefixString
             }
         }
         
@@ -801,11 +845,17 @@ public class MDAG implements Iterable<String> {
      */
     public NavigableSet<String> getStringsWithSubstring(String str) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
-         
-        if (sourceNode != null)      //if the MDAG hasn't been simplified
+        
+        //if the MDAG hasn't been simplified
+        if (sourceNode != null) {
+            if (str.isEmpty() && sourceNode.isAcceptNode())
+                strNavigableSet.add(str);
             getStrings(strNavigableSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", sourceNode.getOutgoingTransitions());
-        else
+        } else {
+            if (str.isEmpty() && simplifiedSourceNode.isAcceptNode())
+                strNavigableSet.add(str);
             getStrings(strNavigableSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", simplifiedSourceNode);
+        }
             
         return strNavigableSet;
     }
@@ -819,12 +869,18 @@ public class MDAG implements Iterable<String> {
     public NavigableSet<String> getStringsEndingWith(String suffixStr) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
         
-        if (sourceNode != null)      //if the MDAG hasn't been simplified
+        //if the MDAG hasn't been simplified
+        if (sourceNode != null) {
+            if (suffixStr.isEmpty() && sourceNode.isAcceptNode())
+                strNavigableSet.add(suffixStr);
             getStrings(strNavigableSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", sourceNode.getOutgoingTransitions());
-        else
+        } else {
+            if (suffixStr.isEmpty() && simplifiedSourceNode.isAcceptNode())
+                strNavigableSet.add(suffixStr);
             getStrings(strNavigableSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", simplifiedSourceNode);
+        }
 
-         return strNavigableSet;
+        return strNavigableSet;
     }
     
     /**
@@ -912,11 +968,11 @@ public class MDAG implements Iterable<String> {
         String graphViz = toGraphViz(withNodeIds);
         Path dotFile = Files.createTempFile("dawg", ".dot");
         Files.write(dotFile, graphViz.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
-        Path dir = Paths.get("temp");
+        Path dir = Paths.get(imagesPath);
         if (!Files.exists(dir))
             dir = Files.createDirectory(dir);
         Path imageFile = Files.createTempFile(dir, "dawg" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssn")), ".png");
-        ProcessBuilder pb = new ProcessBuilder("C:\\Program Files\\GraphViz\\bin\\dot.exe", "-Tpng", dotFile.toFile().getAbsolutePath(), "-o", imageFile.toFile().getAbsolutePath());
+        ProcessBuilder pb = new ProcessBuilder(dotExecutablePath, "-Tpng", dotFile.toFile().getAbsolutePath(), "-o", imageFile.toFile().getAbsolutePath());
         try {
             pb.start().waitFor();
         } catch (InterruptedException e) {
