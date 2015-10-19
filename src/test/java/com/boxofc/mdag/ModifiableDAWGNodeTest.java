@@ -33,15 +33,15 @@ import org.junit.Test;
  *
  * @author Kevin
  */
-public class DAWGNodeTest {
+public class ModifiableDAWGNodeTest {
     @Test
     public void addOutgoingTransitionTest() {
-        MDAGNode node1 = new MDAGNode(false, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
         node1.addOutgoingTransition('a', true, 0);
         node1.addOutgoingTransition('b', false, 0);
         node1.addOutgoingTransition('c', false, 0);
         
-        TreeMap<Character, MDAGNode> outgoingTransitionTreeMap = node1.getOutgoingTransitions();
+        TreeMap<Character, ModifiableDAWGNode> outgoingTransitionTreeMap = node1.getOutgoingTransitions();
         
         assertEquals(3, outgoingTransitionTreeMap.size());
         assertTrue(outgoingTransitionTreeMap.get('a').isAcceptNode());
@@ -51,15 +51,15 @@ public class DAWGNodeTest {
     
     @Test
     public void cloneTest() {
-        MDAGNode node1 = new MDAGNode(false, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
         node1.addOutgoingTransition('a', false, 0);
         node1.addOutgoingTransition('b', true, 0);
-        MDAGNode cloneNode1 = new MDAGNode(node1, 0);
+        ModifiableDAWGNode cloneNode1 = new ModifiableDAWGNode(node1, 0);
         
-        MDAGNode node2 = new MDAGNode(true, 0);
+        ModifiableDAWGNode node2 = new ModifiableDAWGNode(true, 0);
         node2.addOutgoingTransition('c', false, 0);
         node2.addOutgoingTransition('d', true, 0);
-        MDAGNode cloneNode2 = new MDAGNode(node2, 0);
+        ModifiableDAWGNode cloneNode2 = new ModifiableDAWGNode(node2, 0);
         
         assertTrue(node1 != cloneNode1);
         assertEquals(node1.getIncomingTransitionCount(), cloneNode1.getIncomingTransitionCount());
@@ -74,8 +74,8 @@ public class DAWGNodeTest {
     
     @Test
     public void transitionTest1() {
-        MDAGNode node1 = new MDAGNode(false, 0);
-        MDAGNode currentNode = node1;
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
+        ModifiableDAWGNode currentNode = node1;
         
         char[] alphabet = {'a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k'};
         
@@ -89,22 +89,22 @@ public class DAWGNodeTest {
     
     @Test
     public void reassignOutgoingTransitionTest() {
-        MDAGNode node1 = new MDAGNode(false, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
         node1.addOutgoingTransition('a', true, 0);
         node1.addOutgoingTransition('b', false, 0);
         node1.addOutgoingTransition('c', true, 0);
         node1.addOutgoingTransition('d', false, 0);
         
-        MDAGNode node2 = new MDAGNode(true, 0);
+        ModifiableDAWGNode node2 = new ModifiableDAWGNode(true, 0);
         node1.reassignOutgoingTransition('a', node1.transition('a'), node2);
         
-        MDAGNode node3 = new MDAGNode(false, 0);
+        ModifiableDAWGNode node3 = new ModifiableDAWGNode(false, 0);
         node1.reassignOutgoingTransition('b', node1.transition('b'), node3);
         
-        MDAGNode node4 = new MDAGNode(false, 0);
+        ModifiableDAWGNode node4 = new ModifiableDAWGNode(false, 0);
         node1.reassignOutgoingTransition('c', node1.transition('c'), node4);
         
-        MDAGNode node5 = new MDAGNode(true, 0);
+        ModifiableDAWGNode node5 = new ModifiableDAWGNode(true, 0);
         node1.reassignOutgoingTransition('d', node1.transition('d'), node5);
         
         assertTrue(node1.transition('a') == node2);
@@ -122,14 +122,14 @@ public class DAWGNodeTest {
     
     @Test
     public void cloneTest2() {
-        MDAGNode node1 = new MDAGNode(false, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
         
-        MDAGNode node2 = node1.addOutgoingTransition('\0', false, 0);
+        ModifiableDAWGNode node2 = node1.addOutgoingTransition('\0', false, 0);
         node2.addOutgoingTransition('a', false, 0);
         node2.addOutgoingTransition('b', false, 0);
         node2.addOutgoingTransition('c', false, 0);
         
-        MDAGNode node3 = node2.clone(node1, '\0', 0);
+        ModifiableDAWGNode node3 = node2.clone(node1, '\0', 0);
         
         assertTrue(node2 != node3);
         assertTrue(node2.hasOutgoingTransition('a') && node3.hasOutgoingTransition('a'));
@@ -143,14 +143,14 @@ public class DAWGNodeTest {
     
     @Test
     public void equalsTest() {
-        MDAGNode node1 = new MDAGNode(false, 0);
-        MDAGNode node2 = new MDAGNode(false, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
+        ModifiableDAWGNode node2 = new ModifiableDAWGNode(false, 0);
         
-        MDAGNode node3 = new MDAGNode(true, 0);
-        MDAGNode node4 = new MDAGNode(true, 0);
+        ModifiableDAWGNode node3 = new ModifiableDAWGNode(true, 0);
+        ModifiableDAWGNode node4 = new ModifiableDAWGNode(true, 0);
         
-        MDAGNode currentNode1 = node1;
-        MDAGNode currentNode2 = node2;
+        ModifiableDAWGNode currentNode1 = node1;
+        ModifiableDAWGNode currentNode2 = node2;
 
         char[] alphabet = {'a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
         
@@ -168,14 +168,14 @@ public class DAWGNodeTest {
     
     @Test
     public void hashTest() {
-        MDAGNode node1 = new MDAGNode(false, 0);
-        MDAGNode node2 = new MDAGNode(false, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
+        ModifiableDAWGNode node2 = new ModifiableDAWGNode(false, 0);
         
-        MDAGNode node3 = new MDAGNode(true, 0);
-        MDAGNode node4 = new MDAGNode(true, 0);
+        ModifiableDAWGNode node3 = new ModifiableDAWGNode(true, 0);
+        ModifiableDAWGNode node4 = new ModifiableDAWGNode(true, 0);
         
-        MDAGNode currentNode1 = node1;
-        MDAGNode currentNode2 = node2;
+        ModifiableDAWGNode currentNode1 = node1;
+        ModifiableDAWGNode currentNode2 = node2;
 
         char[] alphabet = {'a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
         

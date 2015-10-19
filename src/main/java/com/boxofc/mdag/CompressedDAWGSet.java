@@ -1,14 +1,17 @@
 package com.boxofc.mdag;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.TreeSet;
 
 public class CompressedDAWGSet extends DAWGSet {
     //SimpleMDAGNode from which all others in the structure are reachable (will be defined if this ModifiableDAWGSet is simplified)
-    SimpleMDAGNode simplifiedSourceNode;
+    CompressedDAWGNode sourceNode;
     
     //Array that will contain a space-saving version of the ModifiableDAWGSet after a call to simplify().
-    SimpleMDAGNode[] mdagDataArray;
+    CompressedDAWGNode[] mdagDataArray;
     
     /**
      * Quantity of words in this DAWG.
@@ -22,7 +25,7 @@ public class CompressedDAWGSet extends DAWGSet {
      * @return          true if {@code str} is present in the ModifiableDAWGSet, and false otherwise
      */
     public boolean contains(String str) {
-        SimpleMDAGNode targetNode = SimpleMDAGNode.traverseMDAG(mdagDataArray, simplifiedSourceNode, str);
+        CompressedDAWGNode targetNode = CompressedDAWGNode.traverseMDAG(mdagDataArray, sourceNode, str);
         return targetNode != null && targetNode.isAcceptNode();
     }
     
@@ -36,17 +39,17 @@ public class CompressedDAWGSet extends DAWGSet {
      * @param searchConditionString         the String that all Strings in the ModifiableDAWGSet must be related with in the fashion denoted
                                       by {@code searchCondition} in order to be included in the result set
      * @param prefixString                  the String corresponding to the currently traversed transition path
-     * @param transitionSetBegin            an int denoting the starting index of a SimpleMDAGNode's transition set in mdagDataArray
+     * @param transitionSetBegin            an int denoting the starting index of a CompressedDAWGNode's transition set in mdagDataArray
      * @param onePastTransitionSetEnd       an int denoting one past the last index of a simpleMDAGNode's transition set in mdagDataArray
      */
-    private void getStrings(NavigableSet<String> strNavigableSet, SearchCondition searchCondition, String searchConditionString, String prefixString, SimpleMDAGNode node) {
+    private void getStrings(NavigableSet<String> strNavigableSet, SearchCondition searchCondition, String searchConditionString, String prefixString, CompressedDAWGNode node) {
         int transitionSetBegin = node.getTransitionSetBeginIndex();
-        int onePastTransitionSetEnd = transitionSetBegin +  node.getOutgoingTransitionSetSize();
+        int onePastTransitionSetEnd = transitionSetBegin + node.getOutgoingTransitionSetSize();
         
         //Traverse all the valid transition paths beginning from each transition in transitionTreeMap, inserting the
         //corresponding Strings in to strNavigableSet that have the relationship with conditionString denoted by searchCondition
         for (int i = transitionSetBegin; i < onePastTransitionSetEnd; i++) {
-            SimpleMDAGNode currentNode = mdagDataArray[i];
+            CompressedDAWGNode currentNode = mdagDataArray[i];
             String newPrefixString = prefixString + currentNode.getLetter();
             
             SearchCondition childrenSearchCondition = searchCondition;
@@ -72,7 +75,7 @@ public class CompressedDAWGSet extends DAWGSet {
     @Override
     public NavigableSet<String> getStringsStartingWith(String prefixStr) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
-        SimpleMDAGNode originNode = SimpleMDAGNode.traverseMDAG(mdagDataArray, simplifiedSourceNode, prefixStr);      //attempt to transition down the path denoted by prefixStr
+        CompressedDAWGNode originNode = CompressedDAWGNode.traverseMDAG(mdagDataArray, sourceNode, prefixStr);      //attempt to transition down the path denoted by prefixStr
         //if there a transition path corresponding to prefixString (one or more stored Strings begin with prefixStr)
         if (originNode != null) {
             if (originNode.isAcceptNode())
@@ -91,9 +94,9 @@ public class CompressedDAWGSet extends DAWGSet {
     @Override
     public NavigableSet<String> getStringsWithSubstring(String str) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
-        if (str.isEmpty() && simplifiedSourceNode.isAcceptNode())
+        if (str.isEmpty() && sourceNode.isAcceptNode())
             strNavigableSet.add(str);
-        getStrings(strNavigableSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", simplifiedSourceNode);
+        getStrings(strNavigableSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", sourceNode);
         return strNavigableSet;
     }
     
@@ -106,9 +109,9 @@ public class CompressedDAWGSet extends DAWGSet {
     @Override
     public NavigableSet<String> getStringsEndingWith(String suffixStr) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
-        if (suffixStr.isEmpty() && simplifiedSourceNode.isAcceptNode())
+        if (suffixStr.isEmpty() && sourceNode.isAcceptNode())
             strNavigableSet.add(suffixStr);
-        getStrings(strNavigableSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", simplifiedSourceNode);
+        getStrings(strNavigableSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", sourceNode);
         return strNavigableSet;
     }
 
@@ -125,5 +128,43 @@ public class CompressedDAWGSet extends DAWGSet {
             size = s;
         }
         return size;
+    }
+    
+    private void countNodes(CompressedDAWGNode originNode, HashSet<Integer> nodeIDHashSet) {
+        nodeIDHashSet.add(originNode.getId());
+        int transitionSetBegin = originNode.getTransitionSetBeginIndex();
+        int onePastTransitionSetEnd = transitionSetBegin + originNode.getOutgoingTransitionSetSize();
+        
+        //Traverse all the valid transition paths beginning from each transition in transitionTreeMap, inserting the
+        //corresponding Strings in to strNavigableSet that have the relationship with conditionString denoted by searchCondition
+        for (int i = transitionSetBegin; i < onePastTransitionSetEnd; i++) {
+            CompressedDAWGNode currentNode = mdagDataArray[i];
+            countNodes(currentNode, nodeIDHashSet);
+        }
+    }
+    
+    public int getNodeCount() {
+        HashSet<Integer> ids = new HashSet<>();
+        countNodes(sourceNode, ids);
+        return ids.size();
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 83 * hash + Objects.hashCode(sourceNode);
+        hash = 83 * hash + Arrays.deepHashCode(mdagDataArray);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof CompressedDAWGSet))
+            return false;
+        CompressedDAWGSet other = (CompressedDAWGSet) obj;
+        return Objects.equals(sourceNode, other.sourceNode) &&
+               Arrays.deepEquals(mdagDataArray, other.mdagDataArray);
     }
 }

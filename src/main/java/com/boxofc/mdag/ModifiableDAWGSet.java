@@ -60,12 +60,12 @@ public class ModifiableDAWGSet extends DAWGSet {
     private int id;
     
     //MDAGNode from which all others in the structure are reachable (all manipulation and non-simplified ModifiableDAWGSet search operations begin from this).
-    private MDAGNode sourceNode = new MDAGNode(false, id++);
+    private ModifiableDAWGNode sourceNode = new ModifiableDAWGNode(false, id++);
 
     //HashMap which contains the MDAGNodes collectively representing the all unique equivalence classes in the ModifiableDAWGSet.
     //Uniqueness is defined by the types of transitions allowed from, and number and type of nodes reachable
     //from the node of interest. Since there are no duplicate nodes in an ModifiableDAWGSet, # of equivalence classes == # of nodes.
-    private HashMap<MDAGNode, MDAGNode> equivalenceClassMDAGNodeHashMap = new HashMap<>();
+    private HashMap<ModifiableDAWGNode, ModifiableDAWGNode> equivalenceClassMDAGNodeHashMap = new HashMap<>();
     
     //NavigableSet which will contain the set of unique characters used as transition labels in the ModifiableDAWGSet
     private final TreeSet<Character> charTreeSet = new TreeSet<>();
@@ -217,14 +217,14 @@ public class ModifiableDAWGSet extends DAWGSet {
         return result;
     }
     
-    private void splitTransitionPath(MDAGNode originNode, String storedStringSubstr) {
+    private void splitTransitionPath(ModifiableDAWGNode originNode, String storedStringSubstr) {
         HashMap<String, Object> firstConfluenceNodeDataHashMap = getTransitionPathFirstConfluenceNodeData(originNode, storedStringSubstr);
         Integer toFirstConfluenceNodeTransitionCharIndex = (Integer)firstConfluenceNodeDataHashMap.get("toConfluenceNodeTransitionCharIndex");
-        MDAGNode firstConfluenceNode = (MDAGNode)firstConfluenceNodeDataHashMap.get("confluenceNode");
+        ModifiableDAWGNode firstConfluenceNode = (ModifiableDAWGNode)firstConfluenceNodeDataHashMap.get("confluenceNode");
         
         if (firstConfluenceNode != null) {
-            MDAGNode firstConfluenceNodeParent = originNode.transition(storedStringSubstr.substring(0, toFirstConfluenceNodeTransitionCharIndex));
-            MDAGNode firstConfluenceNodeClone = firstConfluenceNode.clone(firstConfluenceNodeParent, storedStringSubstr.charAt(toFirstConfluenceNodeTransitionCharIndex), id++);
+            ModifiableDAWGNode firstConfluenceNodeParent = originNode.transition(storedStringSubstr.substring(0, toFirstConfluenceNodeTransitionCharIndex));
+            ModifiableDAWGNode firstConfluenceNodeClone = firstConfluenceNode.clone(firstConfluenceNodeParent, storedStringSubstr.charAt(toFirstConfluenceNodeTransitionCharIndex), id++);
             transitionCount += firstConfluenceNodeClone.getOutgoingTransitionCount();
             String unprocessedSubString = storedStringSubstr.substring(toFirstConfluenceNodeTransitionCharIndex + 1);
             splitTransitionPath(firstConfluenceNodeClone, unprocessedSubString);
@@ -239,10 +239,10 @@ public class ModifiableDAWGSet extends DAWGSet {
      *                  corresponding to {@code str} that is only used by {@code str}
      */
     private int calculateSoleTransitionPathLength(String str) {
-        Stack<MDAGNode> transitionPathNodeStack = sourceNode.getTransitionPathNodes(str);
-        transitionPathNodeStack.pop();  //The MDAGNode at the top of the stack is not needed
+        Stack<ModifiableDAWGNode> transitionPathNodeStack = sourceNode.getTransitionPathNodes(str);
+        transitionPathNodeStack.pop();  //The ModifiableDAWGNode at the top of the stack is not needed
                                         //(we are processing the outgoing transitions of nodes inside str's transition path,
-                                        //the outgoing transitions of the MDAGNode at the top of the stack are outside this path)
+                                        //the outgoing transitions of the ModifiableDAWGNode at the top of the stack are outside this path)
         
         transitionPathNodeStack.trimToSize();
 
@@ -250,7 +250,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         //transition path corresponding to str is only used by str.  This is true if and only if
         //each node in the transition path has a single outgoing transition and is not an accept state.
         while (!transitionPathNodeStack.isEmpty()) {
-            MDAGNode currentNode = transitionPathNodeStack.peek();
+            ModifiableDAWGNode currentNode = transitionPathNodeStack.peek();
             if (currentNode.getOutgoingTransitions().size() <= 1 && !currentNode.isAcceptNode())
                 transitionPathNodeStack.pop();
             else
@@ -275,7 +275,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         removeTransitionPathRegisterEntries(str);
 
         //Get the last node in the transition path corresponding to str
-        MDAGNode strEndNode = sourceNode.transition(str);
+        ModifiableDAWGNode strEndNode = sourceNode.transition(str);
 
         //Removing non-existent word.
         if (strEndNode == null)
@@ -298,7 +298,7 @@ public class ModifiableDAWGSet extends DAWGSet {
             } else {
                 //Remove the sub-path in str's transition path that is only used by str
                 int toBeRemovedTransitionLabelCharIndex = internalTransitionPathLength - soleInternalTransitionPathLength;
-                MDAGNode latestNonSoloTransitionPathNode = sourceNode.transition(str.substring(0, toBeRemovedTransitionLabelCharIndex));
+                ModifiableDAWGNode latestNonSoloTransitionPathNode = sourceNode.transition(str.substring(0, toBeRemovedTransitionLabelCharIndex));
                 latestNonSoloTransitionPathNode.removeOutgoingTransition(str.charAt(toBeRemovedTransitionLabelCharIndex));
                 transitionCount -= str.substring(toBeRemovedTransitionLabelCharIndex).length();
 
@@ -349,7 +349,7 @@ public class ModifiableDAWGSet extends DAWGSet {
                   that is also a prefix of a String contained in the ModifiableDAWGSet
      */
     public String determineLongestPrefixInMDAG(String str) {
-        MDAGNode currentNode = sourceNode;
+        ModifiableDAWGNode currentNode = sourceNode;
         int numberOfChars = str.length();
         int onePastPrefixEndIndex = 0;
         
@@ -372,16 +372,16 @@ public class ModifiableDAWGSet extends DAWGSet {
      * (defined as a node with two or more incoming transitions) of a
      * transition path corresponding to a given String from a given node.
      
-     * @param originNode        the MDAGNode from which the transition path corresponding to str starts from
+     * @param originNode        the ModifiableDAWGNode from which the transition path corresponding to str starts from
      * @param str               a String corresponding to a transition path in the ModifiableDAWGSet
      * @return                  a HashMap of Strings to Objects containing:
-     *                              - an int denoting the length of the path to the first confluence node in the transition path of interest
-     *                              - the MDAGNode which is the first confluence node in the transition path of interest (or null if one does not exist)
+                              - an int denoting the length of the path to the first confluence node in the transition path of interest
+                              - the ModifiableDAWGNode which is the first confluence node in the transition path of interest (or null if one does not exist)
      */
-    HashMap<String, Object> getTransitionPathFirstConfluenceNodeData(MDAGNode originNode, String str) {
+    HashMap<String, Object> getTransitionPathFirstConfluenceNodeData(ModifiableDAWGNode originNode, String str) {
         int currentIndex = 0;
         int charCount = str.length();
-        MDAGNode currentNode = originNode;
+        ModifiableDAWGNode currentNode = originNode;
         
         //Loop thorugh the characters in str, sequentially using them to transition through the ModifiableDAWGSet in search of
         //(and breaking upon reaching) the first node that is the target of two or more transitions. The loop is
@@ -412,12 +412,12 @@ public class ModifiableDAWGSet extends DAWGSet {
      * (defined as set of transition paths that can be traversed and nodes able to be reached from it), or making it
      * a representative of a right language/equivalence class if a such a node does not already exist.
      
-     * @param originNode        the MDAGNode that the transition path corresponding to str starts from
+     * @param originNode        the ModifiableDAWGNode that the transition path corresponding to str starts from
      * @param str              a String related to a transition path
      */
-    private void replaceOrRegister(MDAGNode originNode, String str) {
+    private void replaceOrRegister(ModifiableDAWGNode originNode, String str) {
         char transitionLabelChar = str.charAt(0);
-        MDAGNode relevantTargetNode = originNode.transition(transitionLabelChar);
+        ModifiableDAWGNode relevantTargetNode = originNode.transition(transitionLabelChar);
 
         //If relevantTargetNode has transitions and there is at least one char left to process, recursively call
         //this on the next char in order to further processing down the transition path corresponding to str
@@ -427,7 +427,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         //Get the node representing the equivalence class that relevantTargetNode belongs to. MDAGNodes hash on the
         //transitions paths that can be traversed from them and nodes able to be reached from them;
         //nodes with the same equivalence classes will hash to the same bucket.
-        MDAGNode equivalentNode = equivalenceClassMDAGNodeHashMap.get(relevantTargetNode);
+        ModifiableDAWGNode equivalentNode = equivalenceClassMDAGNodeHashMap.get(relevantTargetNode);
         
         //if there is no node with the same right language as relevantTargetNode
         if (equivalentNode == null)
@@ -445,13 +445,13 @@ public class ModifiableDAWGSet extends DAWGSet {
     /**
      * Adds a transition path starting from a specific node in the ModifiableDAWGSet.
      
-     * @param originNode    the MDAGNode which will serve as the start point of the to-be-created transition path
+     * @param originNode    the ModifiableDAWGNode which will serve as the start point of the to-be-created transition path
      * @param str           the String to be used to create a new transition path from {@code originNode}
      * @return true if and only if ModifiableDAWGSet has changed as a result of this call
      */
-    private boolean addTransitionPath(MDAGNode originNode, String str) {
+    private boolean addTransitionPath(ModifiableDAWGNode originNode, String str) {
         if (!str.isEmpty()) {
-            MDAGNode currentNode = originNode;
+            ModifiableDAWGNode currentNode = originNode;
             int charCount = str.length();
 
             //Loop through the characters in str, iteratevely adding
@@ -478,7 +478,7 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @param str       a String corresponding to a transition path from sourceNode
      */
     private void removeTransitionPathRegisterEntries(String str) {
-        MDAGNode currentNode = sourceNode;
+        ModifiableDAWGNode currentNode = sourceNode;
 
         int charCount = str.length();
         
@@ -492,7 +492,7 @@ public class ModifiableDAWGSet extends DAWGSet {
             if (equivalenceClassMDAGNodeHashMap.get(currentNode) == currentNode)
                 equivalenceClassMDAGNodeHashMap.remove(currentNode);
             
-            //The hashCode of an MDAGNode is cached the first time a hash is performed without a cache value present.
+            //The hashCode of an ModifiableDAWGNode is cached the first time a hash is performed without a cache value present.
             //Since we just hashed currentNode, we must clear this regardless of its presence in equivalenceClassMDAGNodeHashMap
             //since we're not actually declaring equivalence class representatives here.
             currentNode.clearStoredHashCode();
@@ -502,21 +502,21 @@ public class ModifiableDAWGSet extends DAWGSet {
     /**
      * Clones a transition path from a given node.
      
-     * @param pivotConfluenceNode               the MDAGNode that the cloning operation is to be based from
+     * @param pivotConfluenceNode               the ModifiableDAWGNode that the cloning operation is to be based from
      * @param transitionStringToPivotNode       a String which corresponds with a transition path from souceNode to {@code pivotConfluenceNode}
      * @param str                               a String which corresponds to the transition path from {@code pivotConfluenceNode} that is to be cloned
      */
-    private void cloneTransitionPath(MDAGNode pivotConfluenceNode, String transitionStringToPivotNode, String str) {
-        MDAGNode lastTargetNode = pivotConfluenceNode.transition(str);      //Will store the last node which was used as the base of a cloning operation
-        MDAGNode lastClonedNode = null;                                     //Will store the last cloned node
+    private void cloneTransitionPath(ModifiableDAWGNode pivotConfluenceNode, String transitionStringToPivotNode, String str) {
+        ModifiableDAWGNode lastTargetNode = pivotConfluenceNode.transition(str);      //Will store the last node which was used as the base of a cloning operation
+        ModifiableDAWGNode lastClonedNode = null;                                     //Will store the last cloned node
         char lastTransitionLabelChar = '\0';                                //Will store the char which labels the transition to lastTargetNode from its parent node in the prefixString's transition path
 
         //Loop backwards through the indices of str, using each as a boundary to create substrings of str of decreasing length
         //which will be used to transition to, and duplicate the nodes in the transition path of str from pivotConfluenceNode.
         for (int i = str.length(); i >= 0; i--) {
             String currentTransitionString = i > 0 ? str.substring(0, i) : null;
-            MDAGNode currentTargetNode = i > 0 ? pivotConfluenceNode.transition(currentTransitionString) : pivotConfluenceNode;
-            MDAGNode clonedNode;
+            ModifiableDAWGNode currentTargetNode = i > 0 ? pivotConfluenceNode.transition(currentTransitionString) : pivotConfluenceNode;
+            ModifiableDAWGNode clonedNode;
 
             //if we have reached pivotConfluenceNode
             if (i == 0) {
@@ -525,7 +525,7 @@ public class ModifiableDAWGSet extends DAWGSet {
                 char parentTransitionLabelChar = transitionStringToPivotNode.charAt(transitionStringToPivotNode.length() - 1);
                 clonedNode = pivotConfluenceNode.clone(sourceNode.transition(transitionStringToPivotNodeParent), parentTransitionLabelChar, id++);
             } else
-                clonedNode = new MDAGNode(currentTargetNode, id++);     //simply clone curentTargetNode
+                clonedNode = new ModifiableDAWGNode(currentTargetNode, id++);     //simply clone curentTargetNode
 
             transitionCount += clonedNode.getOutgoingTransitionCount();
 
@@ -556,7 +556,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         //Retrive the data related to the first confluence node (a node with two or more incoming transitions)
         //in the transition path from sourceNode corresponding to prefixString.
         HashMap<String, Object> firstConfluenceNodeDataHashMap = getTransitionPathFirstConfluenceNodeData(sourceNode, prefixString);
-        MDAGNode firstConfluenceNodeInPrefix = (MDAGNode)firstConfluenceNodeDataHashMap.get("confluenceNode");
+        ModifiableDAWGNode firstConfluenceNodeInPrefix = (ModifiableDAWGNode)firstConfluenceNodeDataHashMap.get("confluenceNode");
         Integer toFirstConfluenceNodeTransitionCharIndex = (Integer) firstConfluenceNodeDataHashMap.get("toConfluenceNodeTransitionCharIndex");
         
         //Remove the register entries of all the nodes in the prefixString transition path up to the first confluence node
@@ -578,28 +578,28 @@ public class ModifiableDAWGSet extends DAWGSet {
     }
 
     /**
-     * Creates a SimpleMDAGNode version of an MDAGNode's outgoing transition set in mdagDataArray.
+     * Creates a CompressedDAWGNode version of an ModifiableDAWGNode's outgoing transition set in mdagDataArray.
      
-     * @param node                                      the MDAGNode containing the transition set to be inserted in to {@code mdagDataArray}
+     * @param node                                      the ModifiableDAWGNode containing the transition set to be inserted in to {@code mdagDataArray}
      * @param mdagDataArray                             an array of SimpleMDAGNodes containing a subset of the data of the ModifiableDAWGSet
      * @param onePastLastCreatedConnectionSetIndex      an int of the index in {@code mdagDataArray} that the outgoing transition set of {@code node} is to start from
      * @return                                          an int of one past the end of the transition set located farthest in {@code mdagDataArray}
      */
-    private int createSimpleMDAGTransitionSet(MDAGNode node, SimpleMDAGNode[] mdagDataArray, int onePastLastCreatedTransitionSetIndex) {
+    private int createSimpleMDAGTransitionSet(ModifiableDAWGNode node, CompressedDAWGNode[] mdagDataArray, int onePastLastCreatedTransitionSetIndex) {
         int pivotIndex = onePastLastCreatedTransitionSetIndex;
         node.setTransitionSetBeginIndex(pivotIndex);
         
         onePastLastCreatedTransitionSetIndex += node.getOutgoingTransitionCount();
 
-        //Create a SimpleMDAGNode representing each transition label/target combo in transitionTreeMap, recursively calling this method (if necessary)
+        //Create a CompressedDAWGNode representing each transition label/target combo in transitionTreeMap, recursively calling this method (if necessary)
         //to set indices in these SimpleMDAGNodes that the set of transitions emitting from their respective transition targets starts from.
-        TreeMap<Character, MDAGNode> transitionTreeMap = node.getOutgoingTransitions();
-        for (Entry<Character, MDAGNode> transitionKeyValuePair : transitionTreeMap.entrySet()) {
-            //Use the current transition's label and target node to create a SimpleMDAGNode
+        TreeMap<Character, ModifiableDAWGNode> transitionTreeMap = node.getOutgoingTransitions();
+        for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : transitionTreeMap.entrySet()) {
+            //Use the current transition's label and target node to create a CompressedDAWGNode
             //(which is a space-saving representation of the transition), and insert it in to mdagDataArray
             char transitionLabelChar = transitionKeyValuePair.getKey();
-            MDAGNode transitionTargetNode = transitionKeyValuePair.getValue();
-            mdagDataArray[pivotIndex] = new SimpleMDAGNode(transitionLabelChar, transitionTargetNode.isAcceptNode(), transitionTargetNode.getOutgoingTransitionCount());
+            ModifiableDAWGNode transitionTargetNode = transitionKeyValuePair.getValue();
+            mdagDataArray[pivotIndex] = new CompressedDAWGNode(transitionLabelChar, transitionTargetNode.isAcceptNode(), transitionTargetNode.getOutgoingTransitionCount());
             
             //If targetTransitionNode's outgoing transition set hasn't been inserted in to mdagDataArray yet, call this method on it to do so.
             //After this call returns, transitionTargetNode will contain the index in mdagDataArray that its transition set starts from
@@ -620,9 +620,19 @@ public class ModifiableDAWGSet extends DAWGSet {
     public CompressedDAWGSet compress() {
         CompressedDAWGSet compressed = new CompressedDAWGSet();
         compressed.size = size;
-        compressed.mdagDataArray = new SimpleMDAGNode[transitionCount];
+        compressed.mdagDataArray = new CompressedDAWGNode[transitionCount];
         createSimpleMDAGTransitionSet(sourceNode, compressed.mdagDataArray, 0);
-        compressed.simplifiedSourceNode = new SimpleMDAGNode('\0', false, sourceNode.getOutgoingTransitionCount());
+        compressed.sourceNode = new CompressedDAWGNode('\0', sourceNode.isAcceptNode(), sourceNode.getOutgoingTransitionCount());
+        //Clear all transition begin indexes.
+        Deque<ModifiableDAWGNode> queue = new LinkedList<>();
+        queue.add(sourceNode);
+        while (true) {
+            ModifiableDAWGNode node = queue.pollLast();
+            if (node == null)
+                break;
+            node.setTransitionSetBeginIndex(-1);
+            queue.addAll(node.getOutgoingTransitions().values());
+        }
         return compressed;
     }
     
@@ -633,7 +643,7 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @return          true if {@code str} is present in the ModifiableDAWGSet, and false otherwise
      */
     public boolean contains(String str) {
-        MDAGNode targetNode = sourceNode.transition(str);
+        ModifiableDAWGNode targetNode = sourceNode.transition(str);
         return targetNode != null && targetNode.isAcceptNode();
     }
     
@@ -647,14 +657,14 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @param searchConditionString     the String that all Strings in the ModifiableDAWGSet must be related with in the fashion denoted
                                   by {@code searchCondition} in order to be included in the result set
      * @param prefixString              the String corresponding to the currently traversed transition path
-     * @param transitionTreeMap         a TreeMap of Characters to MDAGNodes collectively representing an MDAGNode's transition set
+     * @param transitionTreeMap         a TreeMap of Characters to MDAGNodes collectively representing an ModifiableDAWGNode's transition set
      */
-    private void getStrings(NavigableSet<String> strNavigableSet, SearchCondition searchCondition, String searchConditionString, String prefixString, TreeMap<Character, MDAGNode> transitionTreeMap) {
+    private void getStrings(NavigableSet<String> strNavigableSet, SearchCondition searchCondition, String searchConditionString, String prefixString, TreeMap<Character, ModifiableDAWGNode> transitionTreeMap) {
         //Traverse all the valid transition paths beginning from each transition in transitionTreeMap, inserting the
         //corresponding Strings in to strNavigableSet that have the relationship with conditionString denoted by searchCondition
-        for (Entry<Character, MDAGNode> transitionKeyValuePair : transitionTreeMap.entrySet()) {
+        for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : transitionTreeMap.entrySet()) {
             String newPrefixString = prefixString + transitionKeyValuePair.getKey();
-            MDAGNode currentNode = transitionKeyValuePair.getValue();
+            ModifiableDAWGNode currentNode = transitionKeyValuePair.getValue();
 
             SearchCondition childrenSearchCondition = searchCondition;
             if (searchCondition.satisfiesCondition(newPrefixString, searchConditionString)) {
@@ -679,7 +689,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     @Override
     public NavigableSet<String> getStringsStartingWith(String prefixStr) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
-        MDAGNode originNode = sourceNode.transition(prefixStr);  //attempt to transition down the path denoted by prefixStr
+        ModifiableDAWGNode originNode = sourceNode.transition(prefixStr);  //attempt to transition down the path denoted by prefixStr
 
         //if there a transition path corresponding to prefixString (one or more stored Strings begin with prefixString)
         if (originNode != null) {
@@ -723,7 +733,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     /**
      * Returns the ModifiableDAWGSet's source node.
     
-     * @return      the MDAGNode or SimpleMDAGNode functioning as the ModifiableDAWGSet's source node.
+     * @return      the ModifiableDAWGNode or CompressedDAWGNode functioning as the ModifiableDAWGSet's source node.
      */
     Object getSourceNode() {
         return sourceNode;
@@ -738,19 +748,19 @@ public class ModifiableDAWGSet extends DAWGSet {
         return charTreeSet;
     }
     
-    private int countNodes(MDAGNode originNode, HashSet<Integer> nodeIDHashSet) {
+    private void countNodes(ModifiableDAWGNode originNode, HashSet<Integer> nodeIDHashSet) {
         nodeIDHashSet.add(originNode.getId());
         
-        TreeMap<Character, MDAGNode> transitionTreeMap = originNode.getOutgoingTransitions();
+        TreeMap<Character, ModifiableDAWGNode> transitionTreeMap = originNode.getOutgoingTransitions();
         
-        for (Entry<Character, MDAGNode> transitionKeyValuePair : transitionTreeMap.entrySet())
+        for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : transitionTreeMap.entrySet())
             countNodes(transitionKeyValuePair.getValue(), nodeIDHashSet);
-
-        return nodeIDHashSet.size();
     }
     
     public int getNodeCount() {
-        return countNodes(sourceNode, new HashSet<>());
+        HashSet<Integer> ids = new HashSet<>();
+        countNodes(sourceNode, ids);
+        return ids.size();
     }
     
     public int getEquivalenceClassCount() {

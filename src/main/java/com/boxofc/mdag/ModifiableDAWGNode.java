@@ -31,14 +31,14 @@ import java.util.Stack;
 
  * @author Kevin
  */
-public class MDAGNode {
+class ModifiableDAWGNode {
     private int id;
     
     //The boolean denoting the accept state status of this node
     private boolean isAcceptNode;
     
     //The TreeMap to containing entries that represent a transition (label and target node)
-    private final TreeMap<Character, MDAGNode> outgoingTransitionTreeMap;
+    private final TreeMap<Character, ModifiableDAWGNode> outgoingTransitionTreeMap;
 
     //The int representing this node's incoming transition node count
     private int incomingTransitionCount;
@@ -55,7 +55,7 @@ public class MDAGNode {
      * @param isAcceptNode     a boolean denoting the accept state status of this node
      * @param id               identifier of this node
      */
-    public MDAGNode(boolean isAcceptNode, int id) {
+    public ModifiableDAWGNode(boolean isAcceptNode, int id) {
         this.id = id;
         this.isAcceptNode = isAcceptNode;
         outgoingTransitionTreeMap = new TreeMap<>();
@@ -68,28 +68,28 @@ public class MDAGNode {
      *                  outgoing transitions that the to-be-created MDAGNode is to take on
      * @param id        identifier of the cloned node
      */
-    public MDAGNode(MDAGNode node, int id) {
+    public ModifiableDAWGNode(ModifiableDAWGNode node, int id) {
         this.id = id;
         isAcceptNode = node.isAcceptNode;
         outgoingTransitionTreeMap = new TreeMap<>(node.outgoingTransitionTreeMap);
         
         //Loop through the nodes in this node's outgoing transition set, incrementing the number of
         //incoming transitions of each by 1 (to account for this newly created node's outgoing transitions)
-        for (Entry<Character, MDAGNode> transitionKeyValuePair : outgoingTransitionTreeMap.entrySet())
+        for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : outgoingTransitionTreeMap.entrySet())
             transitionKeyValuePair.getValue().incomingTransitionCount++;
     }
     
     /**
-     * Creates an MDAGNode possessing the same accept state status ant transition set
-     * (incoming & outgoing) as this node. outgoing transitions as this node.
+     * Creates an ModifiableDAWGNode possessing the same accept state status ant transition set
+ (incoming & outgoing) as this node. outgoing transitions as this node.
      
-     * @param soleParentNode                        the MDAGNode possessing the only transition that targets this node
+     * @param soleParentNode                        the ModifiableDAWGNode possessing the only transition that targets this node
      * @param parentToCloneTransitionLabelChar      the char which labels the transition from {@code soleParentNode} to this node
      * @param id                                    identifier of the cloned node
-     * @return                                      an MDAGNode possessing the same accept state status and transition set as this node.
+     * @return                                      an ModifiableDAWGNode possessing the same accept state status and transition set as this node.
      */
-    public MDAGNode clone(MDAGNode soleParentNode, char parentToCloneTransitionLabelChar, int id) {
-        MDAGNode cloneNode = new MDAGNode(this, id);
+    public ModifiableDAWGNode clone(ModifiableDAWGNode soleParentNode, char parentToCloneTransitionLabelChar, int id) {
+        ModifiableDAWGNode cloneNode = new ModifiableDAWGNode(this, id);
         soleParentNode.reassignOutgoingTransition(parentToCloneTransitionLabelChar, this, cloneNode);
         
         return cloneNode;
@@ -193,10 +193,10 @@ public class MDAGNode {
      * Follows an outgoing transition of this node labeled with a given char.
      
      * @param letter        the char representation of the desired transition's label
-     * @return              the MDAGNode that is the target of the transition labeled with {@code letter},
+     * @return              the ModifiableDAWGNode that is the target of the transition labeled with {@code letter},
      *                      or null if there is no such labeled transition from this node
      */
-    public MDAGNode transition(char letter) {
+    public ModifiableDAWGNode transition(char letter) {
         return outgoingTransitionTreeMap.get(letter);
     }
     
@@ -204,12 +204,12 @@ public class MDAGNode {
      * Follows a transition path starting from this node.
      
      * @param str               a String corresponding a transition path in the MDAG
-     * @return                  the MDAGNode at the end of the transition path corresponding to
-     *                          {@code str}, or null if such a transition path is not present in the MDAG
+     * @return                  the ModifiableDAWGNode at the end of the transition path corresponding to
+                          {@code str}, or null if such a transition path is not present in the MDAG
      */
-    public MDAGNode transition(String str) {
+    public ModifiableDAWGNode transition(String str) {
         int charCount = str.length();
-        MDAGNode currentNode = this;
+        ModifiableDAWGNode currentNode = this;
         
         //Iteratively transition through the MDAG using the chars in str
         for (int i = 0; i < charCount; i++) {
@@ -229,10 +229,10 @@ public class MDAGNode {
      * @return          a Stack of MDAGNodes containing the nodes in the transition path
      *                  denoted by {@code str}, in the order they are encountered in during transitioning
      */
-    public Stack<MDAGNode> getTransitionPathNodes(String str) {
-        Stack<MDAGNode> nodeStack = new Stack<>();
+    public Stack<ModifiableDAWGNode> getTransitionPathNodes(String str) {
+        Stack<ModifiableDAWGNode> nodeStack = new Stack<>();
         
-        MDAGNode currentNode = this;
+        ModifiableDAWGNode currentNode = this;
         int numberOfChars = str.length();
         
         //Iteratively transition through the MDAG using the chars in str,
@@ -251,7 +251,7 @@ public class MDAGNode {
      * @return      a TreeMap containing entries collectively representing
      *              all of this node's outgoing transitions
      */
-    public TreeMap<Character, MDAGNode> getOutgoingTransitions() {
+    public TreeMap<Character, ModifiableDAWGNode> getOutgoingTransitions() {
         return outgoingTransitionTreeMap;
     }
     
@@ -260,7 +260,7 @@ public class MDAGNode {
      * that are targets of outgoing transitions from this node.
      */
     public void decrementTargetIncomingTransitionCounts() {
-        for (Entry<Character, MDAGNode> transitionKeyValuePair: outgoingTransitionTreeMap.entrySet())
+        for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair: outgoingTransitionTreeMap.entrySet())
             transitionKeyValuePair.getValue().incomingTransitionCount--;
     }
     
@@ -268,10 +268,10 @@ public class MDAGNode {
      * Reassigns the target node of one of this node's outgoing transitions.
      
      * @param letter            the char which labels the outgoing transition of interest
-     * @param oldTargetNode     the MDAGNode that is currently the target of the transition of interest
-     * @param newTargetNode     the MDAGNode that is to be the target of the transition of interest
+     * @param oldTargetNode     the ModifiableDAWGNode that is currently the target of the transition of interest
+     * @param newTargetNode     the ModifiableDAWGNode that is to be the target of the transition of interest
      */
-    public void reassignOutgoingTransition(char letter, MDAGNode oldTargetNode, MDAGNode newTargetNode) {
+    public void reassignOutgoingTransition(char letter, ModifiableDAWGNode oldTargetNode, ModifiableDAWGNode newTargetNode) {
         oldTargetNode.incomingTransitionCount--;
         newTargetNode.incomingTransitionCount++;
         
@@ -285,10 +285,10 @@ public class MDAGNode {
      * @param letter                        a char representing the desired label of the transition
      * @param targetAcceptStateStatus       a boolean representing to-be-created transition target node's accept status
      * @param id                            identifier of the new node
-     * @return                              the (newly created) MDAGNode that is the target of the created transition
+     * @return                              the (newly created) ModifiableDAWGNode that is the target of the created transition
      */
-    public MDAGNode addOutgoingTransition(char letter, boolean targetAcceptStateStatus, int id) {
-        MDAGNode newTargetNode = new MDAGNode(targetAcceptStateStatus, id);
+    public ModifiableDAWGNode addOutgoingTransition(char letter, boolean targetAcceptStateStatus, int id) {
+        ModifiableDAWGNode newTargetNode = new ModifiableDAWGNode(targetAcceptStateStatus, id);
         newTargetNode.incomingTransitionCount++;
         
         outgoingTransitionTreeMap.put(letter, newTargetNode);
@@ -313,17 +313,17 @@ public class MDAGNode {
      * @return                                  true if the set of transition paths from {@code node1}
      *                                          and {@code node2} are equivalent
      */
-    private static boolean haveSameTransitions(MDAGNode node1, MDAGNode node2) {
+    private static boolean haveSameTransitions(ModifiableDAWGNode node1, ModifiableDAWGNode node2) {
         //TreeMaps containing entries collectively representing all of a node's outgoing transitions
-        TreeMap<Character, MDAGNode> outgoingTransitionTreeMap1 = node1.outgoingTransitionTreeMap;
-        TreeMap<Character, MDAGNode> outgoingTransitionTreeMap2 = node2.outgoingTransitionTreeMap;
+        TreeMap<Character, ModifiableDAWGNode> outgoingTransitionTreeMap1 = node1.outgoingTransitionTreeMap;
+        TreeMap<Character, ModifiableDAWGNode> outgoingTransitionTreeMap2 = node2.outgoingTransitionTreeMap;
         
         if (outgoingTransitionTreeMap1.size() == outgoingTransitionTreeMap2.size()) {
             //For each transition in outgoingTransitionTreeMap1, get the identically lableed transition
             //in outgoingTransitionTreeMap2 (if present), and test the equality of the transitions' target nodes
-            for (Entry<Character, MDAGNode> transitionKeyValuePair : outgoingTransitionTreeMap1.entrySet()) {
+            for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : outgoingTransitionTreeMap1.entrySet()) {
                 Character currentCharKey = transitionKeyValuePair.getKey();
-                MDAGNode currentTargetNode = transitionKeyValuePair.getValue();
+                ModifiableDAWGNode currentTargetNode = transitionKeyValuePair.getValue();
                 
                 if (!outgoingTransitionTreeMap2.containsKey(currentCharKey) || !outgoingTransitionTreeMap2.get(currentCharKey).equals(currentTargetNode))
                     return false;
@@ -343,19 +343,19 @@ public class MDAGNode {
     
     /**
      * Evaluates the equality of this node with another object.
-     * This node is equal to obj if and only if obj is also an MDAGNode,
-     * and the set of transitions paths from this node and obj are equivalent.
+     * This node is equal to obj if and only if obj is also an ModifiableDAWGNode,
+ and the set of transitions paths from this node and obj are equivalent.
      
      * @param obj       an object
-     * @return          true of {@code obj} is an MDAGNode and the set of
-     *                  transition paths from this node and obj are equivalent
+     * @return          true of {@code obj} is an ModifiableDAWGNode and the set of
+                  transition paths from this node and obj are equivalent
      */
     @Override
     public boolean equals(Object obj) {
         boolean areEqual = this == obj;
         
-        if (!areEqual && obj != null && obj.getClass().equals(MDAGNode.class)) {
-            MDAGNode node = (MDAGNode)obj;
+        if (!areEqual && obj != null && obj.getClass().equals(ModifiableDAWGNode.class)) {
+            ModifiableDAWGNode node = (ModifiableDAWGNode)obj;
             areEqual = isAcceptNode == node.isAcceptNode && haveSameTransitions(this, node);
         }
         

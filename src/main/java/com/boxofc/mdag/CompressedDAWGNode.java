@@ -28,7 +28,7 @@ package com.boxofc.mdag;
  
  * @author Kevin
  */
-public class SimpleMDAGNode {
+class CompressedDAWGNode {
     //The character labeling an incoming transition to this node
     private final char letter;
     
@@ -48,7 +48,7 @@ public class SimpleMDAGNode {
      * @param isAcceptNode          a boolean representing the accept state status of this SimpleMDAGNode
      * @param transitionSetSize     an int denoting the size of this transition set
      */
-    public SimpleMDAGNode(char letter, boolean isAcceptNode, int transitionSetSize) {
+    public CompressedDAWGNode(char letter, boolean isAcceptNode, int transitionSetSize) {
         this.letter = letter;
         this.isAcceptNode = isAcceptNode;
         this.transitionSetSize = transitionSetSize;
@@ -100,17 +100,21 @@ public class SimpleMDAGNode {
         this.transitionSetBeginIndex = transitionSetBeginIndex;
     }
     
+    public int getId() {
+        return transitionSetSize == 0 ? -1 : transitionSetBeginIndex;
+    }
+    
     /**
      * Follows an outgoing transition from this node.
      
      * @param mdagDataArray     the array of SimpleMDAGNodes containing this node
      * @param letter            the char representation of the desired transition's label
-     * @return                  the SimpleMDAGNode that is the target of the transition labeled with {@code letter},
+     * @return                  the CompressedDAWGNode that is the target of the transition labeled with {@code letter},
      *                          or null if there is no such labeled transition from this node
      */
-    private SimpleMDAGNode transition(SimpleMDAGNode[] mdagDataArray, char letter) {
+    private CompressedDAWGNode transition(CompressedDAWGNode[] mdagDataArray, char letter) {
         int onePastTransitionSetEndIndex = transitionSetBeginIndex + transitionSetSize;
-        SimpleMDAGNode targetNode = null;
+        CompressedDAWGNode targetNode = null;
         
         //Loop through the SimpleMDAGNodes in this node's transition set, searching for
         //the one with a letter equal to that which labels the desired transition
@@ -129,11 +133,11 @@ public class SimpleMDAGNode {
      
      * @param mdagDataArray     the array of SimpleMDAGNodes containing this node
      * @param str               a String corresponding a transition path in the MDAG
-     * @return                  the SimpleMDAGNode at the end of the transition path corresponding to
-     *                          {@code str}, or null if such a transition path is not present in the MDAG
+     * @return                  the CompressedDAWGNode at the end of the transition path corresponding to
+                          {@code str}, or null if such a transition path is not present in the MDAG
      */
-    private SimpleMDAGNode transition(SimpleMDAGNode[] mdagDataArray, String str) {
-        SimpleMDAGNode currentNode = this;
+    private CompressedDAWGNode transition(CompressedDAWGNode[] mdagDataArray, String str) {
+        CompressedDAWGNode currentNode = this;
         int numberOfChars = str.length();
         
         //Iteratively transition through the MDAG using the chars in str
@@ -149,12 +153,12 @@ public class SimpleMDAGNode {
      * Follows a transition path starting from the source node of a MDAG.
      
      * @param mdagDataArray     the array containing the data of the MDAG to be traversed
-     * @param sourceNode        the dummy SimpleMDAGNode which functions as the source of the MDAG data in {@code mdagDataArray}
+     * @param sourceNode        the dummy CompressedDAWGNode which functions as the source of the MDAG data in {@code mdagDataArray}
      * @param str               a String corresponding to a transition path in the to-be-traversed MDAG
-     * @return                  the SimpleMDAGNode at the end of the transition path corresponding to
-     *                          {@code str}, or null if such a transition path is not present in the MDAG
+     * @return                  the CompressedDAWGNode at the end of the transition path corresponding to
+                          {@code str}, or null if such a transition path is not present in the MDAG
      */
-    public static SimpleMDAGNode traverseMDAG(SimpleMDAGNode[] mdagDataArray, SimpleMDAGNode sourceNode, String str) {
+    public static CompressedDAWGNode traverseMDAG(CompressedDAWGNode[] mdagDataArray, CompressedDAWGNode sourceNode, String str) {
         if (str.isEmpty())
             return sourceNode;
         
@@ -169,5 +173,23 @@ public class SimpleMDAGNode {
         }
         
         return null;
+    }
+
+    @Override
+    public int hashCode() {
+        return ((isAcceptNode ? 1 : 0) + (letter * 2)) * 37 + getId();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof CompressedDAWGNode))
+            return false;
+        CompressedDAWGNode other = (CompressedDAWGNode)obj;
+        return letter == other.letter &&
+               isAcceptNode == other.isAcceptNode &&
+               transitionSetSize == other.transitionSetSize &&
+               transitionSetBeginIndex == other.transitionSetBeginIndex;
     }
 }

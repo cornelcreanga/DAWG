@@ -40,7 +40,7 @@ import org.junit.Test;
  *
  * @author Kevin
  */
-public class DAWGTest {
+public class DAWGFileTest {
     private static ArrayList<String> wordArrayList;
     private static ModifiableDAWGSet dawg1;
     private static CompressedDAWGSet dawg2;
@@ -87,9 +87,9 @@ public class DAWGTest {
     
     @Test
     public void dawgBGetTransitionPathFirstConfluenceNodeDataTest() {
-        assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "caution").get("confluenceNode"));
-        assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "abated").get("confluenceNode"));
-        assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((MDAGNode)dawg1.getSourceNode(), "watching").get("confluenceNode"));
+        assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((ModifiableDAWGNode)dawg1.getSourceNode(), "caution").get("confluenceNode"));
+        assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((ModifiableDAWGNode)dawg1.getSourceNode(), "abated").get("confluenceNode"));
+        assertNotNull(dawg1.getTransitionPathFirstConfluenceNodeData((ModifiableDAWGNode)dawg1.getSourceNode(), "watching").get("confluenceNode"));
     }
     
     @Test
