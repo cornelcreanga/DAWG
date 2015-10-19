@@ -61,7 +61,6 @@ public class DAWGFileTest {
         dawg2 = dawg1.compress();
     }
     
-    
     @Test
     public void dawgBGetMinimizationIndexTest() {
         assertEquals(-1, dawg1.calculateMinimizationProcessingStartIndex("", ""));
@@ -97,7 +96,6 @@ public class DAWGFileTest {
         assertEquals(wordArrayList.size(), dawg1.size());
         assertEquals(wordArrayList.size(), dawg2.size());
     }
-    
     
     @Test
     public void dawgBBuildTest() {
@@ -152,7 +150,6 @@ public class DAWGFileTest {
         }
         return parameterObjectDoubleArray;
     }
-    
     
     @Test
     public void removeWord2() {

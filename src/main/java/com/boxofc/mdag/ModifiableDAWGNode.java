@@ -31,8 +31,8 @@ import java.util.Stack;
 
  * @author Kevin
  */
-class ModifiableDAWGNode {
-    private int id;
+class ModifiableDAWGNode implements DAWGNode {
+    private final int id;
     
     //The boolean denoting the accept state status of this node
     private boolean isAcceptNode;
@@ -106,6 +106,7 @@ class ModifiableDAWGNode {
         return transitionSetBeginIndex;
     }
 
+    @Override
     public int getId() {
         return id;
     }
@@ -143,6 +144,7 @@ class ModifiableDAWGNode {
      
      * @return      true if this node is an accept state, false otherwise
      */
+    @Override
     public boolean isAcceptNode() {
         return isAcceptNode;
     }

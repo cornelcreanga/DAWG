@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -735,7 +736,8 @@ public class ModifiableDAWGSet extends DAWGSet {
     
      * @return      the ModifiableDAWGNode or CompressedDAWGNode functioning as the ModifiableDAWGSet's source node.
      */
-    Object getSourceNode() {
+    @Override
+    DAWGNode getSourceNode() {
         return sourceNode;
     }
     
@@ -774,5 +776,43 @@ public class ModifiableDAWGSet extends DAWGSet {
     
     public int size() {
         return size;
+    }
+
+    @Override
+    Iterable<Entry<Character, DAWGNode>> getOutgoingTransitions(final DAWGNode parent) {
+        return new Iterable<Entry<Character, DAWGNode>>() {
+            @Override
+            public Iterator<Entry<Character, DAWGNode>> iterator() {
+                return new Iterator<Entry<Character, DAWGNode>>() {
+                    private final Iterator<Entry<Character, ModifiableDAWGNode>> it = ((ModifiableDAWGNode)parent).getOutgoingTransitions().entrySet().iterator();
+
+                    @Override
+                    public boolean hasNext() {
+                        return it.hasNext();
+                    }
+
+                    @Override
+                    public Entry<Character, DAWGNode> next() {
+                        Entry<Character, ModifiableDAWGNode> next = it.next();
+                        return new Entry<Character, DAWGNode>() {
+                            @Override
+                            public Character getKey() {
+                                return next.getKey();
+                            }
+
+                            @Override
+                            public DAWGNode getValue() {
+                                return next.getValue();
+                            }
+
+                            @Override
+                            public DAWGNode setValue(DAWGNode value) {
+                                return next.setValue((ModifiableDAWGNode)value);
+                            }
+                        };
+                    }
+                };
+            }
+        };
     }
 }

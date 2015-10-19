@@ -28,7 +28,7 @@ package com.boxofc.mdag;
  
  * @author Kevin
  */
-class CompressedDAWGNode {
+class CompressedDAWGNode implements DAWGNode {
     //The character labeling an incoming transition to this node
     private final char letter;
     
@@ -69,6 +69,7 @@ class CompressedDAWGNode {
      
      * @return      true if this node is an accept state, false otherwise
      */
+    @Override
     public boolean isAcceptNode() {
         return isAcceptNode;
     }
@@ -100,8 +101,9 @@ class CompressedDAWGNode {
         this.transitionSetBeginIndex = transitionSetBeginIndex;
     }
     
+    @Override
     public int getId() {
-        return transitionSetSize == 0 ? -1 : transitionSetBeginIndex;
+        return transitionSetBeginIndex == 0 ? 0 : transitionSetSize == 0 ? 1 : transitionSetBeginIndex + 1;
     }
     
     /**

@@ -41,18 +41,20 @@ public abstract class DAWGSet implements Iterable<String> {
     public static void setDotExecutablePath(String dotExecutablePath) {
         DAWGSet.dotExecutablePath = dotExecutablePath;
     }
+    
+    abstract Iterable<Map.Entry<Character, DAWGNode>> getOutgoingTransitions(DAWGNode parent);
   
-  /*  public String toGraphViz(boolean withNodeIds) {
+    public String toGraphViz(boolean withNodeIds) {
         StringBuilder dot = new StringBuilder("digraph dawg {\n");
         dot.append("graph [rankdir=LR, ratio=fill];\n");
         dot.append("node [fontsize=14, shape=circle];\n");
         dot.append("edge [fontsize=12];\n");
-        Deque<MDAGNode> stack = new LinkedList<>();
+        Deque<DAWGNode> stack = new LinkedList<>();
         BitSet visited = new BitSet();
-        stack.add(sourceNode);
-        visited.set(sourceNode.getId());
+        stack.add(getSourceNode());
+        visited.set(getSourceNode().getId());
         while (true) {
-            MDAGNode node = stack.pollLast();
+            DAWGNode node = stack.pollLast();
             if (node == null)
                 break;
             dot.append('n').append(node.getId()).append(" [label=\"").append(node.isAcceptNode() ? 'O' : ' ').append('\"');
@@ -65,8 +67,8 @@ public abstract class DAWGSet implements Iterable<String> {
                 dot.append('\"');
             }
             dot.append("];\n");
-            for (Map.Entry<Character, MDAGNode> e : node.getOutgoingTransitions().entrySet()) {
-                MDAGNode nextNode = e.getValue();
+            for (Map.Entry<Character, DAWGNode> e : getOutgoingTransitions(node)) {
+                DAWGNode nextNode = e.getValue();
                 dot.append('n').append(node.getId()).append(" -> n").append(nextNode.getId()).append(" [label=\"").append(e.getKey()).append("\"];\n");
                 if (!visited.get(nextNode.getId())) {
                     stack.addLast(nextNode);
@@ -94,7 +96,14 @@ public abstract class DAWGSet implements Iterable<String> {
         } finally {
             Files.deleteIfExists(dotFile);
         }
-    }*/
+    }
+    
+    /**
+     * Returns the ModifiableDAWGSet's source node.
+    
+     * @return      the ModifiableDAWGNode or CompressedDAWGNode functioning as the ModifiableDAWGSet's source node.
+     */
+    abstract DAWGNode getSourceNode();
 
     @Override
     public Iterator<String> iterator() {

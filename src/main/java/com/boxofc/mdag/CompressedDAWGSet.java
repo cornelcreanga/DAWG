@@ -2,6 +2,9 @@ package com.boxofc.mdag;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.TreeSet;
@@ -27,6 +30,16 @@ public class CompressedDAWGSet extends DAWGSet {
     public boolean contains(String str) {
         CompressedDAWGNode targetNode = CompressedDAWGNode.traverseMDAG(mdagDataArray, sourceNode, str);
         return targetNode != null && targetNode.isAcceptNode();
+    }
+    
+    /**
+     * Returns the ModifiableDAWGSet's source node.
+    
+     * @return      the ModifiableDAWGNode or CompressedDAWGNode functioning as the ModifiableDAWGSet's source node.
+     */
+    @Override
+    DAWGNode getSourceNode() {
+        return sourceNode;
     }
     
     /**
@@ -166,5 +179,47 @@ public class CompressedDAWGSet extends DAWGSet {
         CompressedDAWGSet other = (CompressedDAWGSet) obj;
         return Objects.equals(sourceNode, other.sourceNode) &&
                Arrays.deepEquals(mdagDataArray, other.mdagDataArray);
+    }
+
+    @Override
+    Iterable<Entry<Character, DAWGNode>> getOutgoingTransitions(DAWGNode parent) {
+        final CompressedDAWGNode cparent = (CompressedDAWGNode)parent;
+        return new Iterable<Entry<Character, DAWGNode>>() {
+            @Override
+            public Iterator<Entry<Character, DAWGNode>> iterator() {
+                return new Iterator<Entry<Character, DAWGNode>>() {
+                    private final int from = cparent.getTransitionSetBeginIndex();
+                    private final int to = from + cparent.getOutgoingTransitionSetSize();
+                    private int current = from;
+
+                    @Override
+                    public boolean hasNext() {
+                        return current < to;
+                    }
+
+                    @Override
+                    public Entry<Character, DAWGNode> next() {
+                        final int nodePos = current;
+                        CompressedDAWGNode node = mdagDataArray[current++];
+                        return new Entry<Character, DAWGNode>() {
+                            @Override
+                            public Character getKey() {
+                                return node.getLetter();
+                            }
+
+                            @Override
+                            public DAWGNode getValue() {
+                                return node;
+                            }
+
+                            @Override
+                            public DAWGNode setValue(DAWGNode value) {
+                                return mdagDataArray[nodePos] = (CompressedDAWGNode)value;
+                            }
+                        };
+                    }
+                };
+            }
+        };
     }
 }
