@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.NavigableSet;
 import java.util.Set;
+import java.util.TreeSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -180,8 +181,12 @@ public class DAWGFileTest {
     
     @Test
     public void getAllWordsTest() {
-        NavigableSet<String> wordNavigableSet1 = dawg1.getAllStrings();
-        NavigableSet<String> wordNavigableSet2 = dawg2.getAllStrings();
+        NavigableSet<String> wordNavigableSet1 = new TreeSet<>();
+        for (String word : dawg1.getAllStrings())
+            wordNavigableSet1.add(word);
+        NavigableSet<String> wordNavigableSet2 = new TreeSet<>();
+        for (String word : dawg2.getAllStrings())
+            wordNavigableSet2.add(word);
         assertTrue(wordNavigableSet1.containsAll(wordArrayList));
         assertTrue(wordNavigableSet2.containsAll(wordArrayList));
     }

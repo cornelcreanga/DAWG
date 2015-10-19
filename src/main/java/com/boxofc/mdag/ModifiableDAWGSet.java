@@ -28,25 +28,15 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -61,12 +51,12 @@ public class ModifiableDAWGSet extends DAWGSet {
     private int id;
     
     //MDAGNode from which all others in the structure are reachable (all manipulation and non-simplified ModifiableDAWGSet search operations begin from this).
-    private ModifiableDAWGNode sourceNode = new ModifiableDAWGNode(false, id++);
+    private final ModifiableDAWGNode sourceNode = new ModifiableDAWGNode(false, id++);
 
     //HashMap which contains the MDAGNodes collectively representing the all unique equivalence classes in the ModifiableDAWGSet.
     //Uniqueness is defined by the types of transitions allowed from, and number and type of nodes reachable
     //from the node of interest. Since there are no duplicate nodes in an ModifiableDAWGSet, # of equivalence classes == # of nodes.
-    private HashMap<ModifiableDAWGNode, ModifiableDAWGNode> equivalenceClassMDAGNodeHashMap = new HashMap<>();
+    private final HashMap<ModifiableDAWGNode, ModifiableDAWGNode> equivalenceClassMDAGNodeHashMap = new HashMap<>();
     
     //NavigableSet which will contain the set of unique characters used as transition labels in the ModifiableDAWGSet
     private final TreeSet<Character> charTreeSet = new TreeSet<>();
@@ -659,8 +649,9 @@ public class ModifiableDAWGSet extends DAWGSet {
                                   by {@code searchCondition} in order to be included in the result set
      * @param prefixString              the String corresponding to the currently traversed transition path
      * @param transitionTreeMap         a TreeMap of Characters to MDAGNodes collectively representing an ModifiableDAWGNode's transition set
+     * @param descending                traverse a tree from the end
      */
-    private void getStrings(NavigableSet<String> strNavigableSet, SearchCondition searchCondition, String searchConditionString, String prefixString, TreeMap<Character, ModifiableDAWGNode> transitionTreeMap) {
+    private void getStrings(NavigableSet<String> strNavigableSet, SearchCondition searchCondition, String searchConditionString, String prefixString, TreeMap<Character, ModifiableDAWGNode> transitionTreeMap, boolean descending) {
         //Traverse all the valid transition paths beginning from each transition in transitionTreeMap, inserting the
         //corresponding Strings in to strNavigableSet that have the relationship with conditionString denoted by searchCondition
         for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : transitionTreeMap.entrySet()) {
@@ -668,16 +659,21 @@ public class ModifiableDAWGSet extends DAWGSet {
             ModifiableDAWGNode currentNode = transitionKeyValuePair.getValue();
 
             SearchCondition childrenSearchCondition = searchCondition;
+            boolean addCurrent = false;
             if (searchCondition.satisfiesCondition(newPrefixString, searchConditionString)) {
                 if (currentNode.isAcceptNode())
-                    strNavigableSet.add(newPrefixString);
+                    addCurrent = true;
                 //If the parent node satisfies the search condition then all its child nodes also satisfy this condition.
                 if (searchCondition == SearchCondition.SUBSTRING_SEARCH_CONDITION)
                     childrenSearchCondition = SearchCondition.NO_SEARCH_CONDITION;
             }
             
+            if (addCurrent && !descending)
+                strNavigableSet.add(newPrefixString);
             //Recursively call this to traverse all the valid transition paths from currentNode
-            getStrings(strNavigableSet, childrenSearchCondition, searchConditionString, newPrefixString, currentNode.getOutgoingTransitions());
+            getStrings(strNavigableSet, childrenSearchCondition, searchConditionString, newPrefixString, currentNode.getOutgoingTransitions(), descending);
+            if (addCurrent && descending)
+                strNavigableSet.add(newPrefixString);
         }
     }
     
@@ -688,7 +684,7 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @return              a NavigableSet containing all the Strings present in the ModifiableDAWGSet that begin with {@code prefixString}
      */
     @Override
-    public NavigableSet<String> getStringsStartingWith(String prefixStr) {
+    public Iterable<String> getStringsStartingWith(String prefixStr) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
         ModifiableDAWGNode originNode = sourceNode.transition(prefixStr);  //attempt to transition down the path denoted by prefixStr
 
@@ -696,7 +692,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         if (originNode != null) {
             if (originNode.isAcceptNode())
                 strNavigableSet.add(prefixStr);
-            getStrings(strNavigableSet, SearchCondition.NO_SEARCH_CONDITION, prefixStr, prefixStr, originNode.getOutgoingTransitions());   //retrieve all Strings that extend the transition path denoted by prefixStr
+            getStrings(strNavigableSet, SearchCondition.NO_SEARCH_CONDITION, prefixStr, prefixStr, originNode.getOutgoingTransitions(), false);   //retrieve all Strings that extend the transition path denoted by prefixStr
         }
         return strNavigableSet;
     }
@@ -708,11 +704,11 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @return          a NavigableSet containing all the Strings present in the ModifiableDAWGSet that begin with {@code prefixString}
      */
     @Override
-    public NavigableSet<String> getStringsWithSubstring(String str) {
+    public Iterable<String> getStringsWithSubstring(String str) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
         if (str.isEmpty() && sourceNode.isAcceptNode())
             strNavigableSet.add(str);
-        getStrings(strNavigableSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", sourceNode.getOutgoingTransitions());
+        getStrings(strNavigableSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", sourceNode.getOutgoingTransitions(), false);
         return strNavigableSet;
     }
     
@@ -723,11 +719,11 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @return                  a NavigableSet containing all the Strings present in the ModifiableDAWGSet that end with {@code suffixStr}
      */
     @Override
-    public NavigableSet<String> getStringsEndingWith(String suffixStr) {
+    public Iterable<String> getStringsEndingWith(String suffixStr) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
         if (suffixStr.isEmpty() && sourceNode.isAcceptNode())
             strNavigableSet.add(suffixStr);
-        getStrings(strNavigableSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", sourceNode.getOutgoingTransitions());
+        getStrings(strNavigableSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", sourceNode.getOutgoingTransitions(), false);
         return strNavigableSet;
     }
     
@@ -759,6 +755,7 @@ public class ModifiableDAWGSet extends DAWGSet {
             countNodes(transitionKeyValuePair.getValue(), nodeIDHashSet);
     }
     
+    @Override
     public int getNodeCount() {
         HashSet<Integer> ids = new HashSet<>();
         countNodes(sourceNode, ids);

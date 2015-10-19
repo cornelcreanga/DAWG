@@ -3,7 +3,6 @@ package com.boxofc.mdag;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableSet;
 import java.util.Objects;
@@ -86,7 +85,7 @@ public class CompressedDAWGSet extends DAWGSet {
      * @return              a NavigableSet containing all the Strings present in the ModifiableDAWGSet that begin with {@code prefixString}
      */
     @Override
-    public NavigableSet<String> getStringsStartingWith(String prefixStr) {
+    public Iterable<String> getStringsStartingWith(String prefixStr) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
         CompressedDAWGNode originNode = CompressedDAWGNode.traverseMDAG(mdagDataArray, sourceNode, prefixStr);      //attempt to transition down the path denoted by prefixStr
         //if there a transition path corresponding to prefixString (one or more stored Strings begin with prefixStr)
@@ -105,7 +104,7 @@ public class CompressedDAWGSet extends DAWGSet {
      * @return          a NavigableSet containing all the Strings present in the ModifiableDAWGSet that begin with {@code prefixString}
      */
     @Override
-    public NavigableSet<String> getStringsWithSubstring(String str) {
+    public Iterable<String> getStringsWithSubstring(String str) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
         if (str.isEmpty() && sourceNode.isAcceptNode())
             strNavigableSet.add(str);
@@ -120,7 +119,7 @@ public class CompressedDAWGSet extends DAWGSet {
      * @return                  a NavigableSet containing all the Strings present in the ModifiableDAWGSet that end with {@code suffixStr}
      */
     @Override
-    public NavigableSet<String> getStringsEndingWith(String suffixStr) {
+    public Iterable<String> getStringsEndingWith(String suffixStr) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
         if (suffixStr.isEmpty() && sourceNode.isAcceptNode())
             strNavigableSet.add(suffixStr);
@@ -156,6 +155,7 @@ public class CompressedDAWGSet extends DAWGSet {
         }
     }
     
+    @Override
     public int getNodeCount() {
         HashSet<Integer> ids = new HashSet<>();
         countNodes(sourceNode, ids);

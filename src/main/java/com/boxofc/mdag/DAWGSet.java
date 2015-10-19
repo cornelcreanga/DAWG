@@ -13,7 +13,6 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.NavigableSet;
 
 public abstract class DAWGSet implements Iterable<String> {
     /**
@@ -115,7 +114,7 @@ public abstract class DAWGSet implements Iterable<String> {
      
      * @return      a NavigableSet containing all the Strings that have been inserted into the ModifiableDAWGSet
      */
-    public NavigableSet<String> getAllStrings() {
+    public Iterable<String> getAllStrings() {
         return getStringsStartingWith("");
     }
     
@@ -125,7 +124,7 @@ public abstract class DAWGSet implements Iterable<String> {
      * @param prefixStr     a String that is the prefix for all the desired Strings
      * @return              a NavigableSet containing all the Strings present in the ModifiableDAWGSet that begin with {@code prefixString}
      */
-    public abstract NavigableSet<String> getStringsStartingWith(String prefixStr);
+    public abstract Iterable<String> getStringsStartingWith(String prefixStr);
     
     /**
      * Retrieves all the Strings in the ModifiableDAWGSet that contain a given String.
@@ -133,7 +132,7 @@ public abstract class DAWGSet implements Iterable<String> {
      * @param str       a String that is contained in all the desired Strings
      * @return          a NavigableSet containing all the Strings present in the ModifiableDAWGSet that begin with {@code prefixString}
      */
-    public abstract NavigableSet<String> getStringsWithSubstring(String str);
+    public abstract Iterable<String> getStringsWithSubstring(String str);
     
     /**
      * Retrieves all the Strings in the ModifiableDAWGSet that begin with a given String.
@@ -141,13 +140,15 @@ public abstract class DAWGSet implements Iterable<String> {
      * @param suffixStr         a String that is the suffix for all the desired Strings
      * @return                  a NavigableSet containing all the Strings present in the ModifiableDAWGSet that end with {@code suffixStr}
      */
-    public abstract NavigableSet<String> getStringsEndingWith(String suffixStr);
+    public abstract Iterable<String> getStringsEndingWith(String suffixStr);
     
     /**
      * Returns the quantity of transitions in this DAWG: number of edges in graph.
      * @return quantity of transitions
      */
     public abstract int getTransitionCount();
+    
+    public abstract int getNodeCount();
     
     //Enum containing fields collectively denoting the set of all conditions that can be applied to a search on the ModifiableDAWGSet
     static enum SearchCondition {
