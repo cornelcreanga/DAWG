@@ -55,113 +55,48 @@ import java.util.TreeSet;
  
  * @author Kevin
  */
-public class MDAG implements Iterable<String> {
-    /**
-     * Folder where to save images when {@link #saveAsImage} is called. Default is the relative directory named "temp".
-     */
-    private static String imagesPath = "temp";
-    
-    /**
-     * Path to GraphViz dot executable. Default is "dot" (works if added to environment variables).
-     */
-    private static String dotExecutablePath = "dot";
-    
+public class ModifiableDAWGSet extends DAWGSet {
     //Increment for node identifiers.
     private int id;
     
-    //MDAGNode from which all others in the structure are reachable (all manipulation and non-simplified MDAG search operations begin from this).
+    //MDAGNode from which all others in the structure are reachable (all manipulation and non-simplified ModifiableDAWGSet search operations begin from this).
     private MDAGNode sourceNode = new MDAGNode(false, id++);
 
-    //SimpleMDAGNode from which all others in the structure are reachable (will be defined if this MDAG is simplified)
-    private SimpleMDAGNode simplifiedSourceNode;
-
-    //HashMap which contains the MDAGNodes collectively representing the all unique equivalence classes in the MDAG.
+    //HashMap which contains the MDAGNodes collectively representing the all unique equivalence classes in the ModifiableDAWGSet.
     //Uniqueness is defined by the types of transitions allowed from, and number and type of nodes reachable
-    //from the node of interest. Since there are no duplicate nodes in an MDAG, # of equivalence classes == # of nodes.
+    //from the node of interest. Since there are no duplicate nodes in an ModifiableDAWGSet, # of equivalence classes == # of nodes.
     private HashMap<MDAGNode, MDAGNode> equivalenceClassMDAGNodeHashMap = new HashMap<>();
     
-    //Array that will contain a space-saving version of the MDAG after a call to simplify().
-    private SimpleMDAGNode[] mdagDataArray;
-    
-    //NavigableSet which will contain the set of unique characters used as transition labels in the MDAG
+    //NavigableSet which will contain the set of unique characters used as transition labels in the ModifiableDAWGSet
     private final TreeSet<Character> charTreeSet = new TreeSet<>();
     
-    //An int denoting the total number of transitions between the nodes of the MDAG
+    //An int denoting the total number of transitions between the nodes of the ModifiableDAWGSet
     private int transitionCount;
     
-    //Total number of words contained in this MDAG.
+    //Total number of words contained in this ModifiableDAWGSet.
     private int size;
-    
-    //Enum containing fields collectively denoting the set of all conditions that can be applied to a search on the MDAG
-    private static enum SearchCondition {
-        NO_SEARCH_CONDITION, SUBSTRING_SEARCH_CONDITION, SUFFIX_SEARCH_CONDITION;
-        
-        /**
-        * Determines whether two Strings have a given type of relationship.
-
-        * @param processingString      a String
-        * @param conditionString       a String
-        * @param searchCondition       an int denoting the type of condition to be satisfied
-        * @return                      true if {@code processingString} has a relationship with
-        *                              {@code conditionString} described by the condition
-        *                              represented by {@code searchCondition}
-        */
-        public boolean satisfiesCondition(String str1, String str2) {
-            boolean satisfiesSearchCondition;
-         
-            switch (this) {
-                case SUBSTRING_SEARCH_CONDITION:
-                    satisfiesSearchCondition = str1.contains(str2);
-                    break;
-                case SUFFIX_SEARCH_CONDITION:
-                    satisfiesSearchCondition = str1.endsWith(str2);
-                    break;
-                default:
-                    satisfiesSearchCondition = true;
-                    break;
-            }
-
-            return satisfiesSearchCondition;
-        }
-    };
     
     /**
      * Creates an MDAG from a collection of Strings.
      
      * @param strCollection     a {@link java.util.Iterable} containing Strings that the MDAG will contain
      */
-    public MDAG(Iterable<? extends String> strCollection) {
+    public ModifiableDAWGSet(Iterable<? extends String> strCollection) {
         addAll(strCollection);
     }
     
     /**
      * Creates empty MDAG. Use {@link #addString} to fill it.
      */
-    public MDAG() {
-    }
-
-    public static String getImagesPath() {
-        return imagesPath;
-    }
-
-    public static void setImagesPath(String imagesPath) {
-        MDAG.imagesPath = imagesPath;
-    }
-
-    public static String getDotExecutablePath() {
-        return dotExecutablePath;
-    }
-
-    public static void setDotExecutablePath(String dotExecutablePath) {
-        MDAG.dotExecutablePath = dotExecutablePath;
+    public ModifiableDAWGSet() {
     }
     
     /**
-     * Creates a MDAG from a newline delimited file containing the data of interest.
+     * Creates a ModifiableDAWGSet from a newline delimited file containing the data of interest.
      
      * @param dataFile          a {@link java.io.File} representation of a file
-     *                          containing the Strings that the MDAG will contain
-     * @return true if and only if this MDAG was changed as a result of this call
+                          containing the Strings that the ModifiableDAWGSet will contain
+     * @return true if and only if this ModifiableDAWGSet was changed as a result of this call
      * @throws IOException      if {@code datafile} cannot be opened, or a read operation on it cannot be carried out
      */
     public boolean addAll(File dataFile) throws IOException {
@@ -171,11 +106,11 @@ public class MDAG implements Iterable<String> {
     }
     
     /**
-     * Creates a MDAG from a newline delimited file containing the data of interest.
+     * Creates a ModifiableDAWGSet from a newline delimited file containing the data of interest.
      
      * @param dataFile          a {@link java.io.InputStream} representation of a file
-     *                          containing the Strings that the MDAG will contain
-     * @return true if and only if this MDAG was changed as a result of this call
+                          containing the Strings that the ModifiableDAWGSet will contain
+     * @return true if and only if this ModifiableDAWGSet was changed as a result of this call
      * @throws IOException      if {@code datafile} cannot be opened, or a read operation on it cannot be carried out
      */
     public boolean addAll(InputStream dataFile) throws IOException {
@@ -222,70 +157,64 @@ public class MDAG implements Iterable<String> {
     }
     
     /**
-     * Adds a Collection of Strings to the MDAG.
+     * Adds a Collection of Strings to the ModifiableDAWGSet.
      
-     * @param strCollection     a {@link java.util.Collection} containing Strings to be added to the MDAG
-     * @return true if and only if this MDAG was changed as a result of this call
+     * @param strCollection     a {@link java.util.Collection} containing Strings to be added to the ModifiableDAWGSet
+     * @return true if and only if this ModifiableDAWGSet was changed as a result of this call
      */
     public final boolean addAll(String... strCollection) {
         return addAll(Arrays.asList(strCollection));
     }
     
     /**
-     * Adds a Collection of Strings to the MDAG.
+     * Adds a Collection of Strings to the ModifiableDAWGSet.
      
-     * @param strCollection     a {@link java.util.Iterable} containing Strings to be added to the MDAG
-     * @return true if and only if this MDAG was changed as a result of this call
+     * @param strCollection     a {@link java.util.Iterable} containing Strings to be added to the ModifiableDAWGSet
+     * @return true if and only if this ModifiableDAWGSet was changed as a result of this call
      */
     public final boolean addAll(Iterable<? extends String> strCollection) {
-        if (sourceNode != null) {
-            boolean result = false;
-            boolean empty = true;
-            String previousString = "";
-        
-            //Add all the Strings in strCollection to the MDAG.
-            for (String currentString : strCollection) {
-                empty = false;
-                int mpsIndex = calculateMinimizationProcessingStartIndex(previousString, currentString);
+        boolean result = false;
+        boolean empty = true;
+        String previousString = "";
 
-                //If the transition path of the previousString needs to be examined for minimization or
-                //equivalence class representation after a certain point, call replaceOrRegister to do so.
-                if (mpsIndex != -1) {
-                    String transitionSubstring = previousString.substring(0, mpsIndex);
-                    String minimizationProcessingSubString = previousString.substring(mpsIndex);
-                    replaceOrRegister(sourceNode.transition(transitionSubstring), minimizationProcessingSubString);
-                }
+        //Add all the Strings in strCollection to the ModifiableDAWGSet.
+        for (String currentString : strCollection) {
+            empty = false;
+            int mpsIndex = calculateMinimizationProcessingStartIndex(previousString, currentString);
 
-                result |= addStringInternal(currentString);
-                previousString = currentString;
+            //If the transition path of the previousString needs to be examined for minimization or
+            //equivalence class representation after a certain point, call replaceOrRegister to do so.
+            if (mpsIndex != -1) {
+                String transitionSubstring = previousString.substring(0, mpsIndex);
+                String minimizationProcessingSubString = previousString.substring(mpsIndex);
+                replaceOrRegister(sourceNode.transition(transitionSubstring), minimizationProcessingSubString);
             }
 
-            if (!empty) {
-                //Since we delay the minimization of the previously-added String
-                //until after we read the next one, we need to have a seperate
-                //statement to minimize the absolute last String.
-                if (!previousString.isEmpty())
-                    replaceOrRegister(sourceNode, previousString);
-            }
-            return result;
-        } else
-            throw new UnsupportedOperationException("MDAG is simplified. Unable to add additional Strings.");
+            result |= addStringInternal(currentString);
+            previousString = currentString;
+        }
+
+        if (!empty) {
+            //Since we delay the minimization of the previously-added String
+            //until after we read the next one, we need to have a seperate
+            //statement to minimize the absolute last String.
+            if (!previousString.isEmpty())
+                replaceOrRegister(sourceNode, previousString);
+        }
+        return result;
     }
     
     /**
-     * Adds a string to the MDAG.
+     * Adds a string to the ModifiableDAWGSet.
      
-     * @param str       the String to be added to the MDAG
-     * @return true if MDAG didn't contain this string yet
+     * @param str       the String to be added to the ModifiableDAWGSet
+     * @return true if ModifiableDAWGSet didn't contain this string yet
      */
     public boolean add(String str) {
-        if (sourceNode != null) {
-            boolean result = addStringInternal(str);
-            if (!str.isEmpty())
-                replaceOrRegister(sourceNode, str);
-            return result;
-        } else
-            throw new UnsupportedOperationException("MDAG is simplified. Unable to add additional Strings.");
+        boolean result = addStringInternal(str);
+        if (!str.isEmpty())
+            replaceOrRegister(sourceNode, str);
+        return result;
     }
     
     private void splitTransitionPath(MDAGNode originNode, String storedStringSubstr) {
@@ -332,68 +261,65 @@ public class MDAG implements Iterable<String> {
     }
     
     /**
-     * Removes a String from the MDAG.
+     * Removes a String from the ModifiableDAWGSet.
      
-     * @param str       the String to be removed from the MDAG
-     * @return true if MDAG already contained this string
+     * @param str       the String to be removed from the ModifiableDAWGSet
+     * @return true if ModifiableDAWGSet already contained this string
      */
     public boolean remove(String str) {
-        if (sourceNode != null) {
-            //Split the transition path corresponding to str to ensure that
-            //any other transition paths sharing nodes with it are not affected
-            splitTransitionPath(sourceNode, str);
+        //Split the transition path corresponding to str to ensure that
+        //any other transition paths sharing nodes with it are not affected
+        splitTransitionPath(sourceNode, str);
 
-            //Remove from equivalenceClassMDAGNodeHashMap, the entries of all the nodes in the transition path corresponding to str.
-            removeTransitionPathRegisterEntries(str);
+        //Remove from equivalenceClassMDAGNodeHashMap, the entries of all the nodes in the transition path corresponding to str.
+        removeTransitionPathRegisterEntries(str);
 
-            //Get the last node in the transition path corresponding to str
-            MDAGNode strEndNode = sourceNode.transition(str);
-            
-            //Removing non-existent word.
-            if (strEndNode == null)
-                return false;
+        //Get the last node in the transition path corresponding to str
+        MDAGNode strEndNode = sourceNode.transition(str);
 
-            if (str.isEmpty() || strEndNode.hasOutgoingTransitions()) {
-                boolean result = strEndNode.setAcceptStateStatus(false);
-                if (!str.isEmpty())
-                    replaceOrRegister(sourceNode, str);
-                if (result)
-                    size--;
-                return result;
-            } else {
-                int soleInternalTransitionPathLength = calculateSoleTransitionPathLength(str);
-                int internalTransitionPathLength = str.length() - 1;
+        //Removing non-existent word.
+        if (strEndNode == null)
+            return false;
 
-                if (soleInternalTransitionPathLength == internalTransitionPathLength) {
-                    sourceNode.removeOutgoingTransition(str.charAt(0));
-                    transitionCount -= str.length();
-                } else {
-                    //Remove the sub-path in str's transition path that is only used by str
-                    int toBeRemovedTransitionLabelCharIndex = internalTransitionPathLength - soleInternalTransitionPathLength;
-                    MDAGNode latestNonSoloTransitionPathNode = sourceNode.transition(str.substring(0, toBeRemovedTransitionLabelCharIndex));
-                    latestNonSoloTransitionPathNode.removeOutgoingTransition(str.charAt(toBeRemovedTransitionLabelCharIndex));
-                    transitionCount -= str.substring(toBeRemovedTransitionLabelCharIndex).length();
-                    
-                    replaceOrRegister(sourceNode, str.substring(0, toBeRemovedTransitionLabelCharIndex));
-                }
+        if (str.isEmpty() || strEndNode.hasOutgoingTransitions()) {
+            boolean result = strEndNode.setAcceptStateStatus(false);
+            if (!str.isEmpty())
+                replaceOrRegister(sourceNode, str);
+            if (result)
                 size--;
-                return true;
+            return result;
+        } else {
+            int soleInternalTransitionPathLength = calculateSoleTransitionPathLength(str);
+            int internalTransitionPathLength = str.length() - 1;
+
+            if (soleInternalTransitionPathLength == internalTransitionPathLength) {
+                sourceNode.removeOutgoingTransition(str.charAt(0));
+                transitionCount -= str.length();
+            } else {
+                //Remove the sub-path in str's transition path that is only used by str
+                int toBeRemovedTransitionLabelCharIndex = internalTransitionPathLength - soleInternalTransitionPathLength;
+                MDAGNode latestNonSoloTransitionPathNode = sourceNode.transition(str.substring(0, toBeRemovedTransitionLabelCharIndex));
+                latestNonSoloTransitionPathNode.removeOutgoingTransition(str.charAt(toBeRemovedTransitionLabelCharIndex));
+                transitionCount -= str.substring(toBeRemovedTransitionLabelCharIndex).length();
+
+                replaceOrRegister(sourceNode, str.substring(0, toBeRemovedTransitionLabelCharIndex));
             }
-        } else
-            throw new UnsupportedOperationException("MDAG is simplified. Unable to remove any Strings.");
+            size--;
+            return true;
+        }
     }
     
     /**
-     * Determines the start index of the substring in the String most recently added to the MDAG
-     * that corresponds to the transition path that will be next up for minimization processing.
+     * Determines the start index of the substring in the String most recently added to the ModifiableDAWGSet
+ that corresponds to the transition path that will be next up for minimization processing.
      *
      * The "minimization processing start index" is defined as the index in {@code prevStr} which starts the substring
      * corresponding to the transition path that doesn't have its right language extended by {@code currStr}. The transition path of
      * the substring before this point is not considered for minimization in order to limit the amount of times the
      * equivalence classes of its nodes will need to be reassigned during the processing of Strings which share prefixes.
      
-     * @param prevStr       the String most recently added to the MDAG
-     * @param currStr       the String next to be added to the MDAG
+     * @param prevStr       the String most recently added to the ModifiableDAWGSet
+     * @param currStr       the String next to be added to the ModifiableDAWGSet
      * @return              an int of the index in {@code prevStr} that starts the substring corresponding
      *                      to the transition path next up for minimization processing
      */
@@ -416,11 +342,11 @@ public class MDAG implements Iterable<String> {
     
     /**
      * Determines the longest prefix of a given String that is
-     * the prefix of another String previously added to the MDAG.
+ the prefix of another String previously added to the ModifiableDAWGSet.
      
      * @param str       the String to be processed
      * @return          a String of the longest prefix of {@code str}
-     *                  that is also a prefix of a String contained in the MDAG
+                  that is also a prefix of a String contained in the ModifiableDAWGSet
      */
     public String determineLongestPrefixInMDAG(String str) {
         MDAGNode currentNode = sourceNode;
@@ -428,7 +354,7 @@ public class MDAG implements Iterable<String> {
         int onePastPrefixEndIndex = 0;
         
         //Loop through the characters in str, using them in sequence to transition
-        //through the MDAG until the currently processing node doesn't have a transition
+        //through the ModifiableDAWGSet until the currently processing node doesn't have a transition
         //labeled with the current processing char, or there are no more characters to process.
         for (int i = 0; i < numberOfChars; i++, onePastPrefixEndIndex++) {
             char currentChar = str.charAt(i);
@@ -447,7 +373,7 @@ public class MDAG implements Iterable<String> {
      * transition path corresponding to a given String from a given node.
      
      * @param originNode        the MDAGNode from which the transition path corresponding to str starts from
-     * @param str               a String corresponding to a transition path in the MDAG
+     * @param str               a String corresponding to a transition path in the ModifiableDAWGSet
      * @return                  a HashMap of Strings to Objects containing:
      *                              - an int denoting the length of the path to the first confluence node in the transition path of interest
      *                              - the MDAGNode which is the first confluence node in the transition path of interest (or null if one does not exist)
@@ -457,7 +383,7 @@ public class MDAG implements Iterable<String> {
         int charCount = str.length();
         MDAGNode currentNode = originNode;
         
-        //Loop thorugh the characters in str, sequentially using them to transition through the MDAG in search of
+        //Loop thorugh the characters in str, sequentially using them to transition through the ModifiableDAWGSet in search of
         //(and breaking upon reaching) the first node that is the target of two or more transitions. The loop is
         //also broken from if the currently processing node doesn't have a transition labeled with the currently processing char.
         for (; currentIndex < charCount; currentIndex++) {
@@ -517,11 +443,11 @@ public class MDAG implements Iterable<String> {
     }
     
     /**
-     * Adds a transition path starting from a specific node in the MDAG.
+     * Adds a transition path starting from a specific node in the ModifiableDAWGSet.
      
      * @param originNode    the MDAGNode which will serve as the start point of the to-be-created transition path
      * @param str           the String to be used to create a new transition path from {@code originNode}
-     * @return true if and only if MDAG has changed as a result of this call
+     * @return true if and only if ModifiableDAWGSet has changed as a result of this call
      */
     private boolean addTransitionPath(MDAGNode originNode, String str) {
         if (!str.isEmpty()) {
@@ -618,10 +544,10 @@ public class MDAG implements Iterable<String> {
     }
     
     /**
-     * Adds a String to the MDAG (called by addString to do actual MDAG manipulation).
+     * Adds a String to the ModifiableDAWGSet (called by addString to do actual ModifiableDAWGSet manipulation).
      
-     * @param str       the String to be added to the MDAG
-     * @return true if and only if MDAG has changed as a result of this call
+     * @param str       the String to be added to the ModifiableDAWGSet
+     * @return true if and only if ModifiableDAWGSet has changed as a result of this call
      */
     private boolean addStringInternal(String str) {
         String prefixString = determineLongestPrefixInMDAG(str);
@@ -655,7 +581,7 @@ public class MDAG implements Iterable<String> {
      * Creates a SimpleMDAGNode version of an MDAGNode's outgoing transition set in mdagDataArray.
      
      * @param node                                      the MDAGNode containing the transition set to be inserted in to {@code mdagDataArray}
-     * @param mdagDataArray                             an array of SimpleMDAGNodes containing a subset of the data of the MDAG
+     * @param mdagDataArray                             an array of SimpleMDAGNodes containing a subset of the data of the ModifiableDAWGSet
      * @param onePastLastCreatedConnectionSetIndex      an int of the index in {@code mdagDataArray} that the outgoing transition set of {@code node} is to start from
      * @return                                          an int of one past the end of the transition set located farthest in {@code mdagDataArray}
      */
@@ -687,48 +613,39 @@ public class MDAG implements Iterable<String> {
     }
     
     /**
-     * Creates a space-saving version of the MDAG in the form of an array.
-     * Once the MDAG is simplified, Strings can no longer be added to or removed from it.
+     * Creates a space-saving version of the ModifiableDAWGSet in the form of an array.
+     * Once the ModifiableDAWGSet is simplified, Strings can no longer be added to or removed from it.
+     * @return an instance of {@link CompressedDAWGSet} containing all the words added to this DAWG
      */
-    public void simplify() {
-        if (sourceNode != null) {
-            mdagDataArray = new SimpleMDAGNode[transitionCount];
-            createSimpleMDAGTransitionSet(sourceNode, mdagDataArray, 0);
-            simplifiedSourceNode = new SimpleMDAGNode('\0', false, sourceNode.getOutgoingTransitionCount());
-
-            //Mark the previous MDAG data structure and equivalenceClassMDAGNodeHashMap
-            //for garbage collection since they are no longer needed.
-            sourceNode = null;
-            equivalenceClassMDAGNodeHashMap = null;
-        }
+    public CompressedDAWGSet compress() {
+        CompressedDAWGSet compressed = new CompressedDAWGSet();
+        compressed.size = size;
+        compressed.mdagDataArray = new SimpleMDAGNode[transitionCount];
+        createSimpleMDAGTransitionSet(sourceNode, compressed.mdagDataArray, 0);
+        compressed.simplifiedSourceNode = new SimpleMDAGNode('\0', false, sourceNode.getOutgoingTransitionCount());
+        return compressed;
     }
     
     /**
-     * Determines whether a String is present in the MDAG.
+     * Determines whether a String is present in the ModifiableDAWGSet.
      
      * @param str       the String to be searched for
-     * @return          true if {@code str} is present in the MDAG, and false otherwise
+     * @return          true if {@code str} is present in the ModifiableDAWGSet, and false otherwise
      */
     public boolean contains(String str) {
-        //if the MDAG hasn't been simplified
-        if (sourceNode != null) {
-            MDAGNode targetNode = sourceNode.transition(str);
-            return targetNode != null && targetNode.isAcceptNode();
-        } else {
-            SimpleMDAGNode targetNode = SimpleMDAGNode.traverseMDAG(mdagDataArray, simplifiedSourceNode, str);
-            return targetNode != null && targetNode.isAcceptNode();
-        }
+        MDAGNode targetNode = sourceNode.transition(str);
+        return targetNode != null && targetNode.isAcceptNode();
     }
     
     /**
      * Retrieves Strings corresponding to all valid transition paths from a given node that satisfy a given condition.
      
-     * @param strNavigableSet                a NavigableSet of Strings to contain all those in the MDAG satisfying
-     *                                  {@code searchCondition} with {@code conditionString}
-     * @param searchCondition           the SearchCondition enum field describing the type of relationship that Strings contained in the MDAG
-     *                                  must have with {@code conditionString} in order to be included in the result set
-     * @param searchConditionString     the String that all Strings in the MDAG must be related with in the fashion denoted
-     *                                  by {@code searchCondition} in order to be included in the result set
+     * @param strNavigableSet                a NavigableSet of Strings to contain all those in the ModifiableDAWGSet satisfying
+                                  {@code searchCondition} with {@code conditionString}
+     * @param searchCondition           the SearchCondition enum field describing the type of relationship that Strings contained in the ModifiableDAWGSet
+                                  must have with {@code conditionString} in order to be included in the result set
+     * @param searchConditionString     the String that all Strings in the ModifiableDAWGSet must be related with in the fashion denoted
+                                  by {@code searchCondition} in order to be included in the result set
      * @param prefixString              the String corresponding to the currently traversed transition path
      * @param transitionTreeMap         a TreeMap of Characters to MDAGNodes collectively representing an MDAGNode's transition set
      */
@@ -754,148 +671,68 @@ public class MDAG implements Iterable<String> {
     }
     
     /**
-     * Retrieves Strings corresponding to all valid transition paths from a given node that satisfy a given condition.
-     
-     * @param strNavigableSet                    a NavigableSet of Strings to contain all those in the MDAG satisfying
-     *                                      {@code searchCondition} with {@code conditionString}
-     * @param searchCondition               the SearchCondition enum field describing the type of relationship that Strings contained in the MDAG
-     *                                      must have with {@code conditionString} in order to be included in the result set
-     * @param searchConditionString         the String that all Strings in the MDAG must be related with in the fashion denoted
-     *                                      by {@code searchCondition} in order to be included in the result set
-     * @param prefixString                  the String corresponding to the currently traversed transition path
-     * @param transitionSetBegin            an int denoting the starting index of a SimpleMDAGNode's transition set in mdagDataArray
-     * @param onePastTransitionSetEnd       an int denoting one past the last index of a simpleMDAGNode's transition set in mdagDataArray
-     */
-    private void getStrings(NavigableSet<String> strNavigableSet, SearchCondition searchCondition, String searchConditionString, String prefixString, SimpleMDAGNode node) {
-        int transitionSetBegin = node.getTransitionSetBeginIndex();
-        int onePastTransitionSetEnd = transitionSetBegin +  node.getOutgoingTransitionSetSize();
-        
-        //Traverse all the valid transition paths beginning from each transition in transitionTreeMap, inserting the
-        //corresponding Strings in to strNavigableSet that have the relationship with conditionString denoted by searchCondition
-        for (int i = transitionSetBegin; i < onePastTransitionSetEnd; i++) {
-            SimpleMDAGNode currentNode = mdagDataArray[i];
-            String newPrefixString = prefixString + currentNode.getLetter();
-            
-            SearchCondition childrenSearchCondition = searchCondition;
-            if (searchCondition.satisfiesCondition(newPrefixString, searchConditionString)) {
-                if (currentNode.isAcceptNode())
-                    strNavigableSet.add(newPrefixString);
-                //If the parent node satisfies the search condition then all its child nodes also satisfy this condition.
-                if (searchCondition == SearchCondition.SUBSTRING_SEARCH_CONDITION)
-                    childrenSearchCondition = SearchCondition.NO_SEARCH_CONDITION;
-            }
-            
-            //Recursively call this to traverse all the valid transition paths from currentNode
-            getStrings(strNavigableSet, childrenSearchCondition, searchConditionString, newPrefixString, currentNode);
-        }
-    }
-
-    @Override
-    public Iterator<String> iterator() {
-        return getAllStrings().iterator();
-    }
-    
-    /**
-     * Retrieves all the valid Strings that have been inserted in to the MDAG.
-     
-     * @return      a NavigableSet containing all the Strings that have been inserted into the MDAG
-     */
-    public NavigableSet<String> getAllStrings() {
-        return getStringsStartingWith("");
-    }
-    
-    /**
-     * Retrieves all the Strings in the MDAG that begin with a given String.
+     * Retrieves all the Strings in the ModifiableDAWGSet that begin with a given String.
      
      * @param prefixStr     a String that is the prefix for all the desired Strings
-     * @return              a NavigableSet containing all the Strings present in the MDAG that begin with {@code prefixString}
+     * @return              a NavigableSet containing all the Strings present in the ModifiableDAWGSet that begin with {@code prefixString}
      */
+    @Override
     public NavigableSet<String> getStringsStartingWith(String prefixStr) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
-        
-        //if the MDAG hasn't been simplified
-        if (sourceNode != null) {
-            MDAGNode originNode = sourceNode.transition(prefixStr);  //attempt to transition down the path denoted by prefixStr
-            
-            //if there a transition path corresponding to prefixString (one or more stored Strings begin with prefixString)
-            if (originNode != null) {
-                if (originNode.isAcceptNode())
-                    strNavigableSet.add(prefixStr);
-                getStrings(strNavigableSet, SearchCondition.NO_SEARCH_CONDITION, prefixStr, prefixStr, originNode.getOutgoingTransitions());   //retrieve all Strings that extend the transition path denoted by prefixStr
-            }
-        } else {
-            SimpleMDAGNode originNode = SimpleMDAGNode.traverseMDAG(mdagDataArray, simplifiedSourceNode, prefixStr);      //attempt to transition down the path denoted by prefixStr
-            
-            //if there a transition path corresponding to prefixString (one or more stored Strings begin with prefixStr)
-            if (originNode != null) {
-                if (originNode.isAcceptNode())
-                    strNavigableSet.add(prefixStr);
-                getStrings(strNavigableSet, SearchCondition.NO_SEARCH_CONDITION, prefixStr, prefixStr, originNode);        //retrieve all Strings that extend the transition path denoted by prefixString
-            }
+        MDAGNode originNode = sourceNode.transition(prefixStr);  //attempt to transition down the path denoted by prefixStr
+
+        //if there a transition path corresponding to prefixString (one or more stored Strings begin with prefixString)
+        if (originNode != null) {
+            if (originNode.isAcceptNode())
+                strNavigableSet.add(prefixStr);
+            getStrings(strNavigableSet, SearchCondition.NO_SEARCH_CONDITION, prefixStr, prefixStr, originNode.getOutgoingTransitions());   //retrieve all Strings that extend the transition path denoted by prefixStr
         }
-        
         return strNavigableSet;
     }
     
     /**
-     * Retrieves all the Strings in the MDAG that contain a given String.
+     * Retrieves all the Strings in the ModifiableDAWGSet that contain a given String.
      
      * @param str       a String that is contained in all the desired Strings
-     * @return          a NavigableSet containing all the Strings present in the MDAG that begin with {@code prefixString}
+     * @return          a NavigableSet containing all the Strings present in the ModifiableDAWGSet that begin with {@code prefixString}
      */
+    @Override
     public NavigableSet<String> getStringsWithSubstring(String str) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
-        
-        //if the MDAG hasn't been simplified
-        if (sourceNode != null) {
-            if (str.isEmpty() && sourceNode.isAcceptNode())
-                strNavigableSet.add(str);
-            getStrings(strNavigableSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", sourceNode.getOutgoingTransitions());
-        } else {
-            if (str.isEmpty() && simplifiedSourceNode.isAcceptNode())
-                strNavigableSet.add(str);
-            getStrings(strNavigableSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", simplifiedSourceNode);
-        }
-            
+        if (str.isEmpty() && sourceNode.isAcceptNode())
+            strNavigableSet.add(str);
+        getStrings(strNavigableSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", sourceNode.getOutgoingTransitions());
         return strNavigableSet;
     }
     
-     /**
-     * Retrieves all the Strings in the MDAG that begin with a given String.
+    /**
+     * Retrieves all the Strings in the ModifiableDAWGSet that begin with a given String.
      
      * @param suffixStr         a String that is the suffix for all the desired Strings
-     * @return                  a NavigableSet containing all the Strings present in the MDAG that end with {@code suffixStr}
+     * @return                  a NavigableSet containing all the Strings present in the ModifiableDAWGSet that end with {@code suffixStr}
      */
+    @Override
     public NavigableSet<String> getStringsEndingWith(String suffixStr) {
         NavigableSet<String> strNavigableSet = new TreeSet<>();
-        
-        //if the MDAG hasn't been simplified
-        if (sourceNode != null) {
-            if (suffixStr.isEmpty() && sourceNode.isAcceptNode())
-                strNavigableSet.add(suffixStr);
-            getStrings(strNavigableSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", sourceNode.getOutgoingTransitions());
-        } else {
-            if (suffixStr.isEmpty() && simplifiedSourceNode.isAcceptNode())
-                strNavigableSet.add(suffixStr);
-            getStrings(strNavigableSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", simplifiedSourceNode);
-        }
-
+        if (suffixStr.isEmpty() && sourceNode.isAcceptNode())
+            strNavigableSet.add(suffixStr);
+        getStrings(strNavigableSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", sourceNode.getOutgoingTransitions());
         return strNavigableSet;
     }
     
     /**
-     * Returns the MDAG's source node.
+     * Returns the ModifiableDAWGSet's source node.
     
-     * @return      the MDAGNode or SimpleMDAGNode functioning as the MDAG's source node.
+     * @return      the MDAGNode or SimpleMDAGNode functioning as the ModifiableDAWGSet's source node.
      */
     Object getSourceNode() {
-        return sourceNode != null ? sourceNode : simplifiedSourceNode;
+        return sourceNode;
     }
     
     /**
-     * Procures the set of characters which collectively label the MDAG's transitions.
+     * Procures the set of characters which collectively label the ModifiableDAWGSet's transitions.
      
-     * @return      a TreeSet of chars which collectively label all the transitions in the MDAG
+     * @return      a TreeSet of chars which collectively label all the transitions in the ModifiableDAWGSet
      */
     public TreeSet<Character> getTransitionLabelSet() {
         return charTreeSet;
@@ -913,72 +750,19 @@ public class MDAG implements Iterable<String> {
     }
     
     public int getNodeCount() {
-        return countNodes(sourceNode, new HashSet<Integer>());
+        return countNodes(sourceNode, new HashSet<>());
     }
     
     public int getEquivalenceClassCount() {
         return equivalenceClassMDAGNodeHashMap.size();
     }
     
+    @Override
     public int getTransitionCount() {
         return transitionCount;
     }
     
     public int size() {
         return size;
-    }
-  
-    public String toGraphViz(boolean withNodeIds) {
-        StringBuilder dot = new StringBuilder("digraph dawg {\n");
-        dot.append("graph [rankdir=LR, ratio=fill];\n");
-        dot.append("node [fontsize=14, shape=circle];\n");
-        dot.append("edge [fontsize=12];\n");
-        Deque<MDAGNode> stack = new LinkedList<>();
-        BitSet visited = new BitSet();
-        stack.add(sourceNode);
-        visited.set(sourceNode.getId());
-        while (true) {
-            MDAGNode node = stack.pollLast();
-            if (node == null)
-                break;
-            dot.append('n').append(node.getId()).append(" [label=\"").append(node.isAcceptNode() ? 'O' : ' ').append('\"');
-            if (withNodeIds) {
-                dot.append(", xlabel=\"");
-                if (node.getId() == 0)
-                    dot.append("START");
-                else
-                    dot.append(node.getId());
-                dot.append('\"');
-            }
-            dot.append("];\n");
-            for (Map.Entry<Character, MDAGNode> e : node.getOutgoingTransitions().entrySet()) {
-                MDAGNode nextNode = e.getValue();
-                dot.append('n').append(node.getId()).append(" -> n").append(nextNode.getId()).append(" [label=\"").append(e.getKey()).append("\"];\n");
-                if (!visited.get(nextNode.getId())) {
-                    stack.addLast(nextNode);
-                    visited.set(nextNode.getId());
-                }
-            }
-        }
-        dot.append('}');
-        return dot.toString();
-    }
-
-    public void saveAsImage(boolean withNodeIds) throws IOException {
-        String graphViz = toGraphViz(withNodeIds);
-        Path dotFile = Files.createTempFile("dawg", ".dot");
-        Files.write(dotFile, graphViz.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
-        Path dir = Paths.get(imagesPath);
-        if (!Files.exists(dir))
-            dir = Files.createDirectory(dir);
-        Path imageFile = Files.createTempFile(dir, "dawg" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssn")), ".png");
-        ProcessBuilder pb = new ProcessBuilder(dotExecutablePath, "-Tpng", dotFile.toFile().getAbsolutePath(), "-o", imageFile.toFile().getAbsolutePath());
-        try {
-            pb.start().waitFor();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } finally {
-            Files.deleteIfExists(dotFile);
-        }
     }
 }

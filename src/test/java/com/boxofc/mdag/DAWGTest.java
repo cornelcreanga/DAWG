@@ -42,8 +42,8 @@ import org.junit.Test;
  */
 public class DAWGTest {
     private static ArrayList<String> wordArrayList;
-    private static MDAG dawg1;
-    private static MDAG dawg2;
+    private static ModifiableDAWGSet dawg1;
+    private static CompressedDAWGSet dawg2;
     
     @BeforeClass
     public static void initClass() throws IOException {
@@ -54,12 +54,11 @@ public class DAWGTest {
             while ((currentWord = breader.readLine()) != null)
                 wordArrayList.add(currentWord);
         }
-        dawg1 = new MDAG(wordArrayList);
+        dawg1 = new ModifiableDAWGSet(wordArrayList);
         
         ArrayList<String> wordArrayList2 = new ArrayList<>(wordArrayList);
         Collections.shuffle(wordArrayList2);
-        dawg2 = new MDAG(wordArrayList2);
-        dawg2.simplify();
+        dawg2 = dawg1.compress();
     }
     
     
@@ -118,10 +117,10 @@ public class DAWGTest {
             Collections.shuffle(wordArrayList2);
             int wordIndex = (int)(Math.random() * wordArrayListSize);
 
-            MDAG testDAWG = new MDAG(wordArrayList2);
+            ModifiableDAWGSet testDAWG = new ModifiableDAWGSet(wordArrayList2);
             String toBeRemovedWord = wordArrayList2.remove(wordIndex);
             testDAWG.remove(toBeRemovedWord);
-            MDAG controlTestDAWG = new MDAG(wordArrayList2);
+            ModifiableDAWGSet controlTestDAWG = new ModifiableDAWGSet(wordArrayList2);
 
             assertEquals("Removed word: " + toBeRemovedWord, wordArrayList.size() - 1, testDAWG.size());
             assertEquals("Removed word: " + toBeRemovedWord, controlTestDAWG.size(), testDAWG.size());
@@ -163,7 +162,7 @@ public class DAWGTest {
             
             int intervalBegin = interval[0];
             int onePastIntervalEnd = interval[1];
-            MDAG testDAWG = new MDAG(wordArrayList2);
+            ModifiableDAWGSet testDAWG = new ModifiableDAWGSet(wordArrayList2);
 
             int intervalSize = onePastIntervalEnd - intervalBegin;
             for (int i = 0; i < intervalSize; i++)
@@ -172,7 +171,7 @@ public class DAWGTest {
             for (int i = 0; i < intervalSize; i++)
                 wordArrayList2.remove(intervalBegin);
 
-            MDAG controlTestDAWG = new MDAG(wordArrayList2);
+            ModifiableDAWGSet controlTestDAWG = new ModifiableDAWGSet(wordArrayList2);
 
             assertEquals(wordArrayList.size() - intervalSize, testDAWG.size());
             assertEquals(controlTestDAWG.size(), testDAWG.size());
@@ -189,7 +188,6 @@ public class DAWGTest {
         assertTrue(wordNavigableSet1.containsAll(wordArrayList));
         assertTrue(wordNavigableSet2.containsAll(wordArrayList));
     }
-    
     
     @Test
     public void containsTest() {

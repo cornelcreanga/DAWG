@@ -40,7 +40,7 @@ public class DAWGSimpleTest {
         String words[] = {
             "a", "xes", "xe", "xs"
         };
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.addAll(words);
         Arrays.sort(words);
 
@@ -102,7 +102,7 @@ public class DAWGSimpleTest {
         };
         Set<String> expected = new HashSet<>(Arrays.asList(words));
         for ( String w[] : Permutations.from(words)) {
-            MDAG dawg = new MDAG();
+            ModifiableDAWGSet dawg = new ModifiableDAWGSet();
             dawg.addAll(w);
             int i = 0;
             for (String s : dawg)
@@ -139,7 +139,7 @@ public class DAWGSimpleTest {
             if (!word.isEmpty())
                 expectedRemoveBlank.add(word);
         for ( String w[] : Permutations.from(words)) {
-            MDAG dawg = new MDAG();
+            ModifiableDAWGSet dawg = new ModifiableDAWGSet();
             dawg.addAll(w);
             int i = 0;
             for (String s : dawg)
@@ -166,7 +166,7 @@ public class DAWGSimpleTest {
                 actual.add(word);
             assertEquals(expectedRemoveOne, actual);
             
-            dawg = new MDAG();
+            dawg = new ModifiableDAWGSet();
             dawg.addAll(w);
             dawg.remove("");
             
@@ -187,7 +187,7 @@ public class DAWGSimpleTest {
 
     @Test
     public void add() throws IOException {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         String words[] = {
             "aient", "ais", "ait", "ai", "ant",
             "assent", "asses", "asse", "assiez", "assions", "as", "a",
@@ -230,21 +230,21 @@ public class DAWGSimpleTest {
 
     @Test(expected = NoSuchElementException.class)
     public void empty() {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         assertFalse(dawg.iterator().hasNext());
         dawg.iterator().next();
     }
 
     @Test(expected = NoSuchElementException.class)
     public void emptySuffix() {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         assertFalse(dawg.getStringsEndingWith("").iterator().hasNext());
         dawg.getStringsEndingWith("").iterator().next();
     }
 
     @Test(expected = NoSuchElementException.class)
     public void emptyCollection() {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.addAll();
         assertFalse(dawg.getStringsEndingWith("").iterator().hasNext());
         dawg.getStringsEndingWith("").iterator().next();
@@ -252,7 +252,7 @@ public class DAWGSimpleTest {
 
     @Test
     public void file() throws IOException {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         // Source: http://www.mieliestronk.com/wordlist.html
         try (FileInputStream fis = new FileInputStream("corncob_lowercase.txt")) {
             dawg.addAll(fis);
@@ -270,7 +270,7 @@ public class DAWGSimpleTest {
 
     @Test
     public void blankCollection() {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.addAll("");
 
         Iterator<String> iterator = dawg.iterator();
@@ -286,7 +286,7 @@ public class DAWGSimpleTest {
 
     @Test
     public void blank() throws IOException {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.add("");
 
         Iterator<String> iterator = dawg.iterator();
@@ -307,7 +307,7 @@ public class DAWGSimpleTest {
 
     @Test
     public void shortWord() {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.add("a");
 
         Iterator<String> iterator = dawg.iterator();
@@ -341,7 +341,7 @@ public class DAWGSimpleTest {
 
     @Test
     public void zero() {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.add("\0");
 
         Iterator<String> iterator = dawg.iterator();
@@ -370,7 +370,7 @@ public class DAWGSimpleTest {
 
     @Test
     public void wordWithBlank() {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.add("");
         dawg.add("add");
 
@@ -404,7 +404,7 @@ public class DAWGSimpleTest {
 
     @Test
     public void shortWordWithBlank() {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.add("");
         dawg.add("a");
 
@@ -437,7 +437,7 @@ public class DAWGSimpleTest {
 
     @Test
     public void zeroWithBlank() {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.add("");
         dawg.add("\0");
 
@@ -470,7 +470,7 @@ public class DAWGSimpleTest {
 
     @Test
     public void similarBeginningAndEnd() {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.add("tet");
         dawg.add("tetatet");
 
@@ -526,7 +526,7 @@ public class DAWGSimpleTest {
 
     @Test
     public void oneWordPartOfAnother() {
-        MDAG dawg = new MDAG();
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.add("tet");
         dawg.add("tetra");
 
