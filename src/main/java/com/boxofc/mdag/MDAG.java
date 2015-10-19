@@ -353,7 +353,14 @@ public class MDAG implements Iterable<String> {
             if (strEndNode == null)
                 return false;
 
-            if (!strEndNode.hasOutgoingTransitions()) {
+            if (str.isEmpty() || strEndNode.hasOutgoingTransitions()) {
+                boolean result = strEndNode.setAcceptStateStatus(false);
+                if (!str.isEmpty())
+                    replaceOrRegister(sourceNode, str);
+                if (result)
+                    size--;
+                return result;
+            } else {
                 int soleInternalTransitionPathLength = calculateSoleTransitionPathLength(str);
                 int internalTransitionPathLength = str.length() - 1;
 
@@ -371,13 +378,6 @@ public class MDAG implements Iterable<String> {
                 }
                 size--;
                 return true;
-            } else {
-                boolean result = strEndNode.setAcceptStateStatus(false);
-                if (!str.isEmpty())
-                    replaceOrRegister(sourceNode, str);
-                if (result)
-                    size--;
-                return result;
             }
         } else
             throw new UnsupportedOperationException("MDAG is simplified. Unable to remove any Strings.");

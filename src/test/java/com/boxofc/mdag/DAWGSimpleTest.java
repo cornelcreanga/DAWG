@@ -332,6 +332,11 @@ public class DAWGSimpleTest {
 
         assertFalse(dawg.getStringsStartingWith("b").iterator().hasNext());
         assertFalse(dawg.getStringsEndingWith("b").iterator().hasNext());
+        
+        dawg.remove("a");
+
+        assertFalse(dawg.iterator().hasNext());
+        assertFalse(dawg.getStringsEndingWith("").iterator().hasNext());
     }
 
     @Test
@@ -429,155 +434,155 @@ public class DAWGSimpleTest {
         assertFalse(dawg.getStringsStartingWith("b").iterator().hasNext());
         assertFalse(dawg.getStringsEndingWith("b").iterator().hasNext());
     }
-/*
+
     @Test
     public void zeroWithBlank() {
-      DAWG dawg = new DAWG();
-      dawg.add( "" );
-      dawg.add( "\0" );
+        MDAG dawg = new MDAG();
+        dawg.add("");
+        dawg.add("\0");
 
-      Iterator< String > iterator = dawg.iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "", iterator.next() );
-      assertTrue( iterator.hasNext() );
-      assertEquals( "\0", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        Iterator<String> iterator = dawg.iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("\0", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      Set< String > expected = new HashSet<>( Arrays.asList( "", "\0" ) );
-      Set< String > actual = new HashSet<>();
-      for ( String word : dawg.getWordsEndingWith( "" ) )
-        actual.add( word );
-      assertEquals( expected, actual );
+        Set<String> expected = new HashSet<>(Arrays.asList("", "\0"));
+        Set<String> actual = new HashSet<>();
+        for (String word : dawg.getStringsEndingWith(""))
+            actual.add(word);
+        assertEquals(expected, actual);
 
-      iterator = dawg.getWordsStartingWith( "\0" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "\0", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsStartingWith("\0").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("\0", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      iterator = dawg.getWordsEndingWith( "\0" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "\0", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsEndingWith("\0").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("\0", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      assertFalse( dawg.getWordsStartingWith( "b" ).iterator().hasNext() );
-      assertFalse( dawg.getWordsEndingWith( "b" ).iterator().hasNext() );
+        assertFalse(dawg.getStringsStartingWith("b").iterator().hasNext());
+        assertFalse(dawg.getStringsEndingWith("b").iterator().hasNext());
     }
 
     @Test
     public void similarBeginningAndEnd() {
-      DAWG dawg = new DAWG();
-      dawg.add( "tet" );
-      dawg.add( "tetatet" );
+        MDAG dawg = new MDAG();
+        dawg.add("tet");
+        dawg.add("tetatet");
 
-      Iterator< String > iterator = dawg.iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tet", iterator.next() );
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tetatet", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        Iterator<String> iterator = dawg.iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("tet", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("tetatet", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      Set< String > expected = new HashSet<>( Arrays.asList( "tet", "tetatet" ) );
-      Set< String > actual = new HashSet<>();
-      for ( String word : dawg.getWordsEndingWith( "" ) )
-        actual.add( word );
-      assertEquals( expected, actual );
+        Set<String> expected = new HashSet<>(Arrays.asList("tet", "tetatet"));
+        Set<String> actual = new HashSet<>();
+        for (String word : dawg.getStringsEndingWith(""))
+            actual.add(word);
+        assertEquals(expected, actual);
 
-      iterator = dawg.getWordsStartingWith( "tet" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tet", iterator.next() );
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tetatet", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsStartingWith("tet").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("tet", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("tetatet", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      expected = new HashSet<>( Arrays.asList( "tet", "tetatet" ) );
-      actual = new HashSet<>();
-      for ( String word : dawg.getWordsEndingWith( "tet" ) )
-        actual.add( word );
-      assertEquals( expected, actual );
+        expected = new HashSet<>(Arrays.asList("tet", "tetatet"));
+        actual = new HashSet<>();
+        for (String word : dawg.getStringsEndingWith("tet"))
+            actual.add(word);
+        assertEquals(expected, actual);
 
-      iterator = dawg.getWordsStartingWith( "teta" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tetatet", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsStartingWith("teta").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("tetatet", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      iterator = dawg.getWordsEndingWith( "atet" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tetatet", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsEndingWith("atet").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("tetatet", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      iterator = dawg.getWordsStartingWith( "tetatet" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tetatet", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsStartingWith("tetatet").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("tetatet", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      iterator = dawg.getWordsEndingWith( "tetatet" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tetatet", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsEndingWith("tetatet").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("tetatet", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      assertFalse( dawg.getWordsStartingWith( "b" ).iterator().hasNext() );
-      assertFalse( dawg.getWordsEndingWith( "b" ).iterator().hasNext() );
+        assertFalse(dawg.getStringsStartingWith("b").iterator().hasNext());
+        assertFalse(dawg.getStringsEndingWith("b").iterator().hasNext());
     }
 
     @Test
     public void oneWordPartOfAnother() {
-      DAWG dawg = new DAWG();
-      dawg.add( "tet" );
-      dawg.add( "tetra" );
+        MDAG dawg = new MDAG();
+        dawg.add("tet");
+        dawg.add("tetra");
 
-      Iterator< String > iterator = dawg.iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tet", iterator.next() );
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tetra", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        Iterator<String> iterator = dawg.iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("tet", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("tetra", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      Set< String > expected = new HashSet<>( Arrays.asList( "tet", "tetra" ) );
-      Set< String > actual = new HashSet<>();
-      for ( String word : dawg.getWordsEndingWith( "" ) )
-        actual.add( word );
-      assertEquals( expected, actual );
+        Set<String> expected = new HashSet<>(Arrays.asList("tet", "tetra"));
+        Set<String> actual = new HashSet<>();
+        for (String word : dawg.getStringsEndingWith(""))
+            actual.add(word);
+        assertEquals(expected, actual);
 
-      iterator = dawg.getWordsStartingWith( "tet" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tet", iterator.next() );
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tetra", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsStartingWith("tet").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("tet", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("tetra", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      expected = new HashSet<>( Arrays.asList( "tet" ) );
-      actual = new HashSet<>();
-      for ( String word : dawg.getWordsEndingWith( "tet" ) )
-        actual.add( word );
-      assertEquals( expected, actual );
+        expected = new HashSet<>(Arrays.asList("tet"));
+        actual = new HashSet<>();
+        for (String word : dawg.getStringsEndingWith("tet"))
+            actual.add(word);
+        assertEquals(expected, actual);
 
-      expected = new HashSet<>( Arrays.asList( "tet" ) );
-      actual = new HashSet<>();
-      for ( String word : dawg.getWordsEndingWith( "t" ) )
-        actual.add( word );
-      assertEquals( expected, actual );
+        expected = new HashSet<>(Arrays.asList("tet"));
+        actual = new HashSet<>();
+        for (String word : dawg.getStringsEndingWith("t"))
+            actual.add(word);
+        assertEquals(expected, actual);
 
-      iterator = dawg.getWordsStartingWith( "tetr" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tetra", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsStartingWith("tetr").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("tetra", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      iterator = dawg.getWordsEndingWith( "etra" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tetra", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsEndingWith("etra").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("tetra", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      iterator = dawg.getWordsStartingWith( "tetra" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tetra", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsStartingWith("tetra").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("tetra", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      iterator = dawg.getWordsEndingWith( "tetra" ).iterator();
-      assertTrue( iterator.hasNext() );
-      assertEquals( "tetra", iterator.next() );
-      assertFalse( iterator.hasNext() );
+        iterator = dawg.getStringsEndingWith("tetra").iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("tetra", iterator.next());
+        assertFalse(iterator.hasNext());
 
-      assertFalse( dawg.getWordsStartingWith( "b" ).iterator().hasNext() );
-      assertFalse( dawg.getWordsEndingWith( "b" ).iterator().hasNext() );
-    }*/
+        assertFalse(dawg.getStringsStartingWith("b").iterator().hasNext());
+        assertFalse(dawg.getStringsEndingWith("b").iterator().hasNext());
+    }
 }
