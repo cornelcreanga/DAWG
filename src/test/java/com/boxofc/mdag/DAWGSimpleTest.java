@@ -36,7 +36,7 @@ import org.junit.Test;
 
 public class DAWGSimpleTest {
     @Test
-    public void addSimple() throws IOException {
+    public void addSimple() {
         String words[] = {
             "a", "xes", "xe", "xs"
         };
@@ -131,7 +131,7 @@ public class DAWGSimpleTest {
     }
   
     @Test
-    public void addCasual() throws IOException {
+    public void addCasual() {
         String words[] = {
             "assiez",
             "assions",
@@ -169,7 +169,7 @@ public class DAWGSimpleTest {
     }
   
     @Test
-    public void addCasualWithBlank() throws IOException {
+    public void addCasualWithBlank() {
         String words[] = {
             "",
             "assiez",
@@ -277,7 +277,7 @@ public class DAWGSimpleTest {
     }
 
     @Test
-    public void add() throws IOException {
+    public void add() {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         String words[] = {
             "aient", "ais", "ait", "ai", "ant",
@@ -445,7 +445,7 @@ public class DAWGSimpleTest {
     }
 
     @Test
-    public void blank() throws IOException {
+    public void blank() {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.add("");
         CompressedDAWGSet cdawg = dawg.compress();
