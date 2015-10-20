@@ -24,9 +24,12 @@ package com.boxofc.mdag;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import static org.junit.Assert.assertEquals;
@@ -190,7 +193,7 @@ public class DAWGSimpleTest {
         for (String word : words)
             if (!word.isEmpty())
                 expectedRemoveBlank.add(word);
-        for ( String w[] : Permutations.from(words)) {
+        for (String w[] : Permutations.from(words)) {
             ModifiableDAWGSet dawg = new ModifiableDAWGSet();
             dawg.addAll(w);
             CompressedDAWGSet cdawg = dawg.compress();
@@ -198,6 +201,12 @@ public class DAWGSimpleTest {
             for (String s : dawg)
                 assertEquals(words[i++], s);
             assertEquals(words.length, i);
+            
+            List<String> list = new ArrayList<>();
+            for (String s : dawg.getStrings("", true, null, false, null, false))
+                list.add(s);
+            Collections.reverse(list);
+            assertEquals(Arrays.asList(words), list);
             
             i = 0;
             for (String s : cdawg)

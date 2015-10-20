@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -202,15 +204,31 @@ public class DAWGFileTest {
     @Test
     public void getAllWordsWithPrefixTest() {
         for (String prefixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            Set<String> controlSet = new HashSet<>();
+            List<String> controlSet = new ArrayList<>();
 
             for (String str : wordArrayList) {
                 if (str.startsWith(prefixStr))
                     controlSet.add(str);
             }
+            
+            List<String> expectedSet = new ArrayList<>();
+            for (String word : dawg1.getStringsStartingWith(prefixStr))
+                expectedSet.add(word);
 
-            assertEquals(controlSet, dawg1.getStringsStartingWith(prefixStr));
-            assertEquals(controlSet, dawg2.getStringsStartingWith(prefixStr));
+            assertEquals(controlSet, expectedSet);
+            
+            expectedSet = new ArrayList<>();
+            for (String word : dawg1.getStrings(prefixStr, true, null, false, null, false))
+                expectedSet.add(word);
+            Collections.reverse(expectedSet);
+
+            assertEquals(controlSet, expectedSet);
+            
+            expectedSet = new ArrayList<>();
+            for (String word : dawg2.getStringsStartingWith(prefixStr))
+                expectedSet.add(word);
+            
+            assertEquals(controlSet, expectedSet);
         }
     }
     

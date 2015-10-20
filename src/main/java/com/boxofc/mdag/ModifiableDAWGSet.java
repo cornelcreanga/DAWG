@@ -29,12 +29,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.Stack;
@@ -66,6 +68,9 @@ public class ModifiableDAWGSet extends DAWGSet {
     
     //Total number of words contained in this ModifiableDAWGSet.
     private int size;
+    
+    //Maximal length of all words added to this DAWG. Does not decrease on removing.
+    private int maxLength;
     
     /**
      * Creates an MDAG from a collection of Strings.
@@ -541,6 +546,8 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @return true if and only if ModifiableDAWGSet has changed as a result of this call
      */
     private boolean addStringInternal(String str) {
+        if (maxLength < str.length())
+            maxLength = str.length();
         String prefixString = determineLongestPrefixInMDAG(str);
         String suffixString = str.substring(prefixString.length());
 
@@ -685,16 +692,95 @@ public class ModifiableDAWGSet extends DAWGSet {
      */
     @Override
     public Iterable<String> getStringsStartingWith(String prefixStr) {
-        NavigableSet<String> strNavigableSet = new TreeSet<>();
-        ModifiableDAWGNode originNode = sourceNode.transition(prefixStr);  //attempt to transition down the path denoted by prefixStr
-
+        return getStrings(prefixStr, false, null, false, null, false);
+    }
+    
+    Iterable<String> getStrings(String prefixStr, boolean descending, String fromStr, boolean inclFrom, String toStr, boolean inclTo) {
+        char buffer[] = new char[maxLength];
+        Deque<Character> charsStack = new LinkedList<>();
+        Deque<Integer> levelsStack = new LinkedList<>();
+        Deque<ModifiableDAWGNode> stack = new LinkedList<>();
+        //attempt to transition down the path denoted by prefixStr
+        ModifiableDAWGNode originNode = sourceNode.transition(prefixStr);
+        if (originNode != null && fromStr != null) {
+            // If fromStr > toStr then return an empty set.
+            if (toStr != null) {
+                int cmp = fromStr.compareTo(toStr);
+                if (cmp > 0 || cmp == 0 && (!inclFrom || !inclTo))
+                    // Here and further in this method it means to return an empty set.
+                    originNode = null;
+            }
+            if (originNode != null) {
+                int cmp = fromStr.compareTo(prefixStr);
+                // No need to limit the range if our prefix definitely lies in this range.
+                if (cmp < 0 || cmp == 0 && inclFrom)
+                    fromStr = null;
+                // Our prefix is out of range.
+                else if (cmp > 0 && !fromStr.startsWith(prefixStr))
+                    originNode = null;
+            }
+        }
+        if (originNode != null && toStr != null) {
+            int cmp = toStr.compareTo(prefixStr);
+            // Our prefix is out of range.
+            if (cmp < 0 || cmp == 0 && !inclTo)
+                originNode = null;
+            // No need to limit the range if our prefix definitely lies in this range.
+            else if (cmp > 0 && !toStr.startsWith(prefixStr))
+                toStr = null;
+        }
         //if there a transition path corresponding to prefixString (one or more stored Strings begin with prefixString)
         if (originNode != null) {
-            if (originNode.isAcceptNode())
-                strNavigableSet.add(prefixStr);
-            getStrings(strNavigableSet, SearchCondition.NO_SEARCH_CONDITION, prefixStr, prefixStr, originNode.getOutgoingTransitions(), false);   //retrieve all Strings that extend the transition path denoted by prefixStr
+            System.arraycopy(prefixStr.toCharArray(), 0, buffer, 0, prefixStr.length());
+            stack.add(originNode);
+            levelsStack.add(prefixStr.length() - 1);
         }
-        return strNavigableSet;
+        return new Iterable<String>() {
+            @Override
+            public Iterator<String> iterator() {
+                return new LookaheadIterator<String>() {
+                    @Override
+                    public String nextElement() throws NoSuchElementException {
+                        while (true) {
+                            ModifiableDAWGNode node = stack.pollLast();
+                            if (node == null)
+                                throw new NoSuchElementException();
+                            int level = levelsStack.pollLast();
+                            if (level >= prefixStr.length()) {
+                                char c = charsStack.pollLast();
+                                buffer[level] = c;
+                            }
+                            boolean retString = false;
+                            NavigableMap<Character, ModifiableDAWGNode> childrenMap = node.getOutgoingTransitions();
+                            if (node.isAcceptNode()) {
+                                // Natural ordering: return short string immediately then process all strings starting with it.
+                                // Descending ordering: add an artificial node to stack (without children) to process current (short)
+                                // string after all strings starting with it.
+                                if (!descending || childrenMap.isEmpty())
+                                    retString = true;
+                                else {
+                                    stack.add(new ModifiableDAWGNode(true, node.getId()));
+                                    levelsStack.add(level);
+                                    charsStack.add(level >= prefixStr.length() ? buffer[level] : '\0');
+                                }
+                            }
+                            level++;
+                            // This is not a typo. When we need natural ordering, we have to add nodes to stack in reverse order.
+                            // Then the first letter in alphabetic order would be the last in the stack and would be processed first.
+                            if (!descending)
+                                childrenMap = childrenMap.descendingMap();
+                            for (Entry<Character, ModifiableDAWGNode> e : childrenMap.entrySet()) {
+                                stack.add(e.getValue());
+                                levelsStack.add(level);
+                                charsStack.add(e.getKey());
+                            }
+                            if (retString)
+                                return String.valueOf(buffer, 0, level);
+                        }
+                    }
+                };
+            }
+        };
     }
     
     /**
