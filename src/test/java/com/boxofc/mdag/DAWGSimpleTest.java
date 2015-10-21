@@ -284,6 +284,62 @@ public class DAWGSimpleTest {
             assertEquals(expectedRemoveBlank, actual);
         }
     }
+    
+    @Test
+    public void getStrings() {
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
+        String words[] = {
+            "aa", "aaa", "aaa", "aab",
+            "baaaa", "baba", "babb", "babbc",
+            "bac", "baca", "bacb", "bacba",
+            "bada", "badb", "badbc", "badd",
+            "bb", "bcd", "cac", "cc"
+        };
+        dawg.addAll(words);
+        
+        List<String> expected;
+        List<String> actual;
+        
+        expected = Arrays.asList("bac", "baca", "bacb", "bacba");
+        for (int desc = 0; desc < 2; desc++) {
+            if (desc == 1)
+                Collections.reverse(expected);
+            actual = new ArrayList<>();
+            for (String word : dawg.getStrings("ba", desc == 1, "bac", true, "bad", true))
+                actual.add(word);
+            assertEquals(expected, actual);
+        }
+        
+        expected = Arrays.asList("bac", "baca", "bacb", "bacba", "bada", "badb");
+        for (int desc = 0; desc < 2; desc++) {
+            if (desc == 1)
+                Collections.reverse(expected);
+            actual = new ArrayList<>();
+            for (String word : dawg.getStrings("ba", desc == 1, "bac", true, "badb", true))
+                actual.add(word);
+            assertEquals(expected, actual);
+        }
+        
+        expected = Arrays.asList("bacb", "bacba", "bada", "badb", "badbc", "badd");
+        for (int desc = 0; desc < 2; desc++) {
+            if (desc == 1)
+                Collections.reverse(expected);
+            actual = new ArrayList<>();
+            for (String word : dawg.getStrings("ba", desc == 1, "bacb", true, "badd", true))
+                actual.add(word);
+            assertEquals(expected, actual);
+        }
+        
+        expected = Arrays.asList("bac", "baca", "bacb", "bacba", "bada", "badb", "badbc");
+        for (int desc = 0; desc < 2; desc++) {
+            if (desc == 1)
+                Collections.reverse(expected);
+            actual = new ArrayList<>();
+            for (String word : dawg.getStrings("ba", desc == 1, "bac", true, "badc", true))
+                actual.add(word);
+            assertEquals(expected, actual);
+        }
+    }
 
     @Test
     public void add() {

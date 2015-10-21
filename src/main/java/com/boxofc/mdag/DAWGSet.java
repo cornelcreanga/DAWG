@@ -169,8 +169,9 @@ public abstract class DAWGSet implements Iterable<String> {
          
             switch (this) {
                 case SUBSTRING_SEARCH_CONDITION:
-                    satisfiesSearchCondition = str1.contains(str2);
-                    break;
+                    // When we find a string ending with a given pattern,
+                    // we accept all strings starting with the found one.
+                    // So, all these strings would contain a pattern as substring.
                 case SUFFIX_SEARCH_CONDITION:
                     satisfiesSearchCondition = str1.endsWith(str2);
                     break;
