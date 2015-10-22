@@ -218,7 +218,7 @@ public class DAWGFileTest {
             assertEquals(controlSet, expectedSet);
             
             expectedSet = new ArrayList<>();
-            for (String word : dawg1.getStrings(prefixStr, true, null, false, null, false))
+            for (String word : dawg1.getStrings(prefixStr, null, true, null, false, null, false))
                 expectedSet.add(word);
             Collections.reverse(expectedSet);
 
@@ -235,30 +235,42 @@ public class DAWGFileTest {
     @Test
     public void getStringsWithSubstringTest() {
         for (String substringStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            Set<String> controlSet = new HashSet<>();
-
+            List<String> controlSet = new ArrayList<>();
             for (String str : wordArrayList) {
                 if (str.contains(substringStr))
                     controlSet.add(str);
             }
-
-            assertEquals(controlSet, dawg1.getStringsWithSubstring(substringStr));
-            assertEquals(controlSet, dawg2.getStringsWithSubstring(substringStr));
+            
+            List<String> actual = new ArrayList<>();
+            for (String s : dawg1.getStringsWithSubstring(substringStr))
+                actual.add(s);
+            assertEquals(controlSet, actual);
+            
+            actual = new ArrayList<>();
+            for (String s : dawg2.getStringsWithSubstring(substringStr))
+                actual.add(s);
+            assertEquals(controlSet, actual);
         }
     }
     
     @Test
     public void getStringsEndingWithTest() {
         for (String suffixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            Set<String> controlSet = new HashSet<>();
-
+            List<String> controlSet = new ArrayList<>();
             for (String str : wordArrayList) {
                 if (str.endsWith(suffixStr))
                     controlSet.add(str);
             }
 
-            assertEquals(controlSet, dawg1.getStringsEndingWith(suffixStr));
-            assertEquals(controlSet, dawg2.getStringsEndingWith(suffixStr));
+            List<String> actual = new ArrayList<>();
+            for (String s : dawg1.getStringsEndingWith(suffixStr))
+                actual.add(s);
+            assertEquals(controlSet, actual);
+            
+            actual = new ArrayList<>();
+            for (String s : dawg2.getStringsEndingWith(suffixStr))
+                actual.add(s);
+            assertEquals(controlSet, actual);
         }
     }
 }

@@ -618,6 +618,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     public CompressedDAWGSet compress() {
         CompressedDAWGSet compressed = new CompressedDAWGSet();
         compressed.size = size;
+        compressed.maxLength = maxLength;
         compressed.mdagDataArray = new CompressedDAWGNode[transitionCount];
         createSimpleMDAGTransitionSet(sourceNode, compressed.mdagDataArray, 0);
         compressed.sourceNode = new CompressedDAWGNode('\0', sourceNode.isAcceptNode(), sourceNode.getOutgoingTransitionCount());
@@ -683,258 +684,15 @@ public class ModifiableDAWGSet extends DAWGSet {
                 strNavigableSet.add(newPrefixString);
         }
     }
-    
-    /**
-     * Retrieves all the Strings in the ModifiableDAWGSet that begin with a given String.
-     
-     * @param prefixStr     a String that is the prefix for all the desired Strings
-     * @return              a NavigableSet containing all the Strings present in the ModifiableDAWGSet that begin with {@code prefixString}
-     */
+
     @Override
-    public Iterable<String> getStringsStartingWith(String prefixStr) {
-        return getStrings(prefixStr, false, null, false, null, false);
+    DAWGNode getNodeByPath(DAWGNode from, String path) {
+        return ((ModifiableDAWGNode)from).transition(path);
     }
-    
-    Iterable<String> getStrings(String prefixString, boolean descending, String fromString, boolean inclFrom, String toString, boolean inclTo) {
-        return new Iterable<String>() {
-            @Override
-            public Iterator<String> iterator() {
-                return new LookaheadIterator<String>() {
-                    private char buffer[];
-                    private Deque<Character> charsStack;
-                    private Deque<Integer> levelsStack;
-                    private Deque<Integer> flagsStack;
-                    private final Deque<ModifiableDAWGNode> stack = new LinkedList<>();
-                    private char from[];
-                    private char to[];
-                    private final String prefixStr = prefixString == null ? "" : prefixString;
-                    
-                    {
-                        String fromStr = fromString;
-                        String toStr = toString;
-                        //attempt to transition down the path denoted by prefixStr
-                        ModifiableDAWGNode originNode = sourceNode.transition(prefixStr);
-                        if (originNode != null && fromStr != null) {
-                            // If fromStr > toStr then return an empty set.
-                            if (toStr != null) {
-                                int cmp = fromStr.compareTo(toStr);
-                                if (cmp > 0 || cmp == 0 && (!inclFrom || !inclTo))
-                                    // Here and further in this method it means to return an empty set.
-                                    originNode = null;
-                            }
-                            if (originNode != null) {
-                                int cmp = fromStr.compareTo(prefixStr);
-                                // No need to limit the range if our prefix definitely lies in this range.
-                                if (cmp < 0 || cmp == 0 && inclFrom)
-                                    fromStr = null;
-                                // Our prefix is out of range.
-                                else if (cmp > 0 && !fromStr.startsWith(prefixStr))
-                                    originNode = null;
-                            }
-                        }
-                        if (originNode != null && toStr != null) {
-                            int cmp = toStr.compareTo(prefixStr);
-                            // Our prefix is out of range.
-                            if (cmp < 0 || cmp == 0 && !inclTo)
-                                originNode = null;
-                            // No need to limit the range if our prefix definitely lies in this range.
-                            else if (cmp > 0 && !toStr.startsWith(prefixStr))
-                                toStr = null;
-                        }
-                        //if there a transition path corresponding to prefixString (one or more stored Strings begin with prefixString)
-                        if (originNode != null) {
-                            buffer = new char[maxLength];
-                            System.arraycopy(prefixStr.toCharArray(), 0, buffer, 0, prefixStr.length());
-                            stack.add(originNode);
-                            levelsStack = new LinkedList<>();
-                            levelsStack.add(prefixStr.length() - 1);
-                            charsStack = new LinkedList<>();
-                            flagsStack = new LinkedList<>();
-                            flagsStack.add(encodeFlags(true, true, true));
-                            if (fromStr != null && !fromStr.isEmpty())
-                                from = fromStr.toCharArray();
-                            if (toStr != null)
-                                to = toStr.toCharArray();
-                        }
-                    }
-                    
-                    private int encodeFlags(boolean checkFrom, boolean checkTo, boolean checkSubstring) {
-                        return (checkFrom ? 1 : 0) |
-                               (checkTo ? 2 : 0) |
-                               (checkSubstring ? 4 : 0);
-                    }
-                    
-                    private void clearCaches() {
-                        stack.clear();
-                        charsStack.clear();
-                        levelsStack.clear();
-                        flagsStack.clear();
-                    }
-                    
-                    @Override
-                    public String nextElement() throws NoSuchElementException {
-                        while (true) {
-                            ModifiableDAWGNode node = stack.pollLast();
-                            if (node == null)
-                                throw new NoSuchElementException();
-                            int level = levelsStack.pollLast();
-                            if (level >= prefixStr.length()) {
-                                char c = charsStack.pollLast();
-                                buffer[level] = c;
-                            }
-                            int flags = flagsStack.pollLast();
-                            boolean checkFrom = (flags & 1) != 0;
-                            boolean checkTo = (flags & 2) != 0;
-                            boolean checkSubstring = (flags & 4) != 0;
-                            boolean skipCurrentString = false;
-                            boolean skipChildren = false;
-                            if (from != null && checkFrom) {
-                                // Here are two variants possible:
-                                // 1. from = prefix, inclFrom = false.
-                                // 2. from starts with prefix.
-                                // Other variants were checked in the constructor.
-                                if (level >= prefixStr.length()) {
-                                    // Current string starts with prefix.
-                                    // The first variant is impossible here
-                                    // because it will be rejected while checking current string = prefix.
-                                    int cmp;
-                                    boolean fromEqualsToCurrent = false;
-                                    if (from.length > level) {
-                                        cmp = from[level] - buffer[level];
-                                        // If we have reached the last letter then all the previous letters match.
-                                        // If the last letter of current string equals to the last letter of the lower bound
-                                        // then the behavior depends on inclFrom.
-                                        // Inclusive behavior is the same as if from < current string.
-                                        // Exclusive means that from > current string.
-                                        if (cmp == 0 && level + 1 == from.length) {
-                                            cmp = inclFrom ? -1 : 1;
-                                            fromEqualsToCurrent = true;
-                                        }
-                                    } else
-                                        cmp = -1;
-                                    if (cmp < 0) {
-                                        if (descending) {
-                                            if (!fromEqualsToCurrent)
-                                                checkFrom = false;
-                                        } else {
-                                            // All further strings match.
-                                            from = null;
-                                        }
-                                    } else if (cmp > 0) {
-                                        // All previously added strings are less than current one,
-                                        // so they don't suit filter condition.
-                                        if (descending)
-                                            clearCaches();
-                                        // Current string and all its children don't match.
-                                        continue;
-                                    } else
-                                        // Lower bound starts with current string,
-                                        // so current string < lower bound => doesn't match.
-                                        // But its children may match.
-                                        skipCurrentString = true;
-                                } else {
-                                    // Current string equals to prefix.
-                                    // Both variants make us skip current string.
-                                    skipCurrentString = true;
-                                    // from = prefix, inclFrom = false.
-                                    // All the rest strings should be accepted.
-                                    // No need to check further.
-                                    if (from.length == prefixStr.length())
-                                        from = null;
-                                }
-                            }
-                            NavigableMap<Character, ModifiableDAWGNode> childrenMap = node.getOutgoingTransitions();
-                            if (to != null && checkTo) {
-                                // Here are two variants possible:
-                                // 1. to = prefix, inclTo = true.
-                                // 2. to starts with prefix.
-                                // Other variants were checked in the constructor.
-                                if (level >= prefixStr.length()) {
-                                    // Current string starts with prefix.
-                                    // Also, to starts with prefix.
-                                    int cmp;
-                                    boolean toEqualsToCurrent = false;
-                                    if (to.length > level) {
-                                        cmp = to[level] - buffer[level];
-                                        if (cmp == 0 && level + 1 == to.length) {
-                                            cmp = inclTo ? 1 : -1;
-                                            toEqualsToCurrent = true;
-                                        }
-                                    } else
-                                        cmp = -1;
-                                    if (cmp > 0) {
-                                        if (descending) {
-                                            if (!toEqualsToCurrent || childrenMap.isEmpty())
-                                                // All further strings match.
-                                                to = null;
-                                        } else {
-                                            if (!toEqualsToCurrent)
-                                                checkTo = false;
-                                        }
-                                    } else if (cmp < 0) {
-                                        // All previously added strings are less than current one,
-                                        // so they don't suit filter condition.
-                                        if (!descending)
-                                            clearCaches();
-                                        // Current string and all its children don't match.
-                                        continue;
-                                    }
-                                } else {
-                                    // Current string equals to prefix.
-                                    if (to.length == prefixStr.length())
-                                        // Return only current string. No other strings match.
-                                        skipChildren = true;
-                                }
-                            }
-                            boolean retCurrentString = false;
-                            if (node.isAcceptNode() && !skipCurrentString) {
-                                // Natural ordering: return short string immediately then process all strings starting with it.
-                                // Descending ordering: add an artificial node to stack (without children) to process current (short)
-                                // string after all strings starting with it.
-                                if (!descending || childrenMap.isEmpty())
-                                    retCurrentString = true;
-                                else {
-                                    stack.add(new ModifiableDAWGNode(true, node.getId()));
-                                    levelsStack.add(level);
-                                    charsStack.add(level >= prefixStr.length() ? buffer[level] : '\0');
-                                    flagsStack.add(encodeFlags(checkFrom, checkTo, checkSubstring));
-                                }
-                            }
-                            level++;
-                            if (!skipChildren) {
-                                // This is not a typo. When we need natural ordering, we have to add nodes to stack in reverse order.
-                                // Then the first letter in alphabetic order would be the last in the stack and would be processed first.
-                                if (!descending)
-                                    childrenMap = childrenMap.descendingMap();
-                                for (Entry<Character, ModifiableDAWGNode> e : childrenMap.entrySet()) {
-                                    stack.add(e.getValue());
-                                    levelsStack.add(level);
-                                    charsStack.add(e.getKey());
-                                    flagsStack.add(encodeFlags(checkFrom, checkTo, checkSubstring));
-                                }
-                            }
-                            if (retCurrentString)
-                                return String.valueOf(buffer, 0, level);
-                        }
-                    }
-                };
-            }
-        };
-    }
-    
-    /**
-     * Retrieves all the Strings in the ModifiableDAWGSet that contain a given String.
-     
-     * @param str       a String that is contained in all the desired Strings
-     * @return          a NavigableSet containing all the Strings present in the ModifiableDAWGSet that begin with {@code prefixString}
-     */
+
     @Override
-    public Iterable<String> getStringsWithSubstring(String str) {
-        NavigableSet<String> strNavigableSet = new TreeSet<>();
-        if (str.isEmpty() && sourceNode.isAcceptNode())
-            strNavigableSet.add(str);
-        getStrings(strNavigableSet, SearchCondition.SUBSTRING_SEARCH_CONDITION, str, "", sourceNode.getOutgoingTransitions(), false);
-        return strNavigableSet;
+    int getMaxLength() {
+        return maxLength;
     }
     
     /**
@@ -1001,40 +759,62 @@ public class ModifiableDAWGSet extends DAWGSet {
     }
 
     @Override
-    Iterable<Entry<Character, DAWGNode>> getOutgoingTransitions(final DAWGNode parent) {
-        return new Iterable<Entry<Character, DAWGNode>>() {
-            @Override
-            public Iterator<Entry<Character, DAWGNode>> iterator() {
-                return new Iterator<Entry<Character, DAWGNode>>() {
-                    private final Iterator<Entry<Character, ModifiableDAWGNode>> it = ((ModifiableDAWGNode)parent).getOutgoingTransitions().entrySet().iterator();
+    SemiNavigableMap<Character, DAWGNode> getOutgoingTransitions(DAWGNode parent) {
+        return new TransitionsMap((ModifiableDAWGNode)parent, false);
+    }
+    
+    private static class TransitionsMap implements SemiNavigableMap<Character, DAWGNode> {
+        private final ModifiableDAWGNode parent;
+        private final NavigableMap<Character, ModifiableDAWGNode> outgoingTransitions;
+        private final boolean desc;
+        
+        public TransitionsMap(ModifiableDAWGNode parent, boolean desc) {
+            this.parent = parent;
+            outgoingTransitions = parent.getOutgoingTransitions();
+            this.desc = desc;
+        }
 
-                    @Override
-                    public boolean hasNext() {
-                        return it.hasNext();
-                    }
+        @Override
+        public Iterator<Entry<Character, DAWGNode>> iterator() {
+            return new Iterator<Entry<Character, DAWGNode>>() {
+                private final Iterator<Entry<Character, ModifiableDAWGNode>> it = (desc ? outgoingTransitions.descendingMap() : outgoingTransitions).entrySet().iterator();
 
-                    @Override
-                    public Entry<Character, DAWGNode> next() {
-                        Entry<Character, ModifiableDAWGNode> next = it.next();
-                        return new Entry<Character, DAWGNode>() {
-                            @Override
-                            public Character getKey() {
-                                return next.getKey();
-                            }
+                @Override
+                public boolean hasNext() {
+                    return it.hasNext();
+                }
 
-                            @Override
-                            public DAWGNode getValue() {
-                                return next.getValue();
-                            }
+                @Override
+                public Entry<Character, DAWGNode> next() {
+                    Entry<Character, ModifiableDAWGNode> next = it.next();
+                    return new Entry<Character, DAWGNode>() {
+                        @Override
+                        public Character getKey() {
+                            return next.getKey();
+                        }
 
-                            @Override
-                            public DAWGNode setValue(DAWGNode value) {
-                                return next.setValue((ModifiableDAWGNode)value);
-                            }
-                        };
-                    }
-                };
-            }
-        };
+                        @Override
+                        public DAWGNode getValue() {
+                            return next.getValue();
+                        }
+
+                        @Override
+                        public DAWGNode setValue(DAWGNode value) {
+                            return next.setValue((ModifiableDAWGNode)value);
+                        }
+                    };
+                }
+            };
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return outgoingTransitions.isEmpty();
+        }
+
+        @Override
+        public SemiNavigableMap<Character, DAWGNode> descendingMap() {
+            return new TransitionsMap(parent, !desc);
+        }
     }
 }

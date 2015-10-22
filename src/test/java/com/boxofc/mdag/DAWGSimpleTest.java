@@ -30,14 +30,19 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.NoSuchElementException;
+import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 public class DAWGSimpleTest {
+    private static final Random RANDOM = new Random(System.nanoTime());
+    
     @Test
     public void addSimple() {
         String words[] = {
@@ -203,7 +208,7 @@ public class DAWGSimpleTest {
             assertEquals(words.length, i);
             
             List<String> list = new ArrayList<>();
-            for (String s : dawg.getStrings("", true, null, false, null, false))
+            for (String s : dawg.getStrings("", "", true, null, false, null, false))
                 list.add(s);
             Collections.reverse(list);
             assertEquals(Arrays.asList(words), list);
@@ -305,7 +310,7 @@ public class DAWGSimpleTest {
             if (desc == 1)
                 Collections.reverse(expected);
             actual = new ArrayList<>();
-            for (String word : dawg.getStrings("ba", desc == 1, "bac", true, "bad", true))
+            for (String word : dawg.getStrings("ba", "", desc == 1, "bac", true, "bad", true))
                 actual.add(word);
             assertEquals(expected, actual);
         }
@@ -315,7 +320,7 @@ public class DAWGSimpleTest {
             if (desc == 1)
                 Collections.reverse(expected);
             actual = new ArrayList<>();
-            for (String word : dawg.getStrings("ba", desc == 1, "bac", true, "badb", true))
+            for (String word : dawg.getStrings("ba", "", desc == 1, "bac", true, "badb", true))
                 actual.add(word);
             assertEquals(expected, actual);
         }
@@ -325,7 +330,7 @@ public class DAWGSimpleTest {
             if (desc == 1)
                 Collections.reverse(expected);
             actual = new ArrayList<>();
-            for (String word : dawg.getStrings("ba", desc == 1, "bacb", true, "badd", true))
+            for (String word : dawg.getStrings("ba", "", desc == 1, "bacb", true, "badd", true))
                 actual.add(word);
             assertEquals(expected, actual);
         }
@@ -335,10 +340,123 @@ public class DAWGSimpleTest {
             if (desc == 1)
                 Collections.reverse(expected);
             actual = new ArrayList<>();
-            for (String word : dawg.getStrings("ba", desc == 1, "bac", true, "badc", true))
+            for (String word : dawg.getStrings("ba", "", desc == 1, "bac", true, "badc", true))
                 actual.add(word);
             assertEquals(expected, actual);
         }
+    }
+    
+    @Test
+    public void to() {
+        String words[] = {"", "b"};
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
+        dawg.addAll(words);
+        
+        List<String> expected = Collections.EMPTY_LIST;
+        List<String> actual = new ArrayList<>();
+        for (String word : dawg.getStrings("", "", false, "", false, "a", false))
+            actual.add(word);
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void range() {
+        String words[] = {"hddb", "hddd", "hddf", "hddh", "hdf", "hdfb", "hdfd", "hdff", "hdfh", "hdh", "hdhb", "hdhd", "hdhf", "hdhh", "hf", "hfb", "hfbb", "hfbd", "hfbf", "hfbh", "hfd", "hfdb", "hfdd", "hfdf", "hfdh", "hff", "hffb", "hffd", "hfff", "hffh", "hfh", "hfhb", "hfhd", "hfhf", "hfhh"};
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
+        dawg.addAll(words);
+        
+        List<String> expected = Arrays.asList(words);
+        List<String> actual = new ArrayList<>();
+        for (String word : dawg.getStrings("", "", false, "hdd", false, "hgecc", false))
+            actual.add(word);
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void rangeDesc() {
+        String words[] = {"bhhh", "bhhf", "bhhd", "bhhb", "bhh", "bhfh", "bhff", "bhfd", "bhfb", "bhf", "bhdh", "bhdf", "bhdd", "bhdb", "bhd", "bhbh", "bhbf", "bhbd", "bhbb", "bhb", "bh", "bfhh", "bfhf", "bfhd", "bfhb", "bfh", "bffh", "bfff", "bffd", "bffb", "bff", "bfdh", "bfdf", "bfdd", "bfdb"};
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
+        dawg.addAll(words);
+        
+        List<String> expected = Arrays.asList(words);
+        List<String> actual = new ArrayList<>();
+        for (String word : dawg.getStrings("", "", true, "bfd", false, "cdgd", false))
+            actual.add(word);
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void getStringsAll() {
+        for (int attempt = 0; attempt < 10; attempt++) {
+            NavigableSet<String> wordsSet = new TreeSet<>();
+            for (int i = 0; i < 625; i++)
+                if (attempt < 2 || RANDOM.nextBoolean() || RANDOM.nextBoolean())
+                    wordsSet.add(Integer.toString(i, 5).replace('1', 'b').replace('2', 'd').replace('3', 'f').replace('4', 'h').replace("0", ""));
+            if (RANDOM.nextBoolean())
+                wordsSet.add("");
+            String words[] = wordsSet.toArray(new String[wordsSet.size()]);
+            ModifiableDAWGSet dawg = new ModifiableDAWGSet(wordsSet);
+            CompressedDAWGSet cdawg = dawg.compress();
+            
+            NavigableSet<String> patternsSet = new TreeSet<>();
+            while (patternsSet.size() < 9) {
+                int i = RANDOM.nextInt(100000);
+                char s[] = String.valueOf(i).replace("0", "").toCharArray();
+                for (int j = 0; j < s.length; j++)
+                    s[j] = (char)(s[j] - '1' + 'a');
+                patternsSet.add(String.valueOf(s));
+            }
+            patternsSet.add("");
+            for (int i = 0; i < 4; i++)
+                patternsSet.add(words[RANDOM.nextInt(words.length)]);
+            String patterns[] = patternsSet.toArray(new String[patternsSet.size()]);
+            
+            for (String prefix : patterns) {
+                for (String substring : patterns) {
+                    for (String from : patterns) {
+                        for (String to : patterns) {
+                            for (int inclFrom = 0; inclFrom < 2; inclFrom++) {
+                                boolean inclF = inclFrom == 1;
+                                for (int inclTo = 0; inclTo < 2; inclTo++) {
+                                    boolean inclT = inclTo == 1;
+                                    for (int desc = 0; desc < 2; desc++) {
+                                        boolean descending = desc == 1;
+                                        List<String> actual = new ArrayList<>();
+                                        for (String s : dawg.getStrings(prefix, substring, descending, from, inclF, to, inclT))
+                                            actual.add(s);
+                                        List<String> expected = getStrings(words, prefix, substring, descending, from, inclF, to, inclT);
+                                        assertEquals("Prefix: " + prefix + ", substring: " + substring + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"), expected, actual);
+                                        
+                                        actual = new ArrayList<>();
+                                        for (String s : cdawg.getStrings(prefix, substring, descending, from, inclF, to, inclT))
+                                            actual.add(s);
+                                        assertEquals("Prefix: " + prefix + ", substring: " + substring + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"), expected, actual);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private static List<String> getStrings(String words[], String prefix, String substring, boolean desc, String from, boolean inclFrom, String to, boolean inclTo) {
+        List<String> ret = new ArrayList<>();
+        for (String word : words) {
+            if (!word.startsWith(prefix) || !word.contains(substring))
+                continue;
+            int cmp = word.compareTo(from);
+            if (cmp < 0 || cmp == 0 && !inclFrom)
+                continue;
+            cmp = word.compareTo(to);
+            if (cmp > 0 || cmp == 0 && !inclTo)
+                continue;
+            ret.add(word);
+        }
+        if (desc)
+            Collections.reverse(ret);
+        return ret;
     }
 
     @Test
@@ -405,6 +523,9 @@ public class DAWGSimpleTest {
         
         assertEquals(25, cdawg.getNodeCount());
         assertEquals(39, cdawg.size());
+        
+        int maxLength = Arrays.stream(words).mapToInt(s -> s.length()).max().orElse(0);
+        assertEquals(maxLength, cdawg.getMaxLength(cdawg.sourceNode, 0));
     }
 
     @Test(expected = NoSuchElementException.class)
@@ -416,7 +537,8 @@ public class DAWGSimpleTest {
 
     @Test(expected = NoSuchElementException.class)
     public void emptyCompressed() {
-        DAWGSet dawg = new ModifiableDAWGSet().compress();
+        CompressedDAWGSet dawg = new ModifiableDAWGSet().compress();
+        assertEquals(0, dawg.getMaxLength(dawg.sourceNode, 0));
         assertFalse(dawg.iterator().hasNext());
         dawg.iterator().next();
     }
@@ -487,6 +609,7 @@ public class DAWGSimpleTest {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.addAll("");
         CompressedDAWGSet cdawg = dawg.compress();
+        assertEquals(0, cdawg.getMaxLength(cdawg.sourceNode, 0));
 
         Iterator<String> iterator = dawg.iterator();
         assertTrue(iterator.hasNext());
