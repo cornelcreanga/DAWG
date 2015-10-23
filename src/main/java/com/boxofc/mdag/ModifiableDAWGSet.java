@@ -247,7 +247,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         //each node in the transition path has a single outgoing transition and is not an accept state.
         while (!transitionPathNodeStack.isEmpty()) {
             ModifiableDAWGNode currentNode = transitionPathNodeStack.peek();
-            if (currentNode.getOutgoingTransitions().size() <= 1 && !currentNode.isAcceptNode())
+            if (currentNode.getOutgoingTransitionCount() <= 1 && !currentNode.isAcceptNode())
                 transitionPathNodeStack.pop();
             else
                 break;
@@ -417,7 +417,7 @@ public class ModifiableDAWGSet extends DAWGSet {
 
         //If relevantTargetNode has transitions and there is at least one char left to process, recursively call
         //this on the next char in order to further processing down the transition path corresponding to str
-        if (relevantTargetNode.hasOutgoingTransitions() && !str.substring(1).isEmpty())
+        if (relevantTargetNode.hasOutgoingTransitions() && str.length() > 1)
             replaceOrRegister(relevantTargetNode, str.substring(1));
 
         //Get the node representing the equivalence class that relevantTargetNode belongs to. MDAGNodes hash on the
@@ -734,8 +734,8 @@ public class ModifiableDAWGSet extends DAWGSet {
         
         TreeMap<Character, ModifiableDAWGNode> transitionTreeMap = originNode.getOutgoingTransitions();
         
-        for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : transitionTreeMap.entrySet())
-            countNodes(transitionKeyValuePair.getValue(), nodeIDHashSet);
+        for (ModifiableDAWGNode transition : transitionTreeMap.values())
+            countNodes(transition, nodeIDHashSet);
     }
     
     @Override
