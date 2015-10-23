@@ -280,6 +280,10 @@ class ModifiableDAWGNode implements DAWGNode {
     public TreeMap<Character, ModifiableDAWGNode> getOutgoingTransitions() {
         return outgoingTransitionTreeMap;
     }
+
+    public TreeMap<Character, Map<Integer, ModifiableDAWGNode>> getIncomingTransitions() {
+        return incomingTransitionTreeMap;
+    }
     
     /**
      * Decrements (by 1) the incoming transition counts of all of the nodes

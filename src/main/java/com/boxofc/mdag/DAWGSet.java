@@ -9,6 +9,7 @@ import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -44,8 +45,10 @@ public abstract class DAWGSet implements Iterable<String> {
     }
     
     abstract SemiNavigableMap<Character, DAWGNode> getOutgoingTransitions(DAWGNode parent);
+    
+    abstract SemiNavigableMap<Character, Collection<? extends DAWGNode>> getIncomingTransitions(DAWGNode parent);
   
-    public String toGraphViz(boolean withNodeIds) {
+    public String toGraphViz(boolean withNodeIds, boolean withIncomingTransitions) {
         StringBuilder dot = new StringBuilder("digraph dawg {\n");
         dot.append("graph [rankdir=LR, ratio=fill];\n");
         dot.append("node [fontsize=14, shape=circle];\n");
@@ -76,13 +79,24 @@ public abstract class DAWGSet implements Iterable<String> {
                     visited.set(nextNode.getId());
                 }
             }
+            if (withIncomingTransitions) {
+                for (Map.Entry<Character, Collection<? extends DAWGNode>> e : getIncomingTransitions(node)) {
+                    for (DAWGNode prevNode : e.getValue()) {
+                        dot.append('n').append(node.getId()).append(" -> n").append(prevNode.getId()).append(" [label=\"").append(e.getKey()).append("\", style=dashed];\n");
+                        if (!visited.get(prevNode.getId())) {
+                            stack.addLast(prevNode);
+                            visited.set(prevNode.getId());
+                        }
+                    }
+                }
+            }
         }
         dot.append('}');
         return dot.toString();
     }
 
-    public void saveAsImage(boolean withNodeIds) throws IOException {
-        String graphViz = toGraphViz(withNodeIds);
+    public void saveAsImage(boolean withNodeIds, boolean withIncomingTransitions) throws IOException {
+        String graphViz = toGraphViz(withNodeIds, withIncomingTransitions);
         Path dotFile = Files.createTempFile("dawg", ".dot");
         Files.write(dotFile, graphViz.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
         Path dir = Paths.get(imagesPath);

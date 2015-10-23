@@ -1,6 +1,7 @@
 package com.boxofc.mdag;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -183,14 +184,19 @@ public class CompressedDAWGSet extends DAWGSet {
 
     @Override
     SemiNavigableMap<Character, DAWGNode> getOutgoingTransitions(DAWGNode parent) {
-        return new TransitionsMap((CompressedDAWGNode)parent, false);
+        return new OutgoingTransitionsMap((CompressedDAWGNode)parent, false);
+    }
+
+    @Override
+    SemiNavigableMap<Character, Collection<? extends DAWGNode>> getIncomingTransitions(DAWGNode parent) {
+        return new IncomingTransitionsMap((CompressedDAWGNode)parent, false);
     }
     
-    private class TransitionsMap implements SemiNavigableMap<Character, DAWGNode> {
+    private class OutgoingTransitionsMap implements SemiNavigableMap<Character, DAWGNode> {
         private final CompressedDAWGNode cparent;
         private final boolean desc;
         
-        public TransitionsMap(CompressedDAWGNode cparent, boolean desc) {
+        public OutgoingTransitionsMap(CompressedDAWGNode cparent, boolean desc) {
             this.cparent = cparent;
             this.desc = desc;
         }
@@ -242,7 +248,67 @@ public class CompressedDAWGSet extends DAWGSet {
 
         @Override
         public SemiNavigableMap<Character, DAWGNode> descendingMap() {
-            return new TransitionsMap(cparent, !desc);
+            return new OutgoingTransitionsMap(cparent, !desc);
+        }
+    }
+    
+    private class IncomingTransitionsMap implements SemiNavigableMap<Character, Collection<? extends DAWGNode>> {
+        private final CompressedDAWGNode cparent;
+        private final boolean desc;
+        
+        public IncomingTransitionsMap(CompressedDAWGNode cparent, boolean desc) {
+            this.cparent = cparent;
+            this.desc = desc;
+        }
+        
+        @Override
+        public Iterator<Entry<Character, Collection<? extends DAWGNode>>> iterator() {
+            return new Iterator<Entry<Character, Collection<? extends DAWGNode>>>() {
+                private final int from = cparent.getTransitionSetBeginIndex();
+                private final int to = from + cparent.getOutgoingTransitionSetSize() - 1;
+                private int current = desc ? to : from;
+
+                @Override
+                public boolean hasNext() {
+                    return desc ? current >= from : current <= to;
+                }
+
+                @Override
+                public Entry<Character, Collection<? extends DAWGNode>> next() {
+                    final int nodePos = current;
+                    CompressedDAWGNode node = mdagDataArray[current];
+                    if (desc)
+                        current--;
+                    else
+                        current++;
+                    return new Entry<Character, Collection<? extends DAWGNode>>() {
+                        @Override
+                        public Character getKey() {
+                            return node.getLetter();
+                        }
+
+                        @Override
+                        public Collection<? extends DAWGNode> getValue() {
+                            return null;//node;
+                        }
+
+                        @Override
+                        public Collection<? extends DAWGNode> setValue(Collection<? extends DAWGNode> value) {
+                            return null;//mdagDataArray[nodePos] = (CompressedDAWGNode)value;
+                        }
+                    };
+                }
+            };
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return false;//cparent.getOutgoingTransitionSetSize() == 0;
+        }
+
+        @Override
+        public SemiNavigableMap<Character, Collection<? extends DAWGNode>> descendingMap() {
+            return new IncomingTransitionsMap(cparent, !desc);
         }
     }
 }

@@ -29,12 +29,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
@@ -760,15 +762,20 @@ public class ModifiableDAWGSet extends DAWGSet {
 
     @Override
     SemiNavigableMap<Character, DAWGNode> getOutgoingTransitions(DAWGNode parent) {
-        return new TransitionsMap((ModifiableDAWGNode)parent, false);
+        return new OutgoingTransitionsMap((ModifiableDAWGNode)parent, false);
+    }
+
+    @Override
+    SemiNavigableMap<Character, Collection<? extends DAWGNode>> getIncomingTransitions(DAWGNode parent) {
+        return new IncomingTransitionsMap((ModifiableDAWGNode)parent, false);
     }
     
-    private static class TransitionsMap implements SemiNavigableMap<Character, DAWGNode> {
+    private static class OutgoingTransitionsMap implements SemiNavigableMap<Character, DAWGNode> {
         private final ModifiableDAWGNode parent;
         private final NavigableMap<Character, ModifiableDAWGNode> outgoingTransitions;
         private final boolean desc;
         
-        public TransitionsMap(ModifiableDAWGNode parent, boolean desc) {
+        public OutgoingTransitionsMap(ModifiableDAWGNode parent, boolean desc) {
             this.parent = parent;
             outgoingTransitions = parent.getOutgoingTransitions();
             this.desc = desc;
@@ -814,7 +821,73 @@ public class ModifiableDAWGSet extends DAWGSet {
 
         @Override
         public SemiNavigableMap<Character, DAWGNode> descendingMap() {
-            return new TransitionsMap(parent, !desc);
+            return new OutgoingTransitionsMap(parent, !desc);
+        }
+    }
+    
+    private static class IncomingTransitionsMap implements SemiNavigableMap<Character, Collection<? extends DAWGNode>> {
+        private final ModifiableDAWGNode parent;
+        private final NavigableMap<Character, Map<Integer, ModifiableDAWGNode>> incomingTransitions;
+        private final boolean desc;
+        
+        public IncomingTransitionsMap(ModifiableDAWGNode parent, boolean desc) {
+            this.parent = parent;
+            incomingTransitions = parent.getIncomingTransitions();
+            this.desc = desc;
+        }
+
+        @Override
+        public Iterator<Entry<Character, Collection<? extends DAWGNode>>> iterator() {
+            return new Iterator<Entry<Character, Collection<? extends DAWGNode>>>() {
+                private final Iterator<Entry<Character, Map<Integer, ModifiableDAWGNode>>> it = (desc ? incomingTransitions.descendingMap() : incomingTransitions).entrySet().iterator();
+
+                @Override
+                public boolean hasNext() {
+                    return it.hasNext();
+                }
+
+                @Override
+                public Entry<Character, Collection<? extends DAWGNode>> next() {
+                    Entry<Character, Map<Integer, ModifiableDAWGNode>> next = it.next();
+                    return new Entry<Character, Collection<? extends DAWGNode>>() {
+                        @Override
+                        public Character getKey() {
+                            return next.getKey();
+                        }
+
+                        @Override
+                        public Collection<? extends DAWGNode> getValue() {
+                            return next.getValue().values();
+                        }
+
+                        @Override
+                        public Collection<? extends DAWGNode> setValue(Collection<? extends DAWGNode> value) {
+                            Map<Integer, ModifiableDAWGNode> current = next.getValue();
+                            Collection<? extends DAWGNode> prev;
+                            if (current == null) {
+                                next.setValue(current = new HashMap<>());
+                                prev = null;
+                            } else {
+                                prev = current.values();
+                                current.clear();
+                            }
+                            for (DAWGNode node : value)
+                                current.put(node.getId(), (ModifiableDAWGNode)node);
+                            return prev;
+                        }
+                    };
+                }
+            };
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return incomingTransitions.isEmpty();
+        }
+
+        @Override
+        public SemiNavigableMap<Character, Collection<? extends DAWGNode>> descendingMap() {
+            return new IncomingTransitionsMap(parent, !desc);
         }
     }
 }

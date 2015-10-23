@@ -27,11 +27,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NavigableSet;
-import java.util.Set;
 import java.util.TreeSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -110,7 +107,7 @@ public class DAWGFileTest {
     
     @Test
     public void removeWordTest() {
-        int numberOfRuns = 20;
+        int numberOfRuns = 10;
         int wordArrayListSize = wordArrayList.size();
         
         for (int i = 0; i < numberOfRuns; i++) {
@@ -132,7 +129,7 @@ public class DAWGFileTest {
     }
     
     public int[][] removeWord2DataProvider() {
-        int numberOfRuns = 20;
+        int numberOfRuns = 10;
         int intervalSize = 20;
         int[][] parameterObjectDoubleArray = new int[numberOfRuns][];
         int wordArrayListSize = wordArrayList.size();
