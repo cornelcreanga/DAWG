@@ -582,6 +582,7 @@ public class DAWGSimpleTest {
             dawg.addAll(fis);
         }
         CompressedDAWGSet cdawg = dawg.compress();
+        ModifiableDAWGSet udawg = cdawg.uncompress();
         
         int i = 0;
         for (String word : dawg)
@@ -592,6 +593,11 @@ public class DAWGSimpleTest {
         for (String word : cdawg)
             i++;
         assertEquals(58109, i);
+        
+        i = 0;
+        for (String word : udawg)
+            i++;
+        assertEquals(58109, i);
 
         i = 0;
         for (String word : dawg.getStringsEndingWith(""))
@@ -600,6 +606,11 @@ public class DAWGSimpleTest {
 
         i = 0;
         for (String word : cdawg.getStringsEndingWith(""))
+            i++;
+        assertEquals(58109, i);
+
+        i = 0;
+        for (String word : udawg.getStringsEndingWith(""))
             i++;
         assertEquals(58109, i);
     }

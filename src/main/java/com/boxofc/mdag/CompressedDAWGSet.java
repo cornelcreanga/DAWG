@@ -176,6 +176,10 @@ public class CompressedDAWGSet extends DAWGSet {
         return Objects.equals(sourceNode, other.sourceNode) &&
                Arrays.deepEquals(mdagDataArray, other.mdagDataArray);
     }
+    
+    public ModifiableDAWGSet uncompress() {
+        return new ModifiableDAWGSet(this);
+    }
 
     @Override
     SemiNavigableMap<Character, DAWGNode> getOutgoingTransitions(DAWGNode parent) {
