@@ -22,9 +22,13 @@
 
 package com.boxofc.mdag;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Stack;
+import java.util.TreeSet;
 
 /**
  * The class which represents a node in a MDAG.
@@ -42,6 +46,8 @@ class ModifiableDAWGNode implements DAWGNode {
 
     //The int representing this node's incoming transition node count
     private int incomingTransitionCount;
+    
+    private final TreeMap<Character, Map<Integer, ModifiableDAWGNode>> incomingTransitionTreeMap = new TreeMap<>();
     
     //The int denoting index in a simplified mdag data array that this node's transition set begins at
     private int transitionSetBeginIndex = -1;
@@ -75,8 +81,26 @@ class ModifiableDAWGNode implements DAWGNode {
         
         //Loop through the nodes in this node's outgoing transition set, incrementing the number of
         //incoming transitions of each by 1 (to account for this newly created node's outgoing transitions)
-        for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : outgoingTransitionTreeMap.entrySet())
-            transitionKeyValuePair.getValue().incomingTransitionCount++;
+        for (Entry<Character, ModifiableDAWGNode> transition : outgoingTransitionTreeMap.entrySet())
+            transition.getValue().addIncomingTransition(transition.getKey(), this);
+    }
+    
+    private void addIncomingTransition(char letter, ModifiableDAWGNode node) {
+        Map<Integer, ModifiableDAWGNode> letterIncomingTransitions = incomingTransitionTreeMap.get(letter);
+        if (letterIncomingTransitions == null)
+            incomingTransitionTreeMap.put(letter, letterIncomingTransitions = new HashMap<>());
+        if (letterIncomingTransitions.put(node.getId(), node) != node)
+            incomingTransitionCount++;
+    }
+    
+    private void removeIncomingTransition(char letter, ModifiableDAWGNode node) {
+        Map<Integer, ModifiableDAWGNode> letterIncomingTransitions = incomingTransitionTreeMap.get(letter);
+        if (letterIncomingTransitions != null) {
+            if (letterIncomingTransitions.remove(node.getId()) != null)
+                incomingTransitionCount--;
+            if (letterIncomingTransitions.isEmpty())
+                incomingTransitionTreeMap.remove(letter);
+        }
     }
     
     /**
@@ -262,8 +286,8 @@ class ModifiableDAWGNode implements DAWGNode {
      * that are targets of outgoing transitions from this node.
      */
     public void decrementTargetIncomingTransitionCounts() {
-        for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair: outgoingTransitionTreeMap.entrySet())
-            transitionKeyValuePair.getValue().incomingTransitionCount--;
+        for (Entry<Character, ModifiableDAWGNode> transition : outgoingTransitionTreeMap.entrySet())
+            transition.getValue().removeIncomingTransition(transition.getKey(), this);
     }
     
     /**
@@ -274,8 +298,8 @@ class ModifiableDAWGNode implements DAWGNode {
      * @param newTargetNode     the ModifiableDAWGNode that is to be the target of the transition of interest
      */
     public void reassignOutgoingTransition(char letter, ModifiableDAWGNode oldTargetNode, ModifiableDAWGNode newTargetNode) {
-        oldTargetNode.incomingTransitionCount--;
-        newTargetNode.incomingTransitionCount++;
+        oldTargetNode.removeIncomingTransition(letter, this);
+        newTargetNode.addIncomingTransition(letter, this);
         
         outgoingTransitionTreeMap.put(letter, newTargetNode);
     }
@@ -291,7 +315,7 @@ class ModifiableDAWGNode implements DAWGNode {
      */
     public ModifiableDAWGNode addOutgoingTransition(char letter, boolean targetAcceptStateStatus, int id) {
         ModifiableDAWGNode newTargetNode = new ModifiableDAWGNode(targetAcceptStateStatus, id);
-        newTargetNode.incomingTransitionCount++;
+        newTargetNode.addIncomingTransition(letter, this);
         
         outgoingTransitionTreeMap.put(letter, newTargetNode);
         return newTargetNode;

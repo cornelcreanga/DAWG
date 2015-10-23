@@ -182,6 +182,30 @@ public class DAWGFileTest {
     }
     
     @Test
+    public void removeWord() {
+        ArrayList<String> wordArrayList2 = new ArrayList<>(wordArrayList);
+        Collections.swap(wordArrayList2, 65958, 65953);
+        int intervalBegin = 65948;
+        int onePastIntervalEnd = 65968;
+        ModifiableDAWGSet testDAWG = new ModifiableDAWGSet(wordArrayList2);
+
+        int intervalSize = onePastIntervalEnd - intervalBegin;
+        for (int i = 0; i < intervalSize; i++)
+            testDAWG.remove(wordArrayList2.get(intervalBegin + i));
+
+        for (int i = 0; i < intervalSize; i++)
+            wordArrayList2.remove(intervalBegin);
+
+        ModifiableDAWGSet controlTestDAWG = new ModifiableDAWGSet(wordArrayList2);
+
+        assertEquals(wordArrayList.size() - intervalSize, testDAWG.size());
+        assertEquals(controlTestDAWG.size(), testDAWG.size());
+        assertEquals(controlTestDAWG.getNodeCount(), testDAWG.getNodeCount());
+        assertEquals(controlTestDAWG.getEquivalenceClassCount(), testDAWG.getEquivalenceClassCount());
+        assertEquals(controlTestDAWG.getTransitionCount(), testDAWG.getTransitionCount());
+    }
+    
+    @Test
     public void getAllWordsTest() {
         NavigableSet<String> wordNavigableSet1 = new TreeSet<>();
         for (String word : dawg1.getAllStrings())
