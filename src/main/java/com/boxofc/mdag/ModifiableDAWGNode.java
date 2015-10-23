@@ -336,35 +336,6 @@ class ModifiableDAWGNode implements DAWGNode {
     }
     
     /**
-     * Determines whether the sets of transition paths from two MDAGNodes are equivalent. This is an expensive operation.
-     
-     * @param node1                             a node to check
-     * @param node2                             a node to check
-     * @return                                  true if the set of transition paths from {@code node1}
-     *                                          and {@code node2} are equivalent
-     */
-    private static boolean haveSameTransitions(ModifiableDAWGNode node1, ModifiableDAWGNode node2) {
-        //TreeMaps containing entries collectively representing all of a node's outgoing transitions
-        TreeMap<Character, ModifiableDAWGNode> outgoingTransitionTreeMap1 = node1.outgoingTransitionTreeMap;
-        TreeMap<Character, ModifiableDAWGNode> outgoingTransitionTreeMap2 = node2.outgoingTransitionTreeMap;
-        
-        if (outgoingTransitionTreeMap1.size() == outgoingTransitionTreeMap2.size()) {
-            //For each transition in outgoingTransitionTreeMap1, get the identically lableed transition
-            //in outgoingTransitionTreeMap2 (if present), and test the equality of the transitions' target nodes
-            for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : outgoingTransitionTreeMap1.entrySet()) {
-                Character currentCharKey = transitionKeyValuePair.getKey();
-                ModifiableDAWGNode currentTargetNode = transitionKeyValuePair.getValue();
-                
-                if (!outgoingTransitionTreeMap2.containsKey(currentCharKey) || !outgoingTransitionTreeMap2.get(currentCharKey).equals(currentTargetNode))
-                    return false;
-            }
-        } else
-            return false;
-        
-        return true;
-    }
-    
-    /**
      * Clears this node's stored hash value
      */
     public void clearStoredHashCode() {
@@ -382,14 +353,12 @@ class ModifiableDAWGNode implements DAWGNode {
      */
     @Override
     public boolean equals(Object obj) {
-        boolean areEqual = this == obj;
-        
-        if (!areEqual && obj != null && obj.getClass().equals(ModifiableDAWGNode.class)) {
-            ModifiableDAWGNode node = (ModifiableDAWGNode)obj;
-            areEqual = isAcceptNode == node.isAcceptNode && haveSameTransitions(this, node);
-        }
-        
-        return areEqual;
+        if (this == obj)
+            return true;
+        if (!(obj instanceof ModifiableDAWGNode))
+            return false;
+        ModifiableDAWGNode node = (ModifiableDAWGNode)obj;
+        return isAcceptNode == node.isAcceptNode && outgoingTransitionTreeMap.equals(node.outgoingTransitionTreeMap);//haveSameTransitions(this, node);
     }
     
     /**
@@ -400,14 +369,9 @@ class ModifiableDAWGNode implements DAWGNode {
      */
     @Override
     public int hashCode() {
-        if (storedHashCode == null) {
-            int hash = 7;
-            hash = 53 * hash + (this.isAcceptNode ? 1 : 0);
-            hash = 53 * hash + (this.outgoingTransitionTreeMap != null ? this.outgoingTransitionTreeMap.hashCode() : 0);    //recursively hashes the nodes in all the
-                                                                                                                                //transition paths stemming from this node
-            storedHashCode = hash;
-            return hash;
-        } else
-            return storedHashCode;
+        if (storedHashCode == null)
+            //transition paths stemming from this node
+            storedHashCode = (isAcceptNode ? 1 : 0) + outgoingTransitionTreeMap.hashCode() * 2;
+        return storedHashCode;
     }
 }
