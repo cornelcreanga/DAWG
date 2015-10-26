@@ -317,11 +317,13 @@ class ModifiableDAWGNode implements DAWGNode {
      */
     public void reassignOutgoingTransition(char letter, ModifiableDAWGNode oldTargetNode, ModifiableDAWGNode newTargetNode) {
         oldTargetNode.removeIncomingTransition(letter, this);
-        if (oldTargetNode.isAcceptNode() && !oldTargetNode.hasIncomingTransition(letter))
-            ((ModifiableDAWGNode)graph.getEndNode()).removeIncomingTransition(letter, oldTargetNode);
         newTargetNode.addIncomingTransition(letter, this);
-        if (newTargetNode.isAcceptNode())
-            ((ModifiableDAWGNode)graph.getEndNode()).addIncomingTransition(letter, newTargetNode);
+        if (graph != null) {
+            if (oldTargetNode.isAcceptNode() && !oldTargetNode.hasIncomingTransition(letter))
+                ((ModifiableDAWGNode)graph.getEndNode()).removeIncomingTransition(letter, oldTargetNode);
+            if (newTargetNode.isAcceptNode())
+                ((ModifiableDAWGNode)graph.getEndNode()).addIncomingTransition(letter, newTargetNode);
+        }
         
         outgoingTransitionTreeMap.put(letter, newTargetNode);
     }
