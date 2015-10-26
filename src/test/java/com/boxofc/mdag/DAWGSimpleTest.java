@@ -208,7 +208,7 @@ public class DAWGSimpleTest {
             assertEquals(words.length, i);
             
             List<String> list = new ArrayList<>();
-            for (String s : dawg.getStrings("", "", true, null, false, null, false))
+            for (String s : dawg.getStrings("", null, null, true, null, false, null, false))
                 list.add(s);
             Collections.reverse(list);
             assertEquals(Arrays.asList(words), list);
@@ -310,7 +310,7 @@ public class DAWGSimpleTest {
             if (desc == 1)
                 Collections.reverse(expected);
             actual = new ArrayList<>();
-            for (String word : dawg.getStrings("ba", "", desc == 1, "bac", true, "bad", true))
+            for (String word : dawg.getStrings("ba", null, null, desc == 1, "bac", true, "bad", true))
                 actual.add(word);
             assertEquals(expected, actual);
         }
@@ -320,7 +320,7 @@ public class DAWGSimpleTest {
             if (desc == 1)
                 Collections.reverse(expected);
             actual = new ArrayList<>();
-            for (String word : dawg.getStrings("ba", "", desc == 1, "bac", true, "badb", true))
+            for (String word : dawg.getStrings("ba", null, null, desc == 1, "bac", true, "badb", true))
                 actual.add(word);
             assertEquals(expected, actual);
         }
@@ -330,7 +330,7 @@ public class DAWGSimpleTest {
             if (desc == 1)
                 Collections.reverse(expected);
             actual = new ArrayList<>();
-            for (String word : dawg.getStrings("ba", "", desc == 1, "bacb", true, "badd", true))
+            for (String word : dawg.getStrings("ba", null, null, desc == 1, "bacb", true, "badd", true))
                 actual.add(word);
             assertEquals(expected, actual);
         }
@@ -340,7 +340,7 @@ public class DAWGSimpleTest {
             if (desc == 1)
                 Collections.reverse(expected);
             actual = new ArrayList<>();
-            for (String word : dawg.getStrings("ba", "", desc == 1, "bac", true, "badc", true))
+            for (String word : dawg.getStrings("ba", null, null, desc == 1, "bac", true, "badc", true))
                 actual.add(word);
             assertEquals(expected, actual);
         }
@@ -354,7 +354,7 @@ public class DAWGSimpleTest {
         
         List<String> expected = Collections.EMPTY_LIST;
         List<String> actual = new ArrayList<>();
-        for (String word : dawg.getStrings("", "", false, "", false, "a", false))
+        for (String word : dawg.getStrings("", null, null, false, "", false, "a", false))
             actual.add(word);
         assertEquals(expected, actual);
     }
@@ -367,7 +367,7 @@ public class DAWGSimpleTest {
         
         List<String> expected = Arrays.asList(words);
         List<String> actual = new ArrayList<>();
-        for (String word : dawg.getStrings("", "", false, "hdd", false, "hgecc", false))
+        for (String word : dawg.getStrings("", null, null, false, "hdd", false, "hgecc", false))
             actual.add(word);
         assertEquals(expected, actual);
     }
@@ -380,7 +380,7 @@ public class DAWGSimpleTest {
         
         List<String> expected = Arrays.asList(words);
         List<String> actual = new ArrayList<>();
-        for (String word : dawg.getStrings("", "", true, "bfd", false, "cdgd", false))
+        for (String word : dawg.getStrings("", null, null, true, "bfd", false, "cdgd", false))
             actual.add(word);
         assertEquals(expected, actual);
     }
@@ -422,13 +422,13 @@ public class DAWGSimpleTest {
                                     for (int desc = 0; desc < 2; desc++) {
                                         boolean descending = desc == 1;
                                         List<String> actual = new ArrayList<>();
-                                        for (String s : dawg.getStrings(prefix, substring, descending, from, inclF, to, inclT))
+                                        for (String s : dawg.getStrings(prefix, substring, null, descending, from, inclF, to, inclT))
                                             actual.add(s);
                                         List<String> expected = getStrings(words, prefix, substring, descending, from, inclF, to, inclT);
                                         assertEquals("Prefix: " + prefix + ", substring: " + substring + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"), expected, actual);
                                         
                                         actual = new ArrayList<>();
-                                        for (String s : cdawg.getStrings(prefix, substring, descending, from, inclF, to, inclT))
+                                        for (String s : cdawg.getStrings(prefix, substring, null, descending, from, inclF, to, inclT))
                                             actual.add(s);
                                         assertEquals("Prefix: " + prefix + ", substring: " + substring + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"), expected, actual);
                                     }

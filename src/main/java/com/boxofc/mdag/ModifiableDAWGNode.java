@@ -55,7 +55,7 @@ class ModifiableDAWGNode implements DAWGNode {
     
     private final ModifiableDAWGSet graph;
     
-    private final TreeMap<Character, Map<Integer, ModifiableDAWGNode>> incomingTransitionTreeMap;
+    private TreeMap<Character, Map<Integer, ModifiableDAWGNode>> incomingTransitionTreeMap;
     
     /**
      * Constructs an MDAGNode.

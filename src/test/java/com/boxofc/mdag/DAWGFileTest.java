@@ -239,7 +239,7 @@ public class DAWGFileTest {
             assertEquals(controlSet, expectedSet);
             
             expectedSet = new ArrayList<>();
-            for (String word : dawg1.getStrings(prefixStr, null, true, null, false, null, false))
+            for (String word : dawg1.getStrings(prefixStr, null, null, true, null, false, null, false))
                 expectedSet.add(word);
             Collections.reverse(expectedSet);
 

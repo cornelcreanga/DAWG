@@ -45,8 +45,6 @@ public abstract class DAWGSet implements Iterable<String> {
     }
 
     public abstract boolean isWithIncomingTransitions();
-
-    public abstract void setWithIncomingTransitions(boolean withIncomingTransitions);
     
     abstract SemiNavigableMap<Character, DAWGNode> getOutgoingTransitions(DAWGNode parent);
     
@@ -145,7 +143,7 @@ public abstract class DAWGSet implements Iterable<String> {
      * @return      a NavigableSet containing all the Strings that have been inserted into the DAWGSet
      */
     public Iterable<String> getAllStrings() {
-        return getStrings("", null, false, null, false, null, false);
+        return getStrings("", null, null, false, null, false, null, false);
     }
     
     /**
@@ -155,7 +153,7 @@ public abstract class DAWGSet implements Iterable<String> {
      * @return              a NavigableSet containing all the Strings present in the DAWGSet that begin with {@code prefixString}
      */
     public Iterable<String> getStringsStartingWith(String prefixStr) {
-        return getStrings(prefixStr, null, false, null, false, null, false);
+        return getStrings(prefixStr, null, null, false, null, false, null, false);
     }
     
     /**
@@ -165,7 +163,7 @@ public abstract class DAWGSet implements Iterable<String> {
      * @return          a NavigableSet containing all the Strings present in the DAWGSet that begin with {@code prefixString}
      */
     public Iterable<String> getStringsWithSubstring(String str) {
-        return getStrings("", str, false, null, false, null, false);
+        return getStrings("", str, null, false, null, false, null, false);
     }
     
     /**
@@ -174,7 +172,9 @@ public abstract class DAWGSet implements Iterable<String> {
      * @param suffixStr         a String that is the suffix for all the desired Strings
      * @return                  a NavigableSet containing all the Strings present in the DAWGSet that end with {@code suffixStr}
      */
-    public abstract Iterable<String> getStringsEndingWith(String suffixStr);
+    public Iterable<String> getStringsEndingWith(String suffixStr) {
+        return getStrings("", null, suffixStr, false, null, false, null, false);
+    }
     
     /**
      * Returns the quantity of transitions in this DAWG: number of edges in graph.
@@ -188,7 +188,7 @@ public abstract class DAWGSet implements Iterable<String> {
     
     abstract int getMaxLength();
     
-    Iterable<String> getStrings(String prefixString, String subString, boolean descending, String fromString, boolean inclFrom, String toString, boolean inclTo) {
+    Iterable<String> getStrings(String prefixString, String subString, String suffixString, boolean descending, String fromString, boolean inclFrom, String toString, boolean inclTo) {
         return new Iterable<String>() {
             @Override
             public Iterator<String> iterator() {
@@ -201,6 +201,7 @@ public abstract class DAWGSet implements Iterable<String> {
                     private char from[];
                     private char to[];
                     private char sub[];
+                    private char suffix[];
                     private final String prefixStr = prefixString == null ? "" : prefixString;
                     
                     {
@@ -237,7 +238,7 @@ public abstract class DAWGSet implements Iterable<String> {
                                 toStr = null;
                         }
                         if (originNode != null && subStr != null) {
-                            if (subStr.isEmpty() || prefixStr.contains(subStr))
+                            if (subStr.isEmpty() || prefixStr.contains(subStr) || suffixString != null && suffixString.contains(subStr))
                                 subStr = null;
                         }
                         //if there a transition path corresponding to prefixString (one or more stored Strings begin with prefixString)
@@ -256,6 +257,8 @@ public abstract class DAWGSet implements Iterable<String> {
                                 to = toStr.toCharArray();
                             if (subStr != null)
                                 sub = subStr.toCharArray();
+                            if (suffixString != null && !suffixString.isEmpty())
+                                suffix = suffixString.toCharArray();
                         }
                     }
                     
@@ -391,10 +394,14 @@ public abstract class DAWGSet implements Iterable<String> {
                             }
                             if (sub != null && checkSubstring) {
                                 boolean endsWithSub = level >= sub.length - 1;
-                                if (endsWithSub)
-                                    for (int i = 0; i < sub.length; i++)
-                                        if (sub[i] != buffer[level - sub.length + 1 + i])
+                                if (endsWithSub) {
+                                    for (int i = 0; i < sub.length; i++) {
+                                        if (sub[i] != buffer[level - sub.length + 1 + i]) {
                                             endsWithSub = false;
+                                            break;
+                                        }
+                                    }
+                                }
                                 if (endsWithSub)
                                     checkSubstring = false;
                                 else
@@ -413,6 +420,17 @@ public abstract class DAWGSet implements Iterable<String> {
                                     levelsStack.add(level);
                                     charsStack.add(letter);
                                     flagsStack.add(encodeFlags(checkFrom, checkTo, checkSubstring));
+                                }
+                            }
+                            if (retCurrentString && suffix != null) {
+                                retCurrentString = level >= suffix.length - 1;
+                                if (retCurrentString) {
+                                    for (int i = 0; i < suffix.length; i++) {
+                                        if (suffix[i] != buffer[level - suffix.length + 1 + i]) {
+                                            retCurrentString = false;
+                                            break;
+                                        }
+                                    }
                                 }
                             }
                             level++;

@@ -54,6 +54,8 @@ public class ModifiableDAWGSet extends DAWGSet {
     //Increment for node identifiers.
     private int id;
     
+    private boolean withIncomingTransitions = true;
+    
     //MDAGNode from which all others in the structure are reachable (all manipulation and non-simplified ModifiableDAWGSet search operations begin from this).
     private final ModifiableDAWGNode sourceNode = new ModifiableDAWGNode(this, false, id++);
     
@@ -75,8 +77,6 @@ public class ModifiableDAWGSet extends DAWGSet {
     
     //Maximal length of all words added to this DAWG. Does not decrease on removing.
     private int maxLength;
-    
-    private boolean withIncomingTransitions = true;
     
     /**
      * Creates an MDAG from a collection of Strings.
@@ -224,7 +224,6 @@ public class ModifiableDAWGSet extends DAWGSet {
         return withIncomingTransitions;
     }
 
-    @Override
     public void setWithIncomingTransitions(boolean withIncomingTransitions) {
         this.withIncomingTransitions = withIncomingTransitions;
     }
@@ -653,7 +652,7 @@ public class ModifiableDAWGSet extends DAWGSet {
      */
     public CompressedDAWGSet compress() {
         CompressedDAWGSet compressed = new CompressedDAWGSet();
-        compressed.setWithIncomingTransitions(isWithIncomingTransitions());
+        compressed.withIncomingTransitions = isWithIncomingTransitions();
         compressed.size = size;
         compressed.maxLength = maxLength;
         compressed.mdagDataArray = new CompressedDAWGNode[transitionCount];
@@ -682,45 +681,6 @@ public class ModifiableDAWGSet extends DAWGSet {
         ModifiableDAWGNode targetNode = sourceNode.transition(str);
         return targetNode != null && targetNode.isAcceptNode();
     }
-    
-    /**
-     * Retrieves Strings corresponding to all valid transition paths from a given node that satisfy a given condition.
-     
-     * @param strNavigableSet                a NavigableSet of Strings to contain all those in the ModifiableDAWGSet satisfying
-                                  {@code searchCondition} with {@code conditionString}
-     * @param searchCondition           the SearchCondition enum field describing the type of relationship that Strings contained in the ModifiableDAWGSet
-                                  must have with {@code conditionString} in order to be included in the result set
-     * @param searchConditionString     the String that all Strings in the ModifiableDAWGSet must be related with in the fashion denoted
-                                  by {@code searchCondition} in order to be included in the result set
-     * @param prefixString              the String corresponding to the currently traversed transition path
-     * @param transitionTreeMap         a TreeMap of Characters to MDAGNodes collectively representing an ModifiableDAWGNode's transition set
-     * @param descending                traverse a tree from the end
-     */
-    private void getStrings(NavigableSet<String> strNavigableSet, SearchCondition searchCondition, String searchConditionString, String prefixString, TreeMap<Character, ModifiableDAWGNode> transitionTreeMap, boolean descending) {
-        //Traverse all the valid transition paths beginning from each transition in transitionTreeMap, inserting the
-        //corresponding Strings in to strNavigableSet that have the relationship with conditionString denoted by searchCondition
-        for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : transitionTreeMap.entrySet()) {
-            String newPrefixString = prefixString + transitionKeyValuePair.getKey();
-            ModifiableDAWGNode currentNode = transitionKeyValuePair.getValue();
-
-            SearchCondition childrenSearchCondition = searchCondition;
-            boolean addCurrent = false;
-            if (searchCondition.satisfiesCondition(newPrefixString, searchConditionString)) {
-                if (currentNode.isAcceptNode())
-                    addCurrent = true;
-                //If the parent node satisfies the search condition then all its child nodes also satisfy this condition.
-                if (searchCondition == SearchCondition.SUBSTRING_SEARCH_CONDITION)
-                    childrenSearchCondition = SearchCondition.NO_SEARCH_CONDITION;
-            }
-            
-            if (addCurrent && !descending)
-                strNavigableSet.add(newPrefixString);
-            //Recursively call this to traverse all the valid transition paths from currentNode
-            getStrings(strNavigableSet, childrenSearchCondition, searchConditionString, newPrefixString, currentNode.getOutgoingTransitions(), descending);
-            if (addCurrent && descending)
-                strNavigableSet.add(newPrefixString);
-        }
-    }
 
     @Override
     DAWGNode getNodeByPath(DAWGNode from, String path) {
@@ -730,21 +690,6 @@ public class ModifiableDAWGSet extends DAWGSet {
     @Override
     int getMaxLength() {
         return maxLength;
-    }
-    
-    /**
-     * Retrieves all the Strings in the ModifiableDAWGSet that begin with a given String.
-     
-     * @param suffixStr         a String that is the suffix for all the desired Strings
-     * @return                  a NavigableSet containing all the Strings present in the ModifiableDAWGSet that end with {@code suffixStr}
-     */
-    @Override
-    public Iterable<String> getStringsEndingWith(String suffixStr) {
-        NavigableSet<String> strNavigableSet = new TreeSet<>();
-        if (suffixStr.isEmpty() && sourceNode.isAcceptNode())
-            strNavigableSet.add(suffixStr);
-        getStrings(strNavigableSet, SearchCondition.SUFFIX_SEARCH_CONDITION, suffixStr, "", sourceNode.getOutgoingTransitions(), false);
-        return strNavigableSet;
     }
     
     /**
