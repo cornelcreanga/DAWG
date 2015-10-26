@@ -55,7 +55,9 @@ public class ModifiableDAWGSet extends DAWGSet {
     private int id;
     
     //MDAGNode from which all others in the structure are reachable (all manipulation and non-simplified ModifiableDAWGSet search operations begin from this).
-    private final ModifiableDAWGNode sourceNode = new ModifiableDAWGNode(false, id++);
+    private final ModifiableDAWGNode sourceNode = new ModifiableDAWGNode(this, false, id++);
+    
+    private final ModifiableDAWGNode endNode = new ModifiableDAWGNode(this, false, id++);
 
     //HashMap which contains the MDAGNodes collectively representing the all unique equivalence classes in the ModifiableDAWGSet.
     //Uniqueness is defined by the types of transitions allowed from, and number and type of nodes reachable
@@ -73,6 +75,8 @@ public class ModifiableDAWGSet extends DAWGSet {
     
     //Maximal length of all words added to this DAWG. Does not decrease on removing.
     private int maxLength;
+    
+    private boolean withIncomingTransitions = true;
     
     /**
      * Creates an MDAG from a collection of Strings.
@@ -214,6 +218,14 @@ public class ModifiableDAWGSet extends DAWGSet {
             replaceOrRegister(sourceNode, str);
         return result;
     }
+
+    public boolean isWithIncomingTransitions() {
+        return withIncomingTransitions;
+    }
+
+    public void setWithIncomingTransitions(boolean withIncomingTransitions) {
+        this.withIncomingTransitions = withIncomingTransitions;
+    }
     
     private void splitTransitionPath(ModifiableDAWGNode originNode, String storedStringSubstr) {
         HashMap<String, Object> firstConfluenceNodeDataHashMap = getTransitionPathFirstConfluenceNodeData(originNode, storedStringSubstr);
@@ -222,7 +234,10 @@ public class ModifiableDAWGSet extends DAWGSet {
         
         if (firstConfluenceNode != null) {
             ModifiableDAWGNode firstConfluenceNodeParent = originNode.transition(storedStringSubstr.substring(0, toFirstConfluenceNodeTransitionCharIndex));
-            ModifiableDAWGNode firstConfluenceNodeClone = firstConfluenceNode.clone(firstConfluenceNodeParent, storedStringSubstr.charAt(toFirstConfluenceNodeTransitionCharIndex), id++);
+            char letter = storedStringSubstr.charAt(toFirstConfluenceNodeTransitionCharIndex);
+            ModifiableDAWGNode firstConfluenceNodeClone = firstConfluenceNode.clone(firstConfluenceNodeParent, letter, id++);
+            if (firstConfluenceNodeClone.isAcceptNode())
+                endNode.addIncomingTransition(letter, firstConfluenceNodeClone);
             transitionCount += firstConfluenceNodeClone.getOutgoingTransitionCount();
             String unprocessedSubString = storedStringSubstr.substring(toFirstConfluenceNodeTransitionCharIndex + 1);
             splitTransitionPath(firstConfluenceNodeClone, unprocessedSubString);
@@ -283,8 +298,14 @@ public class ModifiableDAWGSet extends DAWGSet {
             boolean result = strEndNode.setAcceptStateStatus(false);
             if (!str.isEmpty())
                 replaceOrRegister(sourceNode, str);
-            if (result)
+            if (result) {
                 size--;
+                if (str.isEmpty()) {
+                    for (char c : strEndNode.getIncomingTransitions().keySet())
+                        endNode.removeIncomingTransition(c, strEndNode);
+                } else
+                    endNode.removeIncomingTransition(str.charAt(str.length() - 1), strEndNode);
+            }
             return result;
         } else {
             int soleInternalTransitionPathLength = calculateSoleTransitionPathLength(str);
@@ -296,11 +317,12 @@ public class ModifiableDAWGSet extends DAWGSet {
             } else {
                 //Remove the sub-path in str's transition path that is only used by str
                 int toBeRemovedTransitionLabelCharIndex = internalTransitionPathLength - soleInternalTransitionPathLength;
-                ModifiableDAWGNode latestNonSoloTransitionPathNode = sourceNode.transition(str.substring(0, toBeRemovedTransitionLabelCharIndex));
+                String prefix = str.substring(0, toBeRemovedTransitionLabelCharIndex);
+                ModifiableDAWGNode latestNonSoloTransitionPathNode = sourceNode.transition(prefix);
                 latestNonSoloTransitionPathNode.removeOutgoingTransition(str.charAt(toBeRemovedTransitionLabelCharIndex));
-                transitionCount -= str.substring(toBeRemovedTransitionLabelCharIndex).length();
-
-                replaceOrRegister(sourceNode, str.substring(0, toBeRemovedTransitionLabelCharIndex));
+                transitionCount -= str.length() - toBeRemovedTransitionLabelCharIndex;
+                endNode.removeIncomingTransition(str.charAt(str.length() - 1), strEndNode);
+                replaceOrRegister(sourceNode, prefix);
             }
             size--;
             return true;
@@ -457,13 +479,16 @@ public class ModifiableDAWGSet extends DAWGSet {
             for (int i = 0; i < charCount; i++, transitionCount++) {
                 char currentChar = str.charAt(i);
                 boolean isLastChar = i == charCount - 1;
-                currentNode = currentNode.addOutgoingTransition(currentChar, isLastChar, id++);
-                
+                currentNode = currentNode.addOutgoingTransition(this, currentChar, isLastChar, id++);
+                if (isLastChar)
+                    endNode.addIncomingTransition(currentChar, currentNode);
                 charTreeSet.add(currentChar);
             }
             size++;
             return true;
         } else if (originNode.setAcceptStateStatus(true)) {
+            for (char c : originNode.getIncomingTransitions().keySet())
+                endNode.addIncomingTransition(c, originNode);
             size++;
             return true;
         } else
@@ -522,8 +547,13 @@ public class ModifiableDAWGSet extends DAWGSet {
                 String transitionStringToPivotNodeParent = transitionStringToPivotNode.substring(0, transitionStringToPivotNode.length() - 1);
                 char parentTransitionLabelChar = transitionStringToPivotNode.charAt(transitionStringToPivotNode.length() - 1);
                 clonedNode = pivotConfluenceNode.clone(sourceNode.transition(transitionStringToPivotNodeParent), parentTransitionLabelChar, id++);
-            } else
-                clonedNode = new ModifiableDAWGNode(currentTargetNode, id++);     //simply clone curentTargetNode
+                if (clonedNode.isAcceptNode())
+                    endNode.addIncomingTransition(parentTransitionLabelChar, clonedNode);
+            } else {
+                clonedNode = new ModifiableDAWGNode(currentTargetNode, id++);     //simply clone currentTargetNode
+                if (clonedNode.isAcceptNode())
+                    endNode.addIncomingTransition(lastTransitionLabelChar, clonedNode);
+            }
 
             transitionCount += clonedNode.getOutgoingTransitionCount();
 
@@ -720,6 +750,11 @@ public class ModifiableDAWGSet extends DAWGSet {
     @Override
     DAWGNode getSourceNode() {
         return sourceNode;
+    }
+    
+    @Override
+    DAWGNode getEndNode() {
+        return endNode;
     }
     
     /**

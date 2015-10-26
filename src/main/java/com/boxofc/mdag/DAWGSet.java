@@ -57,6 +57,10 @@ public abstract class DAWGSet implements Iterable<String> {
         BitSet visited = new BitSet();
         stack.add(getSourceNode());
         visited.set(getSourceNode().getId());
+        if (withIncomingTransitions) {
+            stack.add(getEndNode());
+            visited.set(getEndNode().getId());
+        }
         while (true) {
             DAWGNode node = stack.pollLast();
             if (node == null)
@@ -66,6 +70,8 @@ public abstract class DAWGSet implements Iterable<String> {
                 dot.append(", xlabel=\"");
                 if (node.getId() == 0)
                     dot.append("START");
+                else if (node.getId() == 1)
+                    dot.append("END");
                 else
                     dot.append(node.getId());
                 dot.append('\"');
@@ -119,6 +125,8 @@ public abstract class DAWGSet implements Iterable<String> {
      * @return      the ModifiableDAWGNode or CompressedDAWGNode functioning as the DAWGSet's source node.
      */
     abstract DAWGNode getSourceNode();
+    
+    abstract DAWGNode getEndNode();
 
     @Override
     public Iterator<String> iterator() {
@@ -395,7 +403,7 @@ public abstract class DAWGSet implements Iterable<String> {
                                     retCurrentString = true;
                                 else {
                                     char letter = level >= prefixStr.length() ? buffer[level] : '\0';
-                                    stack.add(node instanceof ModifiableDAWGNode ? new ModifiableDAWGNode(true, node.getId()) : new CompressedDAWGNode(letter, true, 0));
+                                    stack.add(node instanceof ModifiableDAWGNode ? new ModifiableDAWGNode((ModifiableDAWGSet)DAWGSet.this, true, node.getId()) : new CompressedDAWGNode(letter, true, 0));
                                     levelsStack.add(level);
                                     charsStack.add(letter);
                                     flagsStack.add(encodeFlags(checkFrom, checkTo, checkSubstring));

@@ -13,6 +13,8 @@ public class CompressedDAWGSet extends DAWGSet {
     //SimpleMDAGNode from which all others in the structure are reachable (will be defined if this ModifiableDAWGSet is simplified)
     CompressedDAWGNode sourceNode;
     
+    CompressedDAWGNode endNode;
+    
     //Array that will contain a space-saving version of the ModifiableDAWGSet after a call to simplify().
     CompressedDAWGNode[] mdagDataArray;
     
@@ -45,6 +47,11 @@ public class CompressedDAWGSet extends DAWGSet {
     @Override
     DAWGNode getSourceNode() {
         return sourceNode;
+    }
+    
+    @Override
+    DAWGNode getEndNode() {
+        return endNode;
     }
     
     /**

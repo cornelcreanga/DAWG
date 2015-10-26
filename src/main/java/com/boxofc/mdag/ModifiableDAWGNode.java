@@ -55,13 +55,16 @@ class ModifiableDAWGNode implements DAWGNode {
     //The int which will store this node's hash code after its been calculated (necessary due to how expensive the hashing calculation is)
     private Integer storedHashCode;
     
+    private ModifiableDAWGSet graph;
+    
     /**
      * Constructs an MDAGNode.
      
      * @param isAcceptNode     a boolean denoting the accept state status of this node
      * @param id               identifier of this node
      */
-    public ModifiableDAWGNode(boolean isAcceptNode, int id) {
+    public ModifiableDAWGNode(ModifiableDAWGSet graph, boolean isAcceptNode, int id) {
+        this.graph = graph;
         this.id = id;
         this.isAcceptNode = isAcceptNode;
         outgoingTransitionTreeMap = new TreeMap<>();
@@ -76,6 +79,7 @@ class ModifiableDAWGNode implements DAWGNode {
      */
     public ModifiableDAWGNode(ModifiableDAWGNode node, int id) {
         this.id = id;
+        graph = node.graph;
         isAcceptNode = node.isAcceptNode;
         outgoingTransitionTreeMap = new TreeMap<>(node.outgoingTransitionTreeMap);
         
@@ -85,22 +89,28 @@ class ModifiableDAWGNode implements DAWGNode {
             transition.getValue().addIncomingTransition(transition.getKey(), this);
     }
     
-    private void addIncomingTransition(char letter, ModifiableDAWGNode node) {
-        Map<Integer, ModifiableDAWGNode> letterIncomingTransitions = incomingTransitionTreeMap.get(letter);
-        if (letterIncomingTransitions == null)
-            incomingTransitionTreeMap.put(letter, letterIncomingTransitions = new HashMap<>());
-        if (letterIncomingTransitions.put(node.getId(), node) != node)
+    public void addIncomingTransition(char letter, ModifiableDAWGNode node) {
+        if (graph == null || graph.isWithIncomingTransitions()) {
+            Map<Integer, ModifiableDAWGNode> letterIncomingTransitions = incomingTransitionTreeMap.get(letter);
+            if (letterIncomingTransitions == null)
+                incomingTransitionTreeMap.put(letter, letterIncomingTransitions = new HashMap<>());
+            if (letterIncomingTransitions.put(node.getId(), node) != node)
+                incomingTransitionCount++;
+        } else
             incomingTransitionCount++;
     }
     
-    private void removeIncomingTransition(char letter, ModifiableDAWGNode node) {
-        Map<Integer, ModifiableDAWGNode> letterIncomingTransitions = incomingTransitionTreeMap.get(letter);
-        if (letterIncomingTransitions != null) {
-            if (letterIncomingTransitions.remove(node.getId()) != null)
-                incomingTransitionCount--;
-            if (letterIncomingTransitions.isEmpty())
-                incomingTransitionTreeMap.remove(letter);
-        }
+    public void removeIncomingTransition(char letter, ModifiableDAWGNode node) {
+        if (graph == null || graph.isWithIncomingTransitions()) {
+            Map<Integer, ModifiableDAWGNode> letterIncomingTransitions = incomingTransitionTreeMap.get(letter);
+            if (letterIncomingTransitions != null) {
+                if (letterIncomingTransitions.remove(node.getId()) != null)
+                    incomingTransitionCount--;
+                if (letterIncomingTransitions.isEmpty())
+                    incomingTransitionTreeMap.remove(letter);
+            }
+        } else
+            incomingTransitionCount--;
     }
     
     /**
@@ -206,6 +216,10 @@ class ModifiableDAWGNode implements DAWGNode {
         return outgoingTransitionTreeMap.containsKey(letter);
     }
     
+    public boolean hasIncomingTransition(char letter) {
+        return incomingTransitionTreeMap.containsKey(letter);
+    }
+    
     /**
      * Determines whether this node has any outgoing transitions.
      
@@ -303,7 +317,11 @@ class ModifiableDAWGNode implements DAWGNode {
      */
     public void reassignOutgoingTransition(char letter, ModifiableDAWGNode oldTargetNode, ModifiableDAWGNode newTargetNode) {
         oldTargetNode.removeIncomingTransition(letter, this);
+        if (oldTargetNode.isAcceptNode() && !oldTargetNode.hasIncomingTransition(letter))
+            ((ModifiableDAWGNode)graph.getEndNode()).removeIncomingTransition(letter, oldTargetNode);
         newTargetNode.addIncomingTransition(letter, this);
+        if (newTargetNode.isAcceptNode())
+            ((ModifiableDAWGNode)graph.getEndNode()).addIncomingTransition(letter, newTargetNode);
         
         outgoingTransitionTreeMap.put(letter, newTargetNode);
     }
@@ -317,8 +335,8 @@ class ModifiableDAWGNode implements DAWGNode {
      * @param id                            identifier of the new node
      * @return                              the (newly created) ModifiableDAWGNode that is the target of the created transition
      */
-    public ModifiableDAWGNode addOutgoingTransition(char letter, boolean targetAcceptStateStatus, int id) {
-        ModifiableDAWGNode newTargetNode = new ModifiableDAWGNode(targetAcceptStateStatus, id);
+    public ModifiableDAWGNode addOutgoingTransition(ModifiableDAWGSet graph, char letter, boolean targetAcceptStateStatus, int id) {
+        ModifiableDAWGNode newTargetNode = new ModifiableDAWGNode(graph, targetAcceptStateStatus, id);
         newTargetNode.addIncomingTransition(letter, this);
         
         outgoingTransitionTreeMap.put(letter, newTargetNode);

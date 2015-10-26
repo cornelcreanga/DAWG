@@ -36,10 +36,10 @@ import org.junit.Test;
 public class ModifiableDAWGNodeTest {
     @Test
     public void addOutgoingTransitionTest() {
-        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
-        node1.addOutgoingTransition('a', true, 0);
-        node1.addOutgoingTransition('b', false, 0);
-        node1.addOutgoingTransition('c', false, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(null, false, 0);
+        node1.addOutgoingTransition(null, 'a', true, 0);
+        node1.addOutgoingTransition(null, 'b', false, 0);
+        node1.addOutgoingTransition(null, 'c', false, 0);
         
         TreeMap<Character, ModifiableDAWGNode> outgoingTransitionTreeMap = node1.getOutgoingTransitions();
         
@@ -51,14 +51,14 @@ public class ModifiableDAWGNodeTest {
     
     @Test
     public void cloneTest() {
-        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
-        node1.addOutgoingTransition('a', false, 0);
-        node1.addOutgoingTransition('b', true, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(null, false, 0);
+        node1.addOutgoingTransition(null, 'a', false, 0);
+        node1.addOutgoingTransition(null, 'b', true, 0);
         ModifiableDAWGNode cloneNode1 = new ModifiableDAWGNode(node1, 0);
         
-        ModifiableDAWGNode node2 = new ModifiableDAWGNode(true, 0);
-        node2.addOutgoingTransition('c', false, 0);
-        node2.addOutgoingTransition('d', true, 0);
+        ModifiableDAWGNode node2 = new ModifiableDAWGNode(null, true, 0);
+        node2.addOutgoingTransition(null, 'c', false, 0);
+        node2.addOutgoingTransition(null, 'd', true, 0);
         ModifiableDAWGNode cloneNode2 = new ModifiableDAWGNode(node2, 0);
         
         assertTrue(node1 != cloneNode1);
@@ -74,13 +74,13 @@ public class ModifiableDAWGNodeTest {
     
     @Test
     public void transitionTest1() {
-        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(null, false, 0);
         ModifiableDAWGNode currentNode = node1;
         
         char[] alphabet = {'a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k'};
         
         for (int i = 0; i < alphabet.length; i++)
-            currentNode = currentNode.addOutgoingTransition(alphabet[i], i % 2 == 0, 0);
+            currentNode = currentNode.addOutgoingTransition(null, alphabet[i], i % 2 == 0, 0);
         
         String alphaStr = new String(alphabet);
         
@@ -89,22 +89,22 @@ public class ModifiableDAWGNodeTest {
     
     @Test
     public void reassignOutgoingTransitionTest() {
-        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
-        node1.addOutgoingTransition('a', true, 0);
-        node1.addOutgoingTransition('b', false, 0);
-        node1.addOutgoingTransition('c', true, 0);
-        node1.addOutgoingTransition('d', false, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(null, false, 0);
+        node1.addOutgoingTransition(null, 'a', true, 0);
+        node1.addOutgoingTransition(null, 'b', false, 0);
+        node1.addOutgoingTransition(null, 'c', true, 0);
+        node1.addOutgoingTransition(null, 'd', false, 0);
         
-        ModifiableDAWGNode node2 = new ModifiableDAWGNode(true, 0);
+        ModifiableDAWGNode node2 = new ModifiableDAWGNode(null, true, 0);
         node1.reassignOutgoingTransition('a', node1.transition('a'), node2);
         
-        ModifiableDAWGNode node3 = new ModifiableDAWGNode(false, 0);
+        ModifiableDAWGNode node3 = new ModifiableDAWGNode(null, false, 0);
         node1.reassignOutgoingTransition('b', node1.transition('b'), node3);
         
-        ModifiableDAWGNode node4 = new ModifiableDAWGNode(false, 0);
+        ModifiableDAWGNode node4 = new ModifiableDAWGNode(null, false, 0);
         node1.reassignOutgoingTransition('c', node1.transition('c'), node4);
         
-        ModifiableDAWGNode node5 = new ModifiableDAWGNode(true, 0);
+        ModifiableDAWGNode node5 = new ModifiableDAWGNode(null, true, 0);
         node1.reassignOutgoingTransition('d', node1.transition('d'), node5);
         
         assertTrue(node1.transition('a') == node2);
@@ -122,12 +122,12 @@ public class ModifiableDAWGNodeTest {
     
     @Test
     public void cloneTest2() {
-        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(null, false, 0);
         
-        ModifiableDAWGNode node2 = node1.addOutgoingTransition('\0', false, 0);
-        node2.addOutgoingTransition('a', false, 0);
-        node2.addOutgoingTransition('b', false, 0);
-        node2.addOutgoingTransition('c', false, 0);
+        ModifiableDAWGNode node2 = node1.addOutgoingTransition(null, '\0', false, 0);
+        node2.addOutgoingTransition(null, 'a', false, 0);
+        node2.addOutgoingTransition(null, 'b', false, 0);
+        node2.addOutgoingTransition(null, 'c', false, 0);
         
         ModifiableDAWGNode node3 = node2.clone(node1, '\0', 0);
         
@@ -143,11 +143,11 @@ public class ModifiableDAWGNodeTest {
     
     @Test
     public void equalsTest() {
-        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
-        ModifiableDAWGNode node2 = new ModifiableDAWGNode(false, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(null, false, 0);
+        ModifiableDAWGNode node2 = new ModifiableDAWGNode(null, false, 0);
         
-        ModifiableDAWGNode node3 = new ModifiableDAWGNode(true, 0);
-        ModifiableDAWGNode node4 = new ModifiableDAWGNode(true, 0);
+        ModifiableDAWGNode node3 = new ModifiableDAWGNode(null, true, 0);
+        ModifiableDAWGNode node4 = new ModifiableDAWGNode(null, true, 0);
         
         ModifiableDAWGNode currentNode1 = node1;
         ModifiableDAWGNode currentNode2 = node2;
@@ -155,8 +155,8 @@ public class ModifiableDAWGNodeTest {
         char[] alphabet = {'a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
         
         for (int i = 0; i < alphabet.length; i++) {
-           currentNode1 = currentNode1.addOutgoingTransition(alphabet[i], i % 2 == 0, 0);
-           currentNode2 = currentNode2.addOutgoingTransition(alphabet[i], i % 2 == 0, 0);
+           currentNode1 = currentNode1.addOutgoingTransition(null, alphabet[i], i % 2 == 0, 0);
+           currentNode2 = currentNode2.addOutgoingTransition(null, alphabet[i], i % 2 == 0, 0);
         }
             
         assertEquals(node1, node2);
@@ -168,11 +168,11 @@ public class ModifiableDAWGNodeTest {
     
     @Test
     public void hashTest() {
-        ModifiableDAWGNode node1 = new ModifiableDAWGNode(false, 0);
-        ModifiableDAWGNode node2 = new ModifiableDAWGNode(false, 0);
+        ModifiableDAWGNode node1 = new ModifiableDAWGNode(null, false, 0);
+        ModifiableDAWGNode node2 = new ModifiableDAWGNode(null, false, 0);
         
-        ModifiableDAWGNode node3 = new ModifiableDAWGNode(true, 0);
-        ModifiableDAWGNode node4 = new ModifiableDAWGNode(true, 0);
+        ModifiableDAWGNode node3 = new ModifiableDAWGNode(null, true, 0);
+        ModifiableDAWGNode node4 = new ModifiableDAWGNode(null, true, 0);
         
         ModifiableDAWGNode currentNode1 = node1;
         ModifiableDAWGNode currentNode2 = node2;
@@ -180,8 +180,8 @@ public class ModifiableDAWGNodeTest {
         char[] alphabet = {'a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
         
         for (int i = 0; i < alphabet.length; i++) {
-           currentNode1 = currentNode1.addOutgoingTransition(alphabet[i], i % 2 == 0, 0);
-           currentNode2 = currentNode2.addOutgoingTransition(alphabet[i], i % 2 == 0, 0);
+           currentNode1 = currentNode1.addOutgoingTransition(null, alphabet[i], i % 2 == 0, 0);
+           currentNode2 = currentNode2.addOutgoingTransition(null, alphabet[i], i % 2 == 0, 0);
         }
         
         assertEquals(node1.hashCode(), node2.hashCode());
