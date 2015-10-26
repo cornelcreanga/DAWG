@@ -219,10 +219,12 @@ public class ModifiableDAWGSet extends DAWGSet {
         return result;
     }
 
+    @Override
     public boolean isWithIncomingTransitions() {
         return withIncomingTransitions;
     }
 
+    @Override
     public void setWithIncomingTransitions(boolean withIncomingTransitions) {
         this.withIncomingTransitions = withIncomingTransitions;
     }
@@ -301,8 +303,9 @@ public class ModifiableDAWGSet extends DAWGSet {
             if (result) {
                 size--;
                 if (str.isEmpty()) {
-                    for (char c : strEndNode.getIncomingTransitions().keySet())
-                        endNode.removeIncomingTransition(c, strEndNode);
+                    if (isWithIncomingTransitions())
+                        for (char c : strEndNode.getIncomingTransitions().keySet())
+                            endNode.removeIncomingTransition(c, strEndNode);
                 } else
                     endNode.removeIncomingTransition(str.charAt(str.length() - 1), strEndNode);
             }
@@ -487,8 +490,9 @@ public class ModifiableDAWGSet extends DAWGSet {
             size++;
             return true;
         } else if (originNode.setAcceptStateStatus(true)) {
-            for (char c : originNode.getIncomingTransitions().keySet())
-                endNode.addIncomingTransition(c, originNode);
+            if (isWithIncomingTransitions())
+                for (char c : originNode.getIncomingTransitions().keySet())
+                    endNode.addIncomingTransition(c, originNode);
             size++;
             return true;
         } else
@@ -649,6 +653,7 @@ public class ModifiableDAWGSet extends DAWGSet {
      */
     public CompressedDAWGSet compress() {
         CompressedDAWGSet compressed = new CompressedDAWGSet();
+        compressed.setWithIncomingTransitions(isWithIncomingTransitions());
         compressed.size = size;
         compressed.maxLength = maxLength;
         compressed.mdagDataArray = new CompressedDAWGNode[transitionCount];

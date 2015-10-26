@@ -28,6 +28,8 @@ public class CompressedDAWGSet extends DAWGSet {
      */
     transient Integer maxLength;
     
+    private boolean withIncomingTransitions;
+    
     /**
      * Determines whether a String is present in the ModifiableDAWGSet.
      
@@ -52,6 +54,16 @@ public class CompressedDAWGSet extends DAWGSet {
     @Override
     DAWGNode getEndNode() {
         return endNode;
+    }
+
+    @Override
+    public boolean isWithIncomingTransitions() {
+        return withIncomingTransitions;
+    }
+
+    @Override
+    public void setWithIncomingTransitions(boolean withIncomingTransitions) {
+        this.withIncomingTransitions = withIncomingTransitions;
     }
     
     /**
@@ -186,7 +198,10 @@ public class CompressedDAWGSet extends DAWGSet {
     }
     
     public ModifiableDAWGSet uncompress() {
-        return new ModifiableDAWGSet(this);
+        ModifiableDAWGSet ret = new ModifiableDAWGSet();
+        ret.setWithIncomingTransitions(isWithIncomingTransitions());
+        ret.addAll(this);
+        return ret;
     }
 
     @Override

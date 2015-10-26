@@ -43,12 +43,18 @@ public abstract class DAWGSet implements Iterable<String> {
     public static void setDotExecutablePath(String dotExecutablePath) {
         DAWGSet.dotExecutablePath = dotExecutablePath;
     }
+
+    public abstract boolean isWithIncomingTransitions();
+
+    public abstract void setWithIncomingTransitions(boolean withIncomingTransitions);
     
     abstract SemiNavigableMap<Character, DAWGNode> getOutgoingTransitions(DAWGNode parent);
     
     abstract SemiNavigableMap<Character, Collection<? extends DAWGNode>> getIncomingTransitions(DAWGNode parent);
   
     public String toGraphViz(boolean withNodeIds, boolean withIncomingTransitions) {
+        if (withIncomingTransitions)
+            withIncomingTransitions = isWithIncomingTransitions();
         StringBuilder dot = new StringBuilder("digraph dawg {\n");
         dot.append("graph [rankdir=LR, ratio=fill];\n");
         dot.append("node [fontsize=14, shape=circle];\n");

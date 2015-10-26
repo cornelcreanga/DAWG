@@ -47,15 +47,15 @@ class ModifiableDAWGNode implements DAWGNode {
     //The int representing this node's incoming transition node count
     private int incomingTransitionCount;
     
-    private final TreeMap<Character, Map<Integer, ModifiableDAWGNode>> incomingTransitionTreeMap = new TreeMap<>();
-    
     //The int denoting index in a simplified mdag data array that this node's transition set begins at
     private int transitionSetBeginIndex = -1;
     
     //The int which will store this node's hash code after its been calculated (necessary due to how expensive the hashing calculation is)
     private Integer storedHashCode;
     
-    private ModifiableDAWGSet graph;
+    private final ModifiableDAWGSet graph;
+    
+    private final TreeMap<Character, Map<Integer, ModifiableDAWGNode>> incomingTransitionTreeMap;
     
     /**
      * Constructs an MDAGNode.
@@ -68,6 +68,7 @@ class ModifiableDAWGNode implements DAWGNode {
         this.id = id;
         this.isAcceptNode = isAcceptNode;
         outgoingTransitionTreeMap = new TreeMap<>();
+        incomingTransitionTreeMap = graph == null || graph.isWithIncomingTransitions() ? new TreeMap<>() : null;
     }
     
     /**
@@ -82,6 +83,7 @@ class ModifiableDAWGNode implements DAWGNode {
         graph = node.graph;
         isAcceptNode = node.isAcceptNode;
         outgoingTransitionTreeMap = new TreeMap<>(node.outgoingTransitionTreeMap);
+        incomingTransitionTreeMap = graph == null || graph.isWithIncomingTransitions() ? new TreeMap<>() : null;
         
         //Loop through the nodes in this node's outgoing transition set, incrementing the number of
         //incoming transitions of each by 1 (to account for this newly created node's outgoing transitions)
@@ -216,7 +218,7 @@ class ModifiableDAWGNode implements DAWGNode {
         return outgoingTransitionTreeMap.containsKey(letter);
     }
     
-    public boolean hasIncomingTransition(char letter) {
+    private boolean hasIncomingTransition(char letter) {
         return incomingTransitionTreeMap.containsKey(letter);
     }
     
@@ -318,7 +320,7 @@ class ModifiableDAWGNode implements DAWGNode {
     public void reassignOutgoingTransition(char letter, ModifiableDAWGNode oldTargetNode, ModifiableDAWGNode newTargetNode) {
         oldTargetNode.removeIncomingTransition(letter, this);
         newTargetNode.addIncomingTransition(letter, this);
-        if (graph != null) {
+        if (graph != null && graph.isWithIncomingTransitions()) {
             if (oldTargetNode.isAcceptNode() && !oldTargetNode.hasIncomingTransition(letter))
                 ((ModifiableDAWGNode)graph.getEndNode()).removeIncomingTransition(letter, oldTargetNode);
             if (newTargetNode.isAcceptNode())
