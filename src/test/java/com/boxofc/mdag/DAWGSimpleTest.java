@@ -387,7 +387,7 @@ public class DAWGSimpleTest {
     
     @Test
     public void getStringsAll() {
-        for (int attempt = 0; attempt < 10; attempt++) {
+        for (int attempt = 0; attempt < 5; attempt++) {
             NavigableSet<String> wordsSet = new TreeSet<>();
             for (int i = 0; i < 625; i++)
                 if (attempt < 2 || RANDOM.nextBoolean() || RANDOM.nextBoolean())
@@ -399,12 +399,14 @@ public class DAWGSimpleTest {
             CompressedDAWGSet cdawg = dawg.compress();
             
             NavigableSet<String> patternsSet = new TreeSet<>();
-            while (patternsSet.size() < 9) {
+            while (patternsSet.size() < 4) {
                 int i = RANDOM.nextInt(100000);
                 char s[] = String.valueOf(i).replace("0", "").toCharArray();
                 for (int j = 0; j < s.length; j++)
                     s[j] = (char)(s[j] - '1' + 'a');
-                patternsSet.add(String.valueOf(s));
+                String word = String.valueOf(s);
+                if (!wordsSet.contains(word))
+                    patternsSet.add(word);
             }
             patternsSet.add("");
             for (int i = 0; i < 4; i++)
@@ -413,24 +415,38 @@ public class DAWGSimpleTest {
             
             for (String prefix : patterns) {
                 for (String substring : patterns) {
-                    for (String from : patterns) {
-                        for (String to : patterns) {
-                            for (int inclFrom = 0; inclFrom < 2; inclFrom++) {
-                                boolean inclF = inclFrom == 1;
-                                for (int inclTo = 0; inclTo < 2; inclTo++) {
-                                    boolean inclT = inclTo == 1;
-                                    for (int desc = 0; desc < 2; desc++) {
-                                        boolean descending = desc == 1;
-                                        List<String> actual = new ArrayList<>();
-                                        for (String s : dawg.getStrings(prefix, substring, null, descending, from, inclF, to, inclT))
-                                            actual.add(s);
-                                        List<String> expected = getStrings(words, prefix, substring, descending, from, inclF, to, inclT);
-                                        assertEquals(/*"Prefix: " + prefix + ", substring: " + substring + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"),*/ expected, actual);
-                                        
-                                        actual = new ArrayList<>();
-                                        for (String s : cdawg.getStrings(prefix, substring, null, descending, from, inclF, to, inclT))
-                                            actual.add(s);
-                                        assertEquals(/*"Prefix: " + prefix + ", substring: " + substring + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"),*/ expected, actual);
+                    for (String suffix : patterns) {
+                        for (String from : patterns) {
+                            for (String to : patterns) {
+                                for (int inclFrom = 0; inclFrom < 2; inclFrom++) {
+                                    boolean inclF = inclFrom == 1;
+                                    for (int inclTo = 0; inclTo < 2; inclTo++) {
+                                        boolean inclT = inclTo == 1;
+                                        for (int desc = 0; desc < 2; desc++) {
+                                            boolean descending = desc == 1;
+                                            List<String> actual = new ArrayList<>();
+                                            for (String s : dawg.getStrings(prefix, substring, suffix, descending, from, inclF, to, inclT))
+                                                actual.add(s);
+                                            // Suffix search returns words with no particular order.
+                                            if (prefix.isEmpty() && !suffix.isEmpty()) {
+                                                Collections.sort(actual);
+                                                if (descending)
+                                                    Collections.reverse(actual);
+                                            }
+                                            List<String> expected = getStrings(words, prefix, substring, suffix, descending, from, inclF, to, inclT);
+                                            assertEquals(/*"Prefix: " + prefix + ", substring: " + substring + ", suffix: " + suffix + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"),*/ expected, actual);
+
+                                            actual = new ArrayList<>();
+                                            for (String s : cdawg.getStrings(prefix, substring, suffix, descending, from, inclF, to, inclT))
+                                                actual.add(s);
+                                            // Suffix search returns words with no particular order.
+                                            if (prefix.isEmpty() && !suffix.isEmpty()) {
+                                                Collections.sort(actual);
+                                                if (descending)
+                                                    Collections.reverse(actual);
+                                            }
+                                            assertEquals(/*"Prefix: " + prefix + ", substring: " + substring + ", suffix: " + suffix + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"),*/ expected, actual);
+                                        }
                                     }
                                 }
                             }
@@ -441,10 +457,10 @@ public class DAWGSimpleTest {
         }
     }
     
-    private static List<String> getStrings(String words[], String prefix, String substring, boolean desc, String from, boolean inclFrom, String to, boolean inclTo) {
+    private static List<String> getStrings(String words[], String prefix, String substring, String suffix, boolean desc, String from, boolean inclFrom, String to, boolean inclTo) {
         List<String> ret = new ArrayList<>();
         for (String word : words) {
-            if (!word.startsWith(prefix) || !word.contains(substring))
+            if (!word.startsWith(prefix) || !word.contains(substring) || !word.endsWith(suffix))
                 continue;
             int cmp = word.compareTo(from);
             if (cmp < 0 || cmp == 0 && !inclFrom)

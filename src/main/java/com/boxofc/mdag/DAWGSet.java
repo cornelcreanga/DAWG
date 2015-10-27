@@ -201,6 +201,7 @@ public abstract class DAWGSet implements Iterable<String> {
                         private char buffer[];
                         private Deque<Character> charsStack;
                         private Deque<Integer> levelsStack;
+                        private Deque<Boolean> checkSubStack;
                         private final Deque<DAWGNode> stack = new LinkedList<>();
                         private char from[];
                         private char to[];
@@ -212,6 +213,8 @@ public abstract class DAWGSet implements Iterable<String> {
                                 buffer = new char[getMaxLength()];
                                 System.arraycopy(suffixString.toCharArray(), 0, buffer, buffer.length - suffixString.length(), suffixString.length());
                                 stack.addAll(originNodes);
+                                checkSubStack = new LinkedList<>();
+                                checkSubStack.addAll(Collections.nCopies(originNodes.size(), true));
                                 levelsStack = new LinkedList<>();
                                 levelsStack.addAll(Collections.nCopies(originNodes.size(), suffixString.length()));
                                 charsStack = new LinkedList<>();
@@ -231,9 +234,24 @@ public abstract class DAWGSet implements Iterable<String> {
                                 if (node == null)
                                     throw new NoSuchElementException();
                                 int level = levelsStack.pollLast();
+                                int currentCharPos = buffer.length - level;
                                 if (level > suffixString.length()) {
                                     char c = charsStack.pollLast();
-                                    buffer[buffer.length - level] = c;
+                                    buffer[currentCharPos] = c;
+                                }
+                                boolean checkSub = checkSubStack.pollLast();
+                                boolean skipCurrent = false;
+                                if (checkSub && sub != null) {
+                                    skipCurrent = level < sub.length;
+                                    if (!skipCurrent) {
+                                        for (int i = 0; i < sub.length; i++) {
+                                            if (sub[i] != buffer[currentCharPos + i]) {
+                                                skipCurrent = true;
+                                                break;
+                                            }
+                                        }
+                                        checkSub = skipCurrent;
+                                    }
                                 }
                                 SemiNavigableMap<Character, Collection<? extends DAWGNode>> childrenMap = getIncomingTransitions(node);
                                 if (descending)
@@ -243,9 +261,44 @@ public abstract class DAWGSet implements Iterable<String> {
                                     stack.addAll(children);
                                     charsStack.addAll(Collections.nCopies(children.size(), e.getKey()));
                                     levelsStack.addAll(Collections.nCopies(children.size(), level + 1));
+                                    checkSubStack.addAll(Collections.nCopies(children.size(), checkSub));
                                 }
-                                if (node.getId() == DAWGNode.START)
-                                    return String.valueOf(buffer, buffer.length - level, level);
+                                if (!skipCurrent && node.getId() == DAWGNode.START) {
+                                    if (from != null) {
+                                        int length = Math.min(level, from.length);
+                                        boolean equal = true;
+                                        for (int i = 0; i < length; i++) {
+                                            int cmp = from[i] - buffer[currentCharPos + i];
+                                            if (cmp < 0) {
+                                                equal = false;
+                                                break;
+                                            } else if (cmp > 0) {
+                                                skipCurrent = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!skipCurrent && equal && (from.length > level || level == from.length && !inclFrom))
+                                            skipCurrent = true;
+                                    }
+                                    if (to != null && !skipCurrent) {
+                                        int length = Math.min(level, to.length);
+                                        boolean equal = true;
+                                        for (int i = 0; i < length; i++) {
+                                            int cmp = to[i] - buffer[currentCharPos + i];
+                                            if (cmp > 0) {
+                                                equal = false;
+                                                break;
+                                            } else if (cmp < 0) {
+                                                skipCurrent = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!skipCurrent && equal && (to.length < level || level == to.length && !inclTo))
+                                            skipCurrent = true;
+                                    }
+                                    if (!skipCurrent)
+                                        return String.valueOf(buffer, currentCharPos, level);
+                                }
                             }
                         }
                     };
