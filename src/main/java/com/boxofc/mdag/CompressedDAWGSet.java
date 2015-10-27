@@ -62,8 +62,13 @@ public class CompressedDAWGSet extends DAWGSet {
     }
 
     @Override
-    DAWGNode getNodeByPath(DAWGNode from, String path) {
+    DAWGNode getNodeByPrefix(DAWGNode from, String path) {
         return CompressedDAWGNode.traverseMDAG(mdagDataArray, (CompressedDAWGNode)from, path);
+    }
+    
+    @Override
+    Collection<? extends DAWGNode> getNodesBySuffix(String suffix) {
+        return null;
     }
 
     @Override

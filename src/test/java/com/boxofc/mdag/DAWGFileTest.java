@@ -27,8 +27,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.NavigableSet;
+import java.util.Set;
 import java.util.TreeSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -277,18 +279,18 @@ public class DAWGFileTest {
     @Test
     public void getStringsEndingWithTest() {
         for (String suffixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            List<String> controlSet = new ArrayList<>();
+            Set<String> controlSet = new HashSet<>();
             for (String str : wordArrayList) {
                 if (str.endsWith(suffixStr))
                     controlSet.add(str);
             }
 
-            List<String> actual = new ArrayList<>();
+            Set<String> actual = new HashSet<>();
             for (String s : dawg1.getStringsEndingWith(suffixStr))
                 actual.add(s);
             assertEquals(controlSet, actual);
             
-            actual = new ArrayList<>();
+            actual = new HashSet<>();
             for (String s : dawg2.getStringsEndingWith(suffixStr))
                 actual.add(s);
             assertEquals(controlSet, actual);

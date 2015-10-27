@@ -425,12 +425,12 @@ public class DAWGSimpleTest {
                                         for (String s : dawg.getStrings(prefix, substring, null, descending, from, inclF, to, inclT))
                                             actual.add(s);
                                         List<String> expected = getStrings(words, prefix, substring, descending, from, inclF, to, inclT);
-                                        assertEquals("Prefix: " + prefix + ", substring: " + substring + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"), expected, actual);
+                                        assertEquals(/*"Prefix: " + prefix + ", substring: " + substring + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"),*/ expected, actual);
                                         
                                         actual = new ArrayList<>();
                                         for (String s : cdawg.getStrings(prefix, substring, null, descending, from, inclF, to, inclT))
                                             actual.add(s);
-                                        assertEquals("Prefix: " + prefix + ", substring: " + substring + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"), expected, actual);
+                                        assertEquals(/*"Prefix: " + prefix + ", substring: " + substring + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"),*/ expected, actual);
                                     }
                                 }
                             }

@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.BitSet;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -72,9 +73,9 @@ public abstract class DAWGSet implements Iterable<String> {
             dot.append('n').append(node.getId()).append(" [label=\"").append(node.isAcceptNode() ? 'O' : ' ').append('\"');
             if (withNodeIds) {
                 dot.append(", xlabel=\"");
-                if (node.getId() == 0)
+                if (node.getId() == DAWGNode.START)
                     dot.append("START");
-                else if (node.getId() == 1)
+                else if (node.getId() == DAWGNode.END)
                     dot.append("END");
                 else
                     dot.append(node.getId());
@@ -184,11 +185,74 @@ public abstract class DAWGSet implements Iterable<String> {
     
     public abstract int getNodeCount();
     
-    abstract DAWGNode getNodeByPath(DAWGNode from, String path);
+    abstract DAWGNode getNodeByPrefix(DAWGNode from, String prefix);
+    
+    abstract Collection<? extends DAWGNode> getNodesBySuffix(String suffix);
     
     abstract int getMaxLength();
     
     Iterable<String> getStrings(String prefixString, String subString, String suffixString, boolean descending, String fromString, boolean inclFrom, String toString, boolean inclTo) {
+        if (suffixString != null && !suffixString.isEmpty() && isWithIncomingTransitions() && getEndNode() != null && (prefixString == null || prefixString.isEmpty())) {
+            // Suffix search.
+            return new Iterable<String>() {
+                @Override
+                public Iterator<String> iterator() {
+                    return new LookaheadIterator<String>() {
+                        private char buffer[];
+                        private Deque<Character> charsStack;
+                        private Deque<Integer> levelsStack;
+                        private final Deque<DAWGNode> stack = new LinkedList<>();
+                        private char from[];
+                        private char to[];
+                        private char sub[];
+                        
+                        {
+                            Collection<? extends DAWGNode> originNodes = getNodesBySuffix(suffixString);
+                            if (!originNodes.isEmpty()) {
+                                buffer = new char[getMaxLength()];
+                                System.arraycopy(suffixString.toCharArray(), 0, buffer, buffer.length - suffixString.length(), suffixString.length());
+                                stack.addAll(originNodes);
+                                levelsStack = new LinkedList<>();
+                                levelsStack.addAll(Collections.nCopies(originNodes.size(), suffixString.length()));
+                                charsStack = new LinkedList<>();
+                                if (subString != null && !subString.isEmpty() && !suffixString.contains(subString))
+                                    sub = subString.toCharArray();
+                                if (fromString != null && (!inclFrom || !fromString.isEmpty()))
+                                    from = fromString.toCharArray();
+                                if (toString != null)
+                                    to = toString.toCharArray();
+                            }
+                        }
+                        
+                        @Override
+                        public String nextElement() throws NoSuchElementException {
+                            while (true) {
+                                DAWGNode node = stack.pollLast();
+                                if (node == null)
+                                    throw new NoSuchElementException();
+                                int level = levelsStack.pollLast();
+                                if (level > suffixString.length()) {
+                                    char c = charsStack.pollLast();
+                                    buffer[buffer.length - level] = c;
+                                }
+                                SemiNavigableMap<Character, Collection<? extends DAWGNode>> childrenMap = getIncomingTransitions(node);
+                                if (descending)
+                                    childrenMap = childrenMap.descendingMap();
+                                for (Map.Entry<Character, Collection<? extends DAWGNode>> e : childrenMap) {
+                                    Collection<? extends DAWGNode> children = e.getValue();
+                                    stack.addAll(children);
+                                    charsStack.addAll(Collections.nCopies(children.size(), e.getKey()));
+                                    levelsStack.addAll(Collections.nCopies(children.size(), level + 1));
+                                }
+                                if (node.getId() == DAWGNode.START)
+                                    return String.valueOf(buffer, buffer.length - level, level);
+                            }
+                        }
+                    };
+                }
+            };
+        }
+        // Prefix search.
         return new Iterable<String>() {
             @Override
             public Iterator<String> iterator() {
@@ -209,7 +273,7 @@ public abstract class DAWGSet implements Iterable<String> {
                         String toStr = toString;
                         String subStr = subString;
                         //attempt to transition down the path denoted by prefixStr
-                        DAWGNode originNode = getNodeByPath(getSourceNode(), prefixStr);
+                        DAWGNode originNode = getNodeByPrefix(getSourceNode(), prefixStr);
                         if (originNode != null && fromStr != null) {
                             // If fromStr > toStr then return an empty set.
                             if (toStr != null) {
@@ -268,7 +332,7 @@ public abstract class DAWGSet implements Iterable<String> {
                                (checkSubstring ? 4 : 0);
                     }
                     
-                    private void clearCaches() {
+                    private void clearStacks() {
                         stack.clear();
                         charsStack.clear();
                         levelsStack.clear();
@@ -330,7 +394,7 @@ public abstract class DAWGSet implements Iterable<String> {
                                         // All previously added strings are less than current one,
                                         // so they don't suit filter condition.
                                         if (descending)
-                                            clearCaches();
+                                            clearStacks();
                                         // Current string and all its children don't match.
                                         continue;
                                     } else
@@ -381,7 +445,7 @@ public abstract class DAWGSet implements Iterable<String> {
                                         // All previously added strings are less than current one,
                                         // so they don't suit filter condition.
                                         if (!descending)
-                                            clearCaches();
+                                            clearStacks();
                                         // Current string and all its children don't match.
                                         continue;
                                     }

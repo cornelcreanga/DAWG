@@ -28,6 +28,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,6 +37,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
@@ -683,8 +685,29 @@ public class ModifiableDAWGSet extends DAWGSet {
     }
 
     @Override
-    DAWGNode getNodeByPath(DAWGNode from, String path) {
+    DAWGNode getNodeByPrefix(DAWGNode from, String path) {
         return ((ModifiableDAWGNode)from).transition(path);
+    }
+    
+    @Override
+    Collection<? extends DAWGNode> getNodesBySuffix(String suffix) {
+        char suffixText[] = suffix.toCharArray();
+        char lastChar = suffixText[suffixText.length - 1];
+        Map<Integer, ModifiableDAWGNode> wordEndings = endNode.getIncomingTransitions().get(lastChar);
+        if (wordEndings == null)
+            return Collections.EMPTY_LIST;
+        Collection<ModifiableDAWGNode> ret = wordEndings.values();
+        for (int i = suffixText.length - 1; i >= 0; i--) {
+            List<ModifiableDAWGNode> levelNodes = new ArrayList<>();
+            char c = suffixText[i];
+            for (ModifiableDAWGNode node : ret) {
+                wordEndings = node.getIncomingTransitions().get(c);
+                if (wordEndings != null)
+                    levelNodes.addAll(wordEndings.values());
+            }
+            ret = levelNodes;
+        }
+        return ret;
     }
 
     @Override

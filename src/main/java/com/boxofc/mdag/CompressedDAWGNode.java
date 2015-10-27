@@ -39,6 +39,7 @@ class CompressedDAWGNode implements DAWGNode {
     private final int transitionSetSize;
     
     //The int denoting the index (in the array which contains this node) at which this node's transition set begins
+    //will be changed for all objects of this type, necessary for dummy root node creation
     private int transitionSetBeginIndex;
     
     /**
@@ -52,7 +53,6 @@ class CompressedDAWGNode implements DAWGNode {
         this.letter = letter;
         this.isAcceptNode = isAcceptNode;
         this.transitionSetSize = transitionSetSize;
-        this.transitionSetBeginIndex = 0; //will be changed for all objects of this type, necessary for dummy root node creation
     }
     
     /**
@@ -103,7 +103,7 @@ class CompressedDAWGNode implements DAWGNode {
     
     @Override
     public int getId() {
-        return transitionSetBeginIndex == 0 ? 0 : transitionSetSize == 0 ? 1 : transitionSetBeginIndex + 1;
+        return transitionSetBeginIndex == 0 ? START : transitionSetSize == 0 ? END : transitionSetBeginIndex + 1;
     }
     
     /**
