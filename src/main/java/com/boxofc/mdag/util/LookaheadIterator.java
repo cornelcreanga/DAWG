@@ -1,4 +1,4 @@
-package com.boxofc.mdag;
+package com.boxofc.mdag.util;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;

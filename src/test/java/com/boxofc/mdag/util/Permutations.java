@@ -1,4 +1,4 @@
-package com.boxofc.mdag;
+package com.boxofc.mdag.util;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
