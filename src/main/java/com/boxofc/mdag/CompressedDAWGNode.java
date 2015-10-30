@@ -22,25 +22,25 @@
 
 package com.boxofc.mdag;
 
+import com.boxofc.mdag.util.SemiNavigableMap;
+import com.boxofc.mdag.util.LookaheadIterator;
+import com.boxofc.mdag.util.SimpleEntry;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 /**
  * The class capable of representing a MDAG node, its transition set, and one of its incoming transitions;
  * objects of this class are used to represent a MDAG after its been simplified in order to save space.
  
  * @author Kevin
  */
-class CompressedDAWGNode implements DAWGNode {
-    //The character labeling an incoming transition to this node
-    private final char letter;
-    
-    //The boolean denoting the accept state status of this node
-    private final boolean isAcceptNode;
-    
+class CompressedDAWGNode extends DAWGNode {
     //The int denoting the size of this node's outgoing transition set
-    private final int transitionSetSize;
+    private int transitionSetSize = -1;
     
-    //The int denoting the index (in the array which contains this node) at which this node's transition set begins
-    //will be changed for all objects of this type, necessary for dummy root node creation
-    private int transitionSetBeginIndex;
+    private final int index;
+    
+    private final CompressedDAWGSet graph;
     
     /**
      * Constructs a SimpleMDAGNode.
@@ -49,10 +49,9 @@ class CompressedDAWGNode implements DAWGNode {
      * @param isAcceptNode          a boolean representing the accept state status of this SimpleMDAGNode
      * @param transitionSetSize     an int denoting the size of this transition set
      */
-    public CompressedDAWGNode(char letter, boolean isAcceptNode, int transitionSetSize) {
-        this.letter = letter;
-        this.isAcceptNode = isAcceptNode;
-        this.transitionSetSize = transitionSetSize;
+    public CompressedDAWGNode(CompressedDAWGSet graph, int index) {
+        this.graph = graph;
+        this.index = index;
     }
     
     /**
@@ -61,7 +60,7 @@ class CompressedDAWGNode implements DAWGNode {
      * @return      the char representing the transition label leading up to this node
      */
     public char getLetter() {
-        return letter;
+        return index < 0 ? '\0' : (char)(graph.data[index] >> 16);
     }
 
     /**
@@ -71,7 +70,7 @@ class CompressedDAWGNode implements DAWGNode {
      */
     @Override
     public boolean isAcceptNode() {
-        return isAcceptNode;
+        return index < 0 ? true : (graph.data[index] & 1) == 1;
     }
     
     /**
@@ -80,7 +79,7 @@ class CompressedDAWGNode implements DAWGNode {
      * @return      an int of the index in this node's containing array at which its transition set begins
      */
     public int getTransitionSetBeginIndex() {
-        return transitionSetBeginIndex;
+        return index < 0 ? 0 : graph.data[index + 1];
     }
     
     /**
@@ -88,98 +87,106 @@ class CompressedDAWGNode implements DAWGNode {
      
      * @return      an int denoting the size of this node's outgoing transition set
      */
-    public int getOutgoingTransitionSetSize() {
+    public int getOutgoingTransitionsSize() {
+        if (transitionSetSize < 0) {
+            if (index < 0)
+                transitionSetSize = 0;
+            else {
+                int from = index + 2;
+                int to = index + graph.getTransitionSizeInInts();
+                int s = 0;
+                for (int i = from; i < to; i++)
+                    s += Integer.bitCount(graph.data[i]);
+                transitionSetSize = s;
+            }
+        }
         return transitionSetSize;
     }
     
-    /**
-     * Records the index in this node's containing array that its transition set begins at.
-     
-     * @param transitionSetBeginIndex       an int denoting the index in this node's containing array that is transition set beings at
-     */
-    public void setTransitionSetBeginIndex(int transitionSetBeginIndex) {
-        this.transitionSetBeginIndex = transitionSetBeginIndex;
+    public Iterable<CompressedDAWGNode> getOutgoingTransitionsNodes() {
+        return new Iterable<CompressedDAWGNode>() {
+            private final int transitionSizeInInts = graph.getTransitionSizeInInts();
+            private final int size = getOutgoingTransitionsSize();
+            
+            @Override
+            public Iterator<CompressedDAWGNode> iterator() {
+                return new LookaheadIterator<CompressedDAWGNode>() {
+                    private int current;
+                    private int childrenIdx = graph.data[index + 1];
+                    
+                    @Override
+                    public CompressedDAWGNode nextElement() throws NoSuchElementException {
+                        if (current < size) {
+                            CompressedDAWGNode child = new CompressedDAWGNode(graph, childrenIdx);
+                            current++;
+                            childrenIdx += transitionSizeInInts;
+                            return child;
+                        } else
+                            throw new NoSuchElementException();
+                    }
+                };
+            }
+        };
+    }
+    
+    public SemiNavigableMap<Character, CompressedDAWGNode> getOutgoingTransitions() {
+        return new SemiNavigableMap<Character, CompressedDAWGNode>() {
+            private final int transitionSizeInInts = graph.getTransitionSizeInInts();
+            private final int start = index + 2;
+            private final int end = index + transitionSizeInInts;
+            
+            @Override
+            public Iterator<SimpleEntry<Character, CompressedDAWGNode>> iterator() {
+                return new LookaheadIterator<SimpleEntry<Character, CompressedDAWGNode>>() {
+                    private int currentIdx = start;
+                    private int currentValue = end == start ? 0 : graph.data[currentIdx];
+                    private int childrenIdx = graph.data[index + 1];
+                    
+                    @Override
+                    public SimpleEntry<Character, CompressedDAWGNode> nextElement() throws NoSuchElementException {
+                        while (true) {
+                            if (currentValue == 0) {
+                                currentIdx++;
+                                if (currentIdx >= end)
+                                    throw new NoSuchElementException();
+                                childrenIdx += transitionSizeInInts;
+                                currentValue = graph.data[currentIdx];
+                            } else {
+                                int lowest = Integer.lowestOneBit(currentValue);
+                                currentValue -= lowest;
+                                int bitShift = Integer.numberOfLeadingZeros(lowest);
+                                char childLetter = graph.letters[((currentIdx - start) << 5) + bitShift];
+                                CompressedDAWGNode child = new CompressedDAWGNode(graph, graph.data[childrenIdx + bitShift]);
+                                return new SimpleEntry<>(childLetter, child);
+                            }
+                        }
+                    }
+                };
+            }
+
+            @Override
+            public boolean isEmpty() {
+                for (int i = start; i < end; i++)
+                    if (graph.data[i] != 0)
+                        return false;
+                return true;
+            }
+
+            @Override
+            public SemiNavigableMap<Character, CompressedDAWGNode> descendingMap() {
+                return null;
+            }
+        };
     }
     
     @Override
     public int getId() {
-        return transitionSetBeginIndex == 0 ? START : transitionSetSize == 0 ? END : transitionSetBeginIndex + 1;
-    }
-    
-    /**
-     * Follows an outgoing transition from this node.
-     
-     * @param mdagDataArray     the array of SimpleMDAGNodes containing this node
-     * @param letter            the char representation of the desired transition's label
-     * @return                  the CompressedDAWGNode that is the target of the transition labeled with {@code letter},
-     *                          or null if there is no such labeled transition from this node
-     */
-    private CompressedDAWGNode transition(CompressedDAWGNode[] mdagDataArray, char letter) {
-        int onePastTransitionSetEndIndex = transitionSetBeginIndex + transitionSetSize;
-        CompressedDAWGNode targetNode = null;
-        
-        //Loop through the SimpleMDAGNodes in this node's transition set, searching for
-        //the one with a letter equal to that which labels the desired transition
-        for (int i = transitionSetBeginIndex; i < onePastTransitionSetEndIndex; i++) {
-            if (mdagDataArray[i].getLetter() == letter) {
-                targetNode = mdagDataArray[i];
-                break;
-            }
-        }
-        
-        return targetNode;
-    }
-    
-    /**
-     * Follows a transition path starting from this node.
-     
-     * @param mdagDataArray     the array of SimpleMDAGNodes containing this node
-     * @param str               a String corresponding a transition path in the MDAG
-     * @return                  the CompressedDAWGNode at the end of the transition path corresponding to
-                          {@code str}, or null if such a transition path is not present in the MDAG
-     */
-    private CompressedDAWGNode transition(CompressedDAWGNode[] mdagDataArray, String str) {
-        CompressedDAWGNode currentNode = this;
-        int numberOfChars = str.length();
-        
-        //Iteratively transition through the MDAG using the chars in str
-        for (int i = 0; i < numberOfChars; i++) {
-            currentNode = currentNode.transition(mdagDataArray, str.charAt(i));
-            if (currentNode == null) break;
-        }
-        
-        return currentNode;
-    }
-    
-    /**
-     * Follows a transition path starting from the source node of a MDAG.
-     
-     * @param mdagDataArray     the array containing the data of the MDAG to be traversed
-     * @param sourceNode        the dummy CompressedDAWGNode which functions as the source of the MDAG data in {@code mdagDataArray}
-     * @param str               a String corresponding to a transition path in the to-be-traversed MDAG
-     * @return                  the CompressedDAWGNode at the end of the transition path corresponding to
-                          {@code str}, or null if such a transition path is not present in the MDAG
-     */
-    public static CompressedDAWGNode traverseMDAG(CompressedDAWGNode[] mdagDataArray, CompressedDAWGNode sourceNode, String str) {
-        if (str.isEmpty())
-            return sourceNode;
-        
-        char firstLetter = str.charAt(0);
-
-        //Loop through the SimpleMDAGNodes in the processing MDAG's source node's transition set,
-        //searching for the the one with a letter (char) equal to the first char of str.
-        //We can use that target node to transition through the MDAG with the rest of the string
-        for (int i = 0; i < sourceNode.transitionSetSize; i++) {
-            if (mdagDataArray[i].getLetter() == firstLetter)
-                return mdagDataArray[i].transition(mdagDataArray, str.substring(1));
-        }
-        
-        return null;
+        return index / graph.getTransitionSizeInInts();
     }
 
     @Override
     public int hashCode() {
-        return ((isAcceptNode ? 1 : 0) + (letter * 2)) * 37 + getId();
+        return index;
     }
 
     @Override
@@ -189,9 +196,49 @@ class CompressedDAWGNode implements DAWGNode {
         if (!(obj instanceof CompressedDAWGNode))
             return false;
         CompressedDAWGNode other = (CompressedDAWGNode)obj;
-        return letter == other.letter &&
-               isAcceptNode == other.isAcceptNode &&
-               transitionSetSize == other.transitionSetSize &&
-               transitionSetBeginIndex == other.transitionSetBeginIndex;
+        return index == other.index && graph == other.graph;
+    }
+    
+    /**
+     * Follows an outgoing transition from this node.
+     
+     * @param letter            the char representation of the desired transition's label
+     * @return                  the CompressedDAWGNode that is the target of the transition labeled with {@code letter},
+     *                          or null if there is no such labeled transition from this node
+     */
+    @Override
+    public CompressedDAWGNode transition(char letter) {
+        Integer letterPos = graph.getLettersIndex().get(letter);
+        if (letterPos == null)
+            return null;
+        int lp = letterPos;
+        int transitionsStart = index + 2;
+        int intIndexOfLetterInArray = lp >>> 5;
+        int transitionsEnd = transitionsStart + intIndexOfLetterInArray;
+        lp &= 31;
+        int bitIndexOfLetterInInt = 1 << lp;
+        if ((graph.data[transitionsEnd] & bitIndexOfLetterInInt) == 0)
+            return null;
+        int pos = 0;
+        for (int i = transitionsStart; i < transitionsEnd; i++)
+            pos += Integer.bitCount(graph.data[i]);
+        if (lp > 0)
+            pos += Integer.bitCount(graph.data[transitionsEnd] << (32 - lp));
+        int transitionSizeInInts = graph.getTransitionSizeInInts();
+        pos *= transitionSizeInInts;
+        pos += graph.data[index + 1];
+        return new CompressedDAWGNode(graph, pos);
+    }
+
+    /**
+     * Follows a transition path starting from this node.
+     
+     * @param str               a String corresponding a transition path in the MDAG
+     * @return                  the CompressedDAWGNode at the end of the transition path corresponding to
+                          {@code str}, or null if such a transition path is not present in the MDAG
+     */
+    @Override
+    public CompressedDAWGNode transition(String str) {
+        return (CompressedDAWGNode)super.transition(str);
     }
 }

@@ -22,6 +22,7 @@
 
 package com.boxofc.mdag;
 
+import com.boxofc.mdag.util.Permutations;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -42,6 +44,34 @@ import org.junit.Test;
 
 public class DAWGSimpleTest {
     private static final Random RANDOM = new Random(System.nanoTime());
+    private static final int DOES_NOT_MATTER = Integer.MIN_VALUE;
+    
+    private static void assertArrayEquals(int expected[], int actual[]) {
+        if (expected.length == actual.length) {
+            for (int i = 0; i < expected.length; i++)
+                if (expected[i] == DOES_NOT_MATTER)
+                    expected[i] = actual[i];
+        }
+        Assert.assertArrayEquals(expected, actual);
+    }
+    
+    @Test
+    public void compress() {
+        String words[] = {
+            "a", "xes", "xe", "as"
+        };
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
+        dawg.addAll(words);
+        CompressedDAWGSet cdawg = dawg.compress();
+        assertArrayEquals(new int[]{
+            0,               3,               9,
+            ('a' << 16) + 1, 9,               4,
+            'x' << 16,       12,              2,
+            ('s' << 16) + 1, DOES_NOT_MATTER, 0,
+            ('e' << 16) + 1, 9,               4
+        }, cdawg.data);
+        assertEquals(cdawg, dawg.compress());
+    }
     
     @Test
     public void addSimple() {
@@ -52,6 +82,14 @@ public class DAWGSimpleTest {
         dawg.addAll(words);
         Arrays.sort(words);
         CompressedDAWGSet cdawg = dawg.compress();
+        assertArrayEquals(new int[]{
+            0,               3,               9,
+            ('a' << 16) + 1, DOES_NOT_MATTER, 0,
+            'x' << 16,       9,               6,
+            ('e' << 16) + 1, 15,              4,
+            ('s' << 16) + 1, DOES_NOT_MATTER, 0,
+            ('s' << 16) + 1, DOES_NOT_MATTER, 0
+        }, cdawg.data);
         assertEquals(cdawg, dawg.compress());
 
         int i = 0;
@@ -411,7 +449,7 @@ public class DAWGSimpleTest {
             patternsSet.add("");
             for (int i = 0; i < 4; i++)
                 patternsSet.add(words[RANDOM.nextInt(words.length)]);
-            String patterns[] = patternsSet.toArray(new String[patternsSet.size()]);
+            String patterns[] = patternsSet.toArray(new String[patternsSet.size() + 1]);
             
             for (String prefix : patterns) {
                 for (String substring : patterns) {
@@ -424,23 +462,23 @@ public class DAWGSimpleTest {
                                         boolean inclT = inclTo == 1;
                                         for (int desc = 0; desc < 2; desc++) {
                                             boolean descending = desc == 1;
+                                            List<String> expected = getStrings(words, prefix, substring, suffix, descending, from, inclF, to, inclT);
                                             List<String> actual = new ArrayList<>();
                                             for (String s : dawg.getStrings(prefix, substring, suffix, descending, from, inclF, to, inclT))
                                                 actual.add(s);
                                             // Suffix search returns words with no particular order.
-                                            if (prefix.isEmpty() && !suffix.isEmpty()) {
+                                            if ((prefix == null || prefix.isEmpty()) && suffix != null && !suffix.isEmpty()) {
                                                 Collections.sort(actual);
                                                 if (descending)
                                                     Collections.reverse(actual);
                                             }
-                                            List<String> expected = getStrings(words, prefix, substring, suffix, descending, from, inclF, to, inclT);
                                             assertEquals(/*"Prefix: " + prefix + ", substring: " + substring + ", suffix: " + suffix + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"),*/ expected, actual);
 
                                             actual = new ArrayList<>();
                                             for (String s : cdawg.getStrings(prefix, substring, suffix, descending, from, inclF, to, inclT))
                                                 actual.add(s);
                                             // Suffix search returns words with no particular order.
-                                            if (prefix.isEmpty() && !suffix.isEmpty()) {
+                                            if ((prefix == null || prefix.isEmpty()) && suffix != null && !suffix.isEmpty()) {
                                                 Collections.sort(actual);
                                                 if (descending)
                                                     Collections.reverse(actual);
@@ -460,14 +498,18 @@ public class DAWGSimpleTest {
     private static List<String> getStrings(String words[], String prefix, String substring, String suffix, boolean desc, String from, boolean inclFrom, String to, boolean inclTo) {
         List<String> ret = new ArrayList<>();
         for (String word : words) {
-            if (!word.startsWith(prefix) || !word.contains(substring) || !word.endsWith(suffix))
+            if (prefix != null && !word.startsWith(prefix) || substring != null && !word.contains(substring) || suffix != null && !word.endsWith(suffix))
                 continue;
-            int cmp = word.compareTo(from);
-            if (cmp < 0 || cmp == 0 && !inclFrom)
-                continue;
-            cmp = word.compareTo(to);
-            if (cmp > 0 || cmp == 0 && !inclTo)
-                continue;
+            if (from != null) {
+                int cmp = word.compareTo(from);
+                if (cmp < 0 || cmp == 0 && !inclFrom)
+                    continue;
+            }
+            if (to != null) {
+                int cmp = word.compareTo(to);
+                if (cmp > 0 || cmp == 0 && !inclTo)
+                    continue;
+            }
             ret.add(word);
         }
         if (desc)
@@ -541,20 +583,26 @@ public class DAWGSimpleTest {
         assertEquals(39, cdawg.size());
         
         int maxLength = Arrays.stream(words).mapToInt(s -> s.length()).max().orElse(0);
-        assertEquals(maxLength, cdawg.getMaxLength(cdawg.sourceNode, 0));
+        assertEquals(maxLength, cdawg.getMaxLength(cdawg.getSourceNode(), 0));
     }
 
     @Test(expected = NoSuchElementException.class)
     public void empty() {
         DAWGSet dawg = new ModifiableDAWGSet();
         assertFalse(dawg.iterator().hasNext());
+        assertFalse(dawg.contains(""));
+        assertFalse(dawg.contains("\0"));
+        assertFalse(dawg.contains("a"));
         dawg.iterator().next();
     }
 
     @Test(expected = NoSuchElementException.class)
     public void emptyCompressed() {
         CompressedDAWGSet dawg = new ModifiableDAWGSet().compress();
-        assertEquals(0, dawg.getMaxLength(dawg.sourceNode, 0));
+        assertEquals(0, dawg.getMaxLength(dawg.getSourceNode(), 0));
+        assertFalse(dawg.contains(""));
+        assertFalse(dawg.contains("\0"));
+        assertFalse(dawg.contains("a"));
         assertFalse(dawg.iterator().hasNext());
         dawg.iterator().next();
     }
@@ -577,6 +625,9 @@ public class DAWGSimpleTest {
     public void emptyCollection() {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.addAll();
+        assertFalse(dawg.contains(""));
+        assertFalse(dawg.contains("\0"));
+        assertFalse(dawg.contains("a"));
         assertFalse(dawg.getStringsEndingWith("").iterator().hasNext());
         dawg.getStringsEndingWith("").iterator().next();
     }
@@ -586,6 +637,10 @@ public class DAWGSimpleTest {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.addAll();
         CompressedDAWGSet cdawg = dawg.compress();
+        assertArrayEquals(new int[]{0, 2}, cdawg.data);
+        assertFalse(cdawg.contains(""));
+        assertFalse(cdawg.contains("\0"));
+        assertFalse(cdawg.contains("a"));
         assertFalse(cdawg.getStringsEndingWith("").iterator().hasNext());
         cdawg.getStringsEndingWith("").iterator().next();
     }
@@ -636,7 +691,15 @@ public class DAWGSimpleTest {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.addAll("");
         CompressedDAWGSet cdawg = dawg.compress();
-        assertEquals(0, cdawg.getMaxLength(cdawg.sourceNode, 0));
+        assertArrayEquals(new int[]{1, 2}, cdawg.data);
+        assertEquals(0, cdawg.getMaxLength(cdawg.getSourceNode(), 0));
+        
+        assertTrue(dawg.contains(""));
+        assertTrue(cdawg.contains(""));
+        assertFalse(dawg.contains("\0"));
+        assertFalse(cdawg.contains("\0"));
+        assertFalse(dawg.contains("a"));
+        assertFalse(cdawg.contains("a"));
 
         Iterator<String> iterator = dawg.iterator();
         assertTrue(iterator.hasNext());
@@ -664,6 +727,13 @@ public class DAWGSimpleTest {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.add("");
         CompressedDAWGSet cdawg = dawg.compress();
+        
+        assertTrue(dawg.contains(""));
+        assertTrue(cdawg.contains(""));
+        assertFalse(dawg.contains("\0"));
+        assertFalse(cdawg.contains("\0"));
+        assertFalse(dawg.contains("a"));
+        assertFalse(cdawg.contains("a"));
 
         Iterator<String> iterator = dawg.iterator();
         assertTrue(iterator.hasNext());
@@ -687,6 +757,13 @@ public class DAWGSimpleTest {
         
         dawg.remove("");
         cdawg = dawg.compress();
+        
+        assertFalse(dawg.contains(""));
+        assertFalse(cdawg.contains(""));
+        assertFalse(dawg.contains("\0"));
+        assertFalse(cdawg.contains("\0"));
+        assertFalse(dawg.contains("a"));
+        assertFalse(cdawg.contains("a"));
 
         assertFalse(dawg.iterator().hasNext());
         assertFalse(dawg.getStringsEndingWith("").iterator().hasNext());
@@ -762,6 +839,14 @@ public class DAWGSimpleTest {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.add("\0");
         CompressedDAWGSet cdawg = dawg.compress();
+        
+        assertFalse(dawg.contains(""));
+        assertTrue(dawg.contains("\0"));
+        assertFalse(dawg.contains("a"));
+        
+        assertFalse(cdawg.contains(""));
+        assertTrue(cdawg.contains("\0"));
+        assertFalse(cdawg.contains("a"));
 
         Iterator<String> iterator = dawg.iterator();
         assertTrue(iterator.hasNext());
@@ -816,6 +901,16 @@ public class DAWGSimpleTest {
         dawg.add("");
         dawg.add("add");
         CompressedDAWGSet cdawg = dawg.compress();
+        
+        assertTrue(dawg.contains(""));
+        assertFalse(dawg.contains("\0"));
+        assertFalse(dawg.contains("a"));
+        assertTrue(dawg.contains("add"));
+        
+        assertTrue(cdawg.contains(""));
+        assertFalse(cdawg.contains("\0"));
+        assertFalse(cdawg.contains("a"));
+        assertTrue(cdawg.contains("add"));
 
         Set<String> expected = new HashSet<>(Arrays.asList("", "add"));
         Set<String> actual = new HashSet<>();
@@ -933,6 +1028,16 @@ public class DAWGSimpleTest {
         dawg.add("");
         dawg.add("\0");
         CompressedDAWGSet cdawg = dawg.compress();
+        
+        assertTrue(dawg.contains(""));
+        assertTrue(dawg.contains("\0"));
+        assertFalse(dawg.contains("a"));
+        assertFalse(dawg.contains("add"));
+        
+        assertTrue(cdawg.contains(""));
+        assertTrue(cdawg.contains("\0"));
+        assertFalse(cdawg.contains("a"));
+        assertFalse(cdawg.contains("add"));
 
         Iterator<String> iterator = dawg.iterator();
         assertTrue(iterator.hasNext());

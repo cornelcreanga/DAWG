@@ -225,6 +225,11 @@ public class DAWGFileTest {
     }
     
     @Test
+    public void containsAOL() {
+        assertTrue(dawg2.contains("AOL"));
+    }
+    
+    @Test
     public void getAllWordsWithPrefixTest() {
         for (String prefixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
             List<String> controlSet = new ArrayList<>();

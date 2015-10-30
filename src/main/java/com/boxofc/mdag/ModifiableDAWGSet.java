@@ -22,6 +22,8 @@
 
 package com.boxofc.mdag;
 
+import com.boxofc.mdag.util.SemiNavigableMap;
+import com.boxofc.mdag.util.SimpleEntry;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
-import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.Stack;
 import java.util.TreeMap;
@@ -53,6 +54,8 @@ import java.util.TreeSet;
  * @author Kevin
  */
 public class ModifiableDAWGSet extends DAWGSet {
+    private static final ModifiableDAWGNode EMPTY_NODE = new ModifiableDAWGNode(null, true, DAWGNode.EMPTY);
+    
     //Increment for node identifiers.
     private int id;
     
@@ -120,12 +123,12 @@ public class ModifiableDAWGSet extends DAWGSet {
     public boolean addAll(InputStream dataFile) throws IOException {
         final IOException exceptionToThrow[] = new IOException[1];
         try (InputStreamReader isr = new InputStreamReader(dataFile);
-             final BufferedReader br = new BufferedReader(isr)) {
+            final BufferedReader br = new BufferedReader(isr)) {
             return addAll(new Iterable<String>() {
                 @Override
                 public Iterator<String> iterator() {
                     return new Iterator<String>() {
-                        String nextLine;
+                        private String nextLine;
 
                         @Override
                         public boolean hasNext() {
@@ -611,39 +614,35 @@ public class ModifiableDAWGSet extends DAWGSet {
         //Add the transition based on suffixString to the end of the (possibly duplicated) transition path corresponding to prefixString
         return addTransitionPath(sourceNode.transition(prefixString), suffixString);
     }
-
-    /**
-     * Creates a CompressedDAWGNode version of an ModifiableDAWGNode's outgoing transition set in mdagDataArray.
-     
-     * @param node                                      the ModifiableDAWGNode containing the transition set to be inserted in to {@code mdagDataArray}
-     * @param mdagDataArray                             an array of SimpleMDAGNodes containing a subset of the data of the ModifiableDAWGSet
-     * @param onePastLastCreatedConnectionSetIndex      an int of the index in {@code mdagDataArray} that the outgoing transition set of {@code node} is to start from
-     * @return                                          an int of one past the end of the transition set located farthest in {@code mdagDataArray}
-     */
-    private int createSimpleMDAGTransitionSet(ModifiableDAWGNode node, CompressedDAWGNode[] mdagDataArray, int onePastLastCreatedTransitionSetIndex) {
+    
+    private int createCompressedTransitionsData(int data[], ModifiableDAWGNode node, int currentNodeIndex, int onePastLastCreatedTransitionSetIndex, int compressedNodeSize, Map<Character, Integer> lettersIndex) {
         int pivotIndex = onePastLastCreatedTransitionSetIndex;
         node.setTransitionSetBeginIndex(pivotIndex);
-        
-        onePastLastCreatedTransitionSetIndex += node.getOutgoingTransitionCount();
+        currentNodeIndex += 2;
+        onePastLastCreatedTransitionSetIndex += node.getOutgoingTransitionCount() * compressedNodeSize;
 
         //Create a CompressedDAWGNode representing each transition label/target combo in transitionTreeMap, recursively calling this method (if necessary)
         //to set indices in these SimpleMDAGNodes that the set of transitions emitting from their respective transition targets starts from.
-        TreeMap<Character, ModifiableDAWGNode> transitionTreeMap = node.getOutgoingTransitions();
-        for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : transitionTreeMap.entrySet()) {
+        for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : node.getOutgoingTransitions().entrySet()) {
             //Use the current transition's label and target node to create a CompressedDAWGNode
             //(which is a space-saving representation of the transition), and insert it in to mdagDataArray
             char transitionLabelChar = transitionKeyValuePair.getKey();
+            int letterIndex = lettersIndex.get(transitionLabelChar);
+            data[currentNodeIndex + (letterIndex >>> 5)] |= 1 << letterIndex;
             ModifiableDAWGNode transitionTargetNode = transitionKeyValuePair.getValue();
-            mdagDataArray[pivotIndex] = new CompressedDAWGNode(transitionLabelChar, transitionTargetNode.isAcceptNode(), transitionTargetNode.getOutgoingTransitionCount());
+            data[pivotIndex] = (transitionLabelChar << 16) + (transitionTargetNode.isAcceptNode() ? 1 : 0);
             
             //If targetTransitionNode's outgoing transition set hasn't been inserted in to mdagDataArray yet, call this method on it to do so.
             //After this call returns, transitionTargetNode will contain the index in mdagDataArray that its transition set starts from
             if (transitionTargetNode.getTransitionSetBeginIndex() == -1)
-                onePastLastCreatedTransitionSetIndex = createSimpleMDAGTransitionSet(transitionTargetNode, mdagDataArray, onePastLastCreatedTransitionSetIndex);
+                onePastLastCreatedTransitionSetIndex = createCompressedTransitionsData(data, transitionTargetNode, pivotIndex, onePastLastCreatedTransitionSetIndex, compressedNodeSize, lettersIndex);
+            else
+                System.arraycopy(transitionTargetNode.getTransitionSetLetters(), 0, data, pivotIndex + 2, compressedNodeSize - 2);
             
-            mdagDataArray[pivotIndex++].setTransitionSetBeginIndex(transitionTargetNode.getTransitionSetBeginIndex());
+            data[pivotIndex + 1] = transitionTargetNode.getTransitionSetBeginIndex();
+            pivotIndex += compressedNodeSize;
         }
-        
+        node.setTransitionSetLetters(Arrays.copyOfRange(data, currentNodeIndex, currentNodeIndex + compressedNodeSize - 2));
         return onePastLastCreatedTransitionSetIndex;
     }
     
@@ -655,38 +654,29 @@ public class ModifiableDAWGSet extends DAWGSet {
     public CompressedDAWGSet compress() {
         CompressedDAWGSet compressed = new CompressedDAWGSet();
         compressed.withIncomingTransitions = isWithIncomingTransitions();
-        compressed.size = size;
-        compressed.maxLength = maxLength;
-        compressed.mdagDataArray = new CompressedDAWGNode[transitionCount];
-        createSimpleMDAGTransitionSet(sourceNode, compressed.mdagDataArray, 0);
-        compressed.sourceNode = new CompressedDAWGNode('\0', sourceNode.isAcceptNode(), sourceNode.getOutgoingTransitionCount());
+        compressed.size = size();
+        compressed.maxLength = getMaxLength();
+        compressed.letters = new char[charTreeSet.size()];
+        int i = 0;
+        for (char c : charTreeSet)
+            compressed.letters[i++] = c;
+        int compressedNodeSize = compressed.calculateTransitionSizeInInts();
+        compressed.data = new int[(transitionCount + 1) * compressedNodeSize];
+        compressed.data[0] = sourceNode.isAcceptNode() ? 1 : 0;
+        compressed.data[1] = compressedNodeSize;
+        createCompressedTransitionsData(compressed.data, sourceNode, 0, compressedNodeSize, compressedNodeSize, compressed.getLettersIndex());
         //Clear all transition begin indexes.
-        Deque<ModifiableDAWGNode> queue = new LinkedList<>();
-        queue.add(sourceNode);
+        Deque<ModifiableDAWGNode> stack = new LinkedList<>();
+        stack.add(sourceNode);
         while (true) {
-            ModifiableDAWGNode node = queue.pollLast();
+            ModifiableDAWGNode node = stack.pollLast();
             if (node == null)
                 break;
             node.setTransitionSetBeginIndex(-1);
-            queue.addAll(node.getOutgoingTransitions().values());
+            node.setTransitionSetLetters(null);
+            stack.addAll(node.getOutgoingTransitions().values());
         }
         return compressed;
-    }
-    
-    /**
-     * Determines whether a String is present in the ModifiableDAWGSet.
-     
-     * @param str       the String to be searched for
-     * @return          true if {@code str} is present in the ModifiableDAWGSet, and false otherwise
-     */
-    public boolean contains(String str) {
-        ModifiableDAWGNode targetNode = sourceNode.transition(str);
-        return targetNode != null && targetNode.isAcceptNode();
-    }
-
-    @Override
-    DAWGNode getNodeByPrefix(DAWGNode from, String path) {
-        return ((ModifiableDAWGNode)from).transition(path);
     }
     
     @Override
@@ -728,6 +718,11 @@ public class ModifiableDAWGSet extends DAWGSet {
     @Override
     DAWGNode getEndNode() {
         return endNode;
+    }
+    
+    @Override
+    DAWGNode getEmptyNode() {
+        return EMPTY_NODE;
     }
     
     /**
@@ -790,8 +785,8 @@ public class ModifiableDAWGSet extends DAWGSet {
         }
 
         @Override
-        public Iterator<Entry<Character, DAWGNode>> iterator() {
-            return new Iterator<Entry<Character, DAWGNode>>() {
+        public Iterator<SimpleEntry<Character, DAWGNode>> iterator() {
+            return new Iterator<SimpleEntry<Character, DAWGNode>>() {
                 private final Iterator<Entry<Character, ModifiableDAWGNode>> it = (desc ? outgoingTransitions.descendingMap() : outgoingTransitions).entrySet().iterator();
 
                 @Override
@@ -800,24 +795,9 @@ public class ModifiableDAWGSet extends DAWGSet {
                 }
 
                 @Override
-                public Entry<Character, DAWGNode> next() {
+                public SimpleEntry<Character, DAWGNode> next() {
                     Entry<Character, ModifiableDAWGNode> next = it.next();
-                    return new Entry<Character, DAWGNode>() {
-                        @Override
-                        public Character getKey() {
-                            return next.getKey();
-                        }
-
-                        @Override
-                        public DAWGNode getValue() {
-                            return next.getValue();
-                        }
-
-                        @Override
-                        public DAWGNode setValue(DAWGNode value) {
-                            return next.setValue((ModifiableDAWGNode)value);
-                        }
-                    };
+                    return new SimpleEntry<>(next.getKey(), next.getValue());
                 }
             };
         }
@@ -845,8 +825,8 @@ public class ModifiableDAWGSet extends DAWGSet {
         }
 
         @Override
-        public Iterator<Entry<Character, Collection<? extends DAWGNode>>> iterator() {
-            return new Iterator<Entry<Character, Collection<? extends DAWGNode>>>() {
+        public Iterator<SimpleEntry<Character, Collection<? extends DAWGNode>>> iterator() {
+            return new Iterator<SimpleEntry<Character, Collection<? extends DAWGNode>>>() {
                 private final Iterator<Entry<Character, Map<Integer, ModifiableDAWGNode>>> it = (desc ? incomingTransitions.descendingMap() : incomingTransitions).entrySet().iterator();
 
                 @Override
@@ -855,35 +835,9 @@ public class ModifiableDAWGSet extends DAWGSet {
                 }
 
                 @Override
-                public Entry<Character, Collection<? extends DAWGNode>> next() {
+                public SimpleEntry<Character, Collection<? extends DAWGNode>> next() {
                     Entry<Character, Map<Integer, ModifiableDAWGNode>> next = it.next();
-                    return new Entry<Character, Collection<? extends DAWGNode>>() {
-                        @Override
-                        public Character getKey() {
-                            return next.getKey();
-                        }
-
-                        @Override
-                        public Collection<? extends DAWGNode> getValue() {
-                            return next.getValue().values();
-                        }
-
-                        @Override
-                        public Collection<? extends DAWGNode> setValue(Collection<? extends DAWGNode> value) {
-                            Map<Integer, ModifiableDAWGNode> current = next.getValue();
-                            Collection<? extends DAWGNode> prev;
-                            if (current == null) {
-                                next.setValue(current = new HashMap<>());
-                                prev = null;
-                            } else {
-                                prev = current.values();
-                                current.clear();
-                            }
-                            for (DAWGNode node : value)
-                                current.put(node.getId(), (ModifiableDAWGNode)node);
-                            return prev;
-                        }
-                    };
+                    return new SimpleEntry<>(next.getKey(), next.getValue().values());
                 }
             };
         }

@@ -1,5 +1,7 @@
 package com.boxofc.mdag;
 
+import com.boxofc.mdag.util.SemiNavigableMap;
+import com.boxofc.mdag.util.LookaheadIterator;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -15,7 +17,6 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.NavigableMap;
 import java.util.NoSuchElementException;
 
 public abstract class DAWGSet implements Iterable<String> {
@@ -132,6 +133,19 @@ public abstract class DAWGSet implements Iterable<String> {
     abstract DAWGNode getSourceNode();
     
     abstract DAWGNode getEndNode();
+    
+    abstract DAWGNode getEmptyNode();
+    
+    /**
+     * Determines whether a String is present in the DAWGSet.
+     
+     * @param str       the String to be searched for
+     * @return          true if {@code str} is present in the DAWGSet, and false otherwise
+     */
+    public boolean contains(String str) {
+        DAWGNode targetNode = getSourceNode().transition(str);
+        return targetNode != null && targetNode.isAcceptNode();
+    }
 
     @Override
     public Iterator<String> iterator() {
@@ -184,8 +198,6 @@ public abstract class DAWGSet implements Iterable<String> {
     public abstract int getTransitionCount();
     
     public abstract int getNodeCount();
-    
-    abstract DAWGNode getNodeByPrefix(DAWGNode from, String prefix);
     
     abstract Collection<? extends DAWGNode> getNodesBySuffix(String suffix);
     
@@ -307,6 +319,8 @@ public abstract class DAWGSet implements Iterable<String> {
         }
         // Prefix search.
         return new Iterable<String>() {
+            private final String prefixStr = prefixString == null ? "" : prefixString;
+            
             @Override
             public Iterator<String> iterator() {
                 return new LookaheadIterator<String>() {
@@ -319,14 +333,13 @@ public abstract class DAWGSet implements Iterable<String> {
                     private char to[];
                     private char sub[];
                     private char suffix[];
-                    private final String prefixStr = prefixString == null ? "" : prefixString;
                     
                     {
                         String fromStr = fromString;
                         String toStr = toString;
                         String subStr = subString;
                         //attempt to transition down the path denoted by prefixStr
-                        DAWGNode originNode = getNodeByPrefix(getSourceNode(), prefixStr);
+                        DAWGNode originNode = getSourceNode().transition(prefixStr);
                         if (originNode != null && fromStr != null) {
                             // If fromStr > toStr then return an empty set.
                             if (toStr != null) {
@@ -533,7 +546,7 @@ public abstract class DAWGSet implements Iterable<String> {
                                     retCurrentString = true;
                                 else {
                                     char letter = level >= prefixStr.length() ? buffer[level] : '\0';
-                                    stack.add(node instanceof ModifiableDAWGNode ? new ModifiableDAWGNode((ModifiableDAWGSet)DAWGSet.this, true, node.getId()) : new CompressedDAWGNode(letter, true, 0));
+                                    stack.add(getEmptyNode());
                                     levelsStack.add(level);
                                     charsStack.add(letter);
                                     flagsStack.add(encodeFlags(checkFrom, checkTo, checkSubstring));

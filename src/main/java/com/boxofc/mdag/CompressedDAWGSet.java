@@ -1,22 +1,36 @@
 package com.boxofc.mdag;
 
+import com.boxofc.mdag.util.SemiNavigableMap;
+import com.boxofc.mdag.util.SimpleEntry;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.NavigableSet;
-import java.util.Objects;
-import java.util.TreeSet;
+import java.util.Map;
 
-public class CompressedDAWGSet extends DAWGSet {
-    //SimpleMDAGNode from which all others in the structure are reachable (will be defined if this ModifiableDAWGSet is simplified)
-    CompressedDAWGNode sourceNode;
+public class CompressedDAWGSet extends DAWGSet implements Serializable {
+    private static final CompressedDAWGNode EMPTY_NODE = new CompressedDAWGNode(null, DAWGNode.EMPTY);
     
     CompressedDAWGNode endNode;
     
-    //Array that will contain a space-saving version of the ModifiableDAWGSet after a call to simplify().
-    CompressedDAWGNode[] mdagDataArray;
+    //Array that will contain a space-saving version of the ModifiableDAWGSet after a call to compress().
+    int data[];
+    
+    /**
+     * An array of all letters used in this dictionary (an alphabet of the language defined by this DAWG).
+     */
+    char letters[];
+    
+    boolean withIncomingTransitions;
+    
+    /**
+     * A mapping from characters of {@link #letters} array to their positions in that array.
+     */
+    private transient Map<Character, Integer> lettersIndex;
     
     /**
      * Quantity of words in this DAWG.
@@ -28,17 +42,27 @@ public class CompressedDAWGSet extends DAWGSet {
      */
     transient Integer maxLength;
     
-    boolean withIncomingTransitions;
+    private transient int transitionSizeInInts;
     
     /**
-     * Determines whether a String is present in the ModifiableDAWGSet.
-     
-     * @param str       the String to be searched for
-     * @return          true if {@code str} is present in the ModifiableDAWGSet, and false otherwise
+     * SimpleMDAGNode from which all others in the structure are reachable (will be defined if this ModifiableDAWGSet is simplified)
      */
-    public boolean contains(String str) {
-        CompressedDAWGNode targetNode = CompressedDAWGNode.traverseMDAG(mdagDataArray, sourceNode, str);
-        return targetNode != null && targetNode.isAcceptNode();
+    private transient CompressedDAWGNode sourceNode;
+    
+    /**
+     * Package-private constructor.
+     * Use {@link ModifiableDAWGSet#compress} to create instances of this class.
+     */
+    CompressedDAWGSet() {
+    }
+    
+    /**
+     * This method is invoked when the object is read from input stream.
+     * @see Serializable
+     */
+    private void readObject( ObjectInputStream ois ) throws IOException, ClassNotFoundException {
+        ois.defaultReadObject();
+        transitionSizeInInts = calculateTransitionSizeInInts();
     }
     
     /**
@@ -47,7 +71,9 @@ public class CompressedDAWGSet extends DAWGSet {
      * @return      the ModifiableDAWGNode or CompressedDAWGNode functioning as the ModifiableDAWGSet's source node.
      */
     @Override
-    DAWGNode getSourceNode() {
+    CompressedDAWGNode getSourceNode() {
+        if (sourceNode == null)
+            sourceNode = new CompressedDAWGNode(this, DAWGNode.START);
         return sourceNode;
     }
     
@@ -55,45 +81,65 @@ public class CompressedDAWGSet extends DAWGSet {
     DAWGNode getEndNode() {
         return endNode;
     }
+    
+    @Override
+    DAWGNode getEmptyNode() {
+        return EMPTY_NODE;
+    }
 
     @Override
     public boolean isWithIncomingTransitions() {
         return withIncomingTransitions;
-    }
-
-    @Override
-    DAWGNode getNodeByPrefix(DAWGNode from, String path) {
-        return CompressedDAWGNode.traverseMDAG(mdagDataArray, (CompressedDAWGNode)from, path);
     }
     
     @Override
     Collection<? extends DAWGNode> getNodesBySuffix(String suffix) {
         return null;
     }
+    
+    Map<Character, Integer> getLettersIndex() {
+        if (lettersIndex == null) {
+            Map<Character, Integer> ret = new HashMap<>();
+            for (int i = 0; i < letters.length; i++)
+                ret.put(letters[i], i);
+            lettersIndex = ret;
+        }
+        return lettersIndex;
+    }
+    
+    int getTransitionSizeInInts() {
+        return transitionSizeInInts;
+    }
+    
+    int calculateTransitionSizeInInts() {
+        // Int 0:
+        // Current letter (char)
+        // Accept node mark (boolean)
+        // Int 1:
+        // Outgoing nodes array begin index (int)
+        // The rest:
+        // Bit array for each char denoting if there exists a transition
+        // from this node to the letter in a specified position
+        return transitionSizeInInts = 2 + ((letters.length + 31) >>> 5);
+    }
 
     @Override
     int getMaxLength() {
         if (maxLength == null)
-            maxLength = getMaxLength(sourceNode, 0);
+            maxLength = getMaxLength(getSourceNode(), 0);
         return maxLength;
     }
     
     int getMaxLength(CompressedDAWGNode node, int length) {
-        int transitionSetBegin = node.getTransitionSetBeginIndex();
-        int onePastTransitionSetEnd = transitionSetBegin + node.getOutgoingTransitionSetSize();
         int ret = length;
-        for (int i = transitionSetBegin; i < onePastTransitionSetEnd; i++) {
-            CompressedDAWGNode currentNode = mdagDataArray[i];
-            int len = getMaxLength(currentNode, length + 1);
-            if (len > ret)
-                ret = len;
-        }
+        for (CompressedDAWGNode child : node.getOutgoingTransitionsNodes())
+            ret = Math.max(ret, getMaxLength(child, length + 1));
         return ret;
     }
 
     @Override
     public int getTransitionCount() {
-        return mdagDataArray.length;
+        return data.length / transitionSizeInInts - 1;
     }
     
     public int size() {
@@ -106,32 +152,23 @@ public class CompressedDAWGSet extends DAWGSet {
         return size;
     }
     
-    private void countNodes(CompressedDAWGNode originNode, HashSet<Integer> nodeIDHashSet) {
-        nodeIDHashSet.add(originNode.getId());
-        int transitionSetBegin = originNode.getTransitionSetBeginIndex();
-        int onePastTransitionSetEnd = transitionSetBegin + originNode.getOutgoingTransitionSetSize();
-        
-        //Traverse all the valid transition paths beginning from each transition in transitionTreeMap, inserting the
-        //corresponding Strings in to strNavigableSet that have the relationship with conditionString denoted by searchCondition
-        for (int i = transitionSetBegin; i < onePastTransitionSetEnd; i++) {
-            CompressedDAWGNode currentNode = mdagDataArray[i];
-            countNodes(currentNode, nodeIDHashSet);
-        }
+    private void countNodes(CompressedDAWGNode node, HashSet<Integer> nodeIDHashSet) {
+        if (node.getOutgoingTransitionsSize() != 0)
+            nodeIDHashSet.add(node.getTransitionSetBeginIndex());
+        for (CompressedDAWGNode child : node.getOutgoingTransitionsNodes())
+            countNodes(child, nodeIDHashSet);
     }
     
     @Override
     public int getNodeCount() {
         HashSet<Integer> ids = new HashSet<>();
-        countNodes(sourceNode, ids);
-        return ids.size();
+        countNodes(getSourceNode(), ids);
+        return ids.size() + 1;
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 83 * hash + Objects.hashCode(sourceNode);
-        hash = 83 * hash + Arrays.deepHashCode(mdagDataArray);
-        return hash;
+        return ((Arrays.hashCode(letters) * 31 + Arrays.hashCode(data)) << 1) + (isWithIncomingTransitions() ? 1 : 0);
     }
 
     @Override
@@ -141,8 +178,9 @@ public class CompressedDAWGSet extends DAWGSet {
         if (!(obj instanceof CompressedDAWGSet))
             return false;
         CompressedDAWGSet other = (CompressedDAWGSet) obj;
-        return Objects.equals(sourceNode, other.sourceNode) &&
-               Arrays.deepEquals(mdagDataArray, other.mdagDataArray);
+        return isWithIncomingTransitions() == other.isWithIncomingTransitions() &&
+               Arrays.equals(letters, other.letters) &&
+               Arrays.equals(data, other.data);
     }
     
     public ModifiableDAWGSet uncompress() {
@@ -165,17 +203,19 @@ public class CompressedDAWGSet extends DAWGSet {
     private class OutgoingTransitionsMap implements SemiNavigableMap<Character, DAWGNode> {
         private final CompressedDAWGNode cparent;
         private final boolean desc;
+        private final int from;
+        private final int to;
         
         public OutgoingTransitionsMap(CompressedDAWGNode cparent, boolean desc) {
             this.cparent = cparent;
             this.desc = desc;
+            from = cparent.getTransitionSetBeginIndex();
+            to = from + (cparent.getOutgoingTransitionsSize() - 1) * transitionSizeInInts;
         }
         
         @Override
-        public Iterator<Entry<Character, DAWGNode>> iterator() {
-            return new Iterator<Entry<Character, DAWGNode>>() {
-                private final int from = cparent.getTransitionSetBeginIndex();
-                private final int to = from + cparent.getOutgoingTransitionSetSize() - 1;
+        public Iterator<SimpleEntry<Character, DAWGNode>> iterator() {
+            return new Iterator<SimpleEntry<Character, DAWGNode>>() {
                 private int current = desc ? to : from;
 
                 @Override
@@ -184,36 +224,20 @@ public class CompressedDAWGSet extends DAWGSet {
                 }
 
                 @Override
-                public Entry<Character, DAWGNode> next() {
-                    final int nodePos = current;
-                    CompressedDAWGNode node = mdagDataArray[current];
+                public SimpleEntry<Character, DAWGNode> next() {
+                    CompressedDAWGNode node = new CompressedDAWGNode(CompressedDAWGSet.this, current);
                     if (desc)
-                        current--;
+                        current -= transitionSizeInInts;
                     else
-                        current++;
-                    return new Entry<Character, DAWGNode>() {
-                        @Override
-                        public Character getKey() {
-                            return node.getLetter();
-                        }
-
-                        @Override
-                        public DAWGNode getValue() {
-                            return node;
-                        }
-
-                        @Override
-                        public DAWGNode setValue(DAWGNode value) {
-                            return mdagDataArray[nodePos] = (CompressedDAWGNode)value;
-                        }
-                    };
+                        current += transitionSizeInInts;
+                    return new SimpleEntry<>(node.getLetter(), node);
                 }
             };
         }
 
         @Override
         public boolean isEmpty() {
-            return cparent.getOutgoingTransitionSetSize() == 0;
+            return cparent.getOutgoingTransitionsSize() == 0;
         }
 
         @Override
@@ -225,17 +249,19 @@ public class CompressedDAWGSet extends DAWGSet {
     private class IncomingTransitionsMap implements SemiNavigableMap<Character, Collection<? extends DAWGNode>> {
         private final CompressedDAWGNode cparent;
         private final boolean desc;
+        private final int from;
+        private final int to;
         
         public IncomingTransitionsMap(CompressedDAWGNode cparent, boolean desc) {
             this.cparent = cparent;
             this.desc = desc;
+            from = cparent.getTransitionSetBeginIndex();
+            to = from + cparent.getOutgoingTransitionsSize() - 1;
         }
         
         @Override
-        public Iterator<Entry<Character, Collection<? extends DAWGNode>>> iterator() {
-            return new Iterator<Entry<Character, Collection<? extends DAWGNode>>>() {
-                private final int from = cparent.getTransitionSetBeginIndex();
-                private final int to = from + cparent.getOutgoingTransitionSetSize() - 1;
+        public Iterator<SimpleEntry<Character, Collection<? extends DAWGNode>>> iterator() {
+            return new Iterator<SimpleEntry<Character, Collection<? extends DAWGNode>>>() {
                 private int current = desc ? to : from;
 
                 @Override
@@ -244,36 +270,20 @@ public class CompressedDAWGSet extends DAWGSet {
                 }
 
                 @Override
-                public Entry<Character, Collection<? extends DAWGNode>> next() {
-                    final int nodePos = current;
-                    CompressedDAWGNode node = mdagDataArray[current];
+                public SimpleEntry<Character, Collection<? extends DAWGNode>> next() {
+                    CompressedDAWGNode node = new CompressedDAWGNode(CompressedDAWGSet.this, current);
                     if (desc)
-                        current--;
+                        current -= transitionSizeInInts;
                     else
-                        current++;
-                    return new Entry<Character, Collection<? extends DAWGNode>>() {
-                        @Override
-                        public Character getKey() {
-                            return node.getLetter();
-                        }
-
-                        @Override
-                        public Collection<? extends DAWGNode> getValue() {
-                            return null;//node;
-                        }
-
-                        @Override
-                        public Collection<? extends DAWGNode> setValue(Collection<? extends DAWGNode> value) {
-                            return null;//mdagDataArray[nodePos] = (CompressedDAWGNode)value;
-                        }
-                    };
+                        current += transitionSizeInInts;
+                    return new SimpleEntry<>(node.getLetter(), null);
                 }
             };
         }
 
         @Override
         public boolean isEmpty() {
-            return false;//cparent.getOutgoingTransitionSetSize() == 0;
+            return false;//cparent.getOutgoingTransitionsSize() == 0;
         }
 
         @Override

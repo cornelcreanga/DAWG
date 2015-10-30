@@ -26,16 +26,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.Stack;
-import java.util.TreeSet;
 
 /**
  * The class which represents a node in a MDAG.
 
  * @author Kevin
  */
-class ModifiableDAWGNode implements DAWGNode {
+class ModifiableDAWGNode extends DAWGNode {
     private final int id;
     
     //The boolean denoting the accept state status of this node
@@ -50,12 +48,14 @@ class ModifiableDAWGNode implements DAWGNode {
     //The int denoting index in a simplified mdag data array that this node's transition set begins at
     private int transitionSetBeginIndex = -1;
     
+    private int transitionSetLetters[];
+    
     //The int which will store this node's hash code after its been calculated (necessary due to how expensive the hashing calculation is)
     private Integer storedHashCode;
     
     private final ModifiableDAWGSet graph;
     
-    private TreeMap<Character, Map<Integer, ModifiableDAWGNode>> incomingTransitionTreeMap;
+    private final TreeMap<Character, Map<Integer, ModifiableDAWGNode>> incomingTransitionTreeMap;
     
     /**
      * Constructs an MDAGNode.
@@ -206,6 +206,14 @@ class ModifiableDAWGNode implements DAWGNode {
     public void setTransitionSetBeginIndex(int transitionSetBeginIndex) {
         this.transitionSetBeginIndex = transitionSetBeginIndex;
     }
+
+    public int[] getTransitionSetLetters() {
+        return transitionSetLetters;
+    }
+
+    public void setTransitionSetLetters(int transitionSetLetters[]) {
+        this.transitionSetLetters = transitionSetLetters;
+    }
     
     /**
      * Determines whether this node has an outgoing transition with a given label.
@@ -238,29 +246,14 @@ class ModifiableDAWGNode implements DAWGNode {
      * @return              the ModifiableDAWGNode that is the target of the transition labeled with {@code letter},
      *                      or null if there is no such labeled transition from this node
      */
+    @Override
     public ModifiableDAWGNode transition(char letter) {
         return outgoingTransitionTreeMap.get(letter);
     }
-    
-    /**
-     * Follows a transition path starting from this node.
-     
-     * @param str               a String corresponding a transition path in the MDAG
-     * @return                  the ModifiableDAWGNode at the end of the transition path corresponding to
-                          {@code str}, or null if such a transition path is not present in the MDAG
-     */
+
+    @Override
     public ModifiableDAWGNode transition(String str) {
-        int charCount = str.length();
-        ModifiableDAWGNode currentNode = this;
-        
-        //Iteratively transition through the MDAG using the chars in str
-        for (int i = 0; i < charCount; i++) {
-            currentNode = currentNode.transition(str.charAt(i));
-            if (currentNode == null)
-                break;
-        }
-        
-        return currentNode;
+        return (ModifiableDAWGNode)super.transition(str);
     }
     
     /**
