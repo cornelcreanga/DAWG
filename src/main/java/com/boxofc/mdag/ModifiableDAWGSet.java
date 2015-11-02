@@ -618,7 +618,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     private int createCompressedTransitionsData(int data[], ModifiableDAWGNode node, int currentNodeIndex, int onePastLastCreatedTransitionSetIndex, int compressedNodeSize, Map<Character, Integer> lettersIndex) {
         int pivotIndex = onePastLastCreatedTransitionSetIndex;
         node.setTransitionSetBeginIndex(pivotIndex);
-        currentNodeIndex += 2;
+        currentNodeIndex += 1;
         onePastLastCreatedTransitionSetIndex += node.getOutgoingTransitionCount() * compressedNodeSize;
 
         //Create a CompressedDAWGNode representing each transition label/target combo in transitionTreeMap, recursively calling this method (if necessary)
@@ -630,19 +630,20 @@ public class ModifiableDAWGSet extends DAWGSet {
             int letterIndex = lettersIndex.get(transitionLabelChar);
             data[currentNodeIndex + (letterIndex >>> 5)] |= 1 << letterIndex;
             ModifiableDAWGNode transitionTargetNode = transitionKeyValuePair.getValue();
-            data[pivotIndex] = (transitionLabelChar << 16) + (transitionTargetNode.isAcceptNode() ? 1 : 0);
             
             //If targetTransitionNode's outgoing transition set hasn't been inserted in to mdagDataArray yet, call this method on it to do so.
             //After this call returns, transitionTargetNode will contain the index in mdagDataArray that its transition set starts from
             if (transitionTargetNode.getTransitionSetBeginIndex() == -1)
                 onePastLastCreatedTransitionSetIndex = createCompressedTransitionsData(data, transitionTargetNode, pivotIndex, onePastLastCreatedTransitionSetIndex, compressedNodeSize, lettersIndex);
             else
-                System.arraycopy(transitionTargetNode.getTransitionSetLetters(), 0, data, pivotIndex + 2, compressedNodeSize - 2);
+                System.arraycopy(transitionTargetNode.getTransitionSetLetters(), 0, data, pivotIndex + 1, compressedNodeSize - 1);
             
-            data[pivotIndex + 1] = transitionTargetNode.getTransitionSetBeginIndex();
+            data[pivotIndex] = transitionTargetNode.getTransitionSetBeginIndex();
+            if (transitionTargetNode.isAcceptNode())
+                data[pivotIndex] |= CompressedDAWGNode.ACCEPT_NODE_MASK;
             pivotIndex += compressedNodeSize;
         }
-        node.setTransitionSetLetters(Arrays.copyOfRange(data, currentNodeIndex, currentNodeIndex + compressedNodeSize - 2));
+        node.setTransitionSetLetters(Arrays.copyOfRange(data, currentNodeIndex, currentNodeIndex + compressedNodeSize - 1));
         return onePastLastCreatedTransitionSetIndex;
     }
     
@@ -662,8 +663,9 @@ public class ModifiableDAWGSet extends DAWGSet {
             compressed.letters[i++] = c;
         int compressedNodeSize = compressed.calculateTransitionSizeInInts();
         compressed.data = new int[(transitionCount + 1) * compressedNodeSize];
-        compressed.data[0] = sourceNode.isAcceptNode() ? 1 : 0;
-        compressed.data[1] = compressedNodeSize;
+        compressed.data[0] = compressedNodeSize;
+        if (sourceNode.isAcceptNode())
+            compressed.data[0] |= CompressedDAWGNode.ACCEPT_NODE_MASK;
         createCompressedTransitionsData(compressed.data, sourceNode, 0, compressedNodeSize, compressedNodeSize, compressed.getLettersIndex());
         //Clear all transition begin indexes.
         Deque<ModifiableDAWGNode> stack = new LinkedList<>();

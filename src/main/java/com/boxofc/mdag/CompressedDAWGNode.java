@@ -35,6 +35,9 @@ import java.util.NoSuchElementException;
  * @author Kevin
  */
 class CompressedDAWGNode extends DAWGNode {
+    public static final int ACCEPT_NODE_MASK = Integer.MIN_VALUE;
+    public static final int TRANSITION_SET_BEGIN_INDEX_MASK = Integer.MAX_VALUE;
+    
     //The int denoting the size of this node's outgoing transition set
     private int transitionSetSize = -1;
     
@@ -53,15 +56,6 @@ class CompressedDAWGNode extends DAWGNode {
         this.graph = graph;
         this.index = index;
     }
-    
-    /**
-     * Retrieves the character representing the transition laben leading up to this node.
-     
-     * @return      the char representing the transition label leading up to this node
-     */
-    public char getLetter() {
-        return index < 0 ? '\0' : (char)(graph.data[index] >> 16);
-    }
 
     /**
      * Retrieves the accept state status of this node.
@@ -70,7 +64,7 @@ class CompressedDAWGNode extends DAWGNode {
      */
     @Override
     public boolean isAcceptNode() {
-        return index < 0 ? true : (graph.data[index] & 1) == 1;
+        return index < 0 ? true : (graph.data[index] & ACCEPT_NODE_MASK) == ACCEPT_NODE_MASK;
     }
     
     /**
@@ -79,7 +73,7 @@ class CompressedDAWGNode extends DAWGNode {
      * @return      an int of the index in this node's containing array at which its transition set begins
      */
     public int getTransitionSetBeginIndex() {
-        return index < 0 ? 0 : graph.data[index + 1];
+        return index < 0 ? 0 : graph.data[index] & TRANSITION_SET_BEGIN_INDEX_MASK;
     }
     
     /**
@@ -92,7 +86,7 @@ class CompressedDAWGNode extends DAWGNode {
             if (index < 0)
                 transitionSetSize = 0;
             else {
-                int from = index + 2;
+                int from = index + 1;
                 int to = index + graph.getTransitionSizeInInts();
                 int s = 0;
                 for (int i = from; i < to; i++)
@@ -112,7 +106,7 @@ class CompressedDAWGNode extends DAWGNode {
             public Iterator<CompressedDAWGNode> iterator() {
                 return new LookaheadIterator<CompressedDAWGNode>() {
                     private int current;
-                    private int childrenIdx = graph.data[index + 1];
+                    private int childrenIdx = getTransitionSetBeginIndex();
                     
                     @Override
                     public CompressedDAWGNode nextElement() throws NoSuchElementException {
@@ -132,7 +126,7 @@ class CompressedDAWGNode extends DAWGNode {
     public SemiNavigableMap<Character, CompressedDAWGNode> getOutgoingTransitions() {
         return new SemiNavigableMap<Character, CompressedDAWGNode>() {
             private final int transitionSizeInInts = graph.getTransitionSizeInInts();
-            private final int start = index + 2;
+            private final int start = index + 1;
             private final int end = index + transitionSizeInInts;
             
             @Override
@@ -140,7 +134,7 @@ class CompressedDAWGNode extends DAWGNode {
                 return new LookaheadIterator<SimpleEntry<Character, CompressedDAWGNode>>() {
                     private int currentIdx = start;
                     private int currentValue = end == start ? 0 : graph.data[currentIdx];
-                    private int childrenIdx = graph.data[index + 1];
+                    private int childrenIdx = getTransitionSetBeginIndex();
                     
                     @Override
                     public SimpleEntry<Character, CompressedDAWGNode> nextElement() throws NoSuchElementException {
@@ -153,7 +147,7 @@ class CompressedDAWGNode extends DAWGNode {
                                 currentValue = graph.data[currentIdx];
                             } else {
                                 int lowest = Integer.lowestOneBit(currentValue);
-                                currentValue -= lowest;
+                                currentValue ^= lowest;
                                 int bitShift = Integer.numberOfLeadingZeros(lowest);
                                 char childLetter = graph.letters[((currentIdx - start) << 5) + bitShift];
                                 CompressedDAWGNode child = new CompressedDAWGNode(graph, graph.data[childrenIdx + bitShift]);
@@ -177,6 +171,10 @@ class CompressedDAWGNode extends DAWGNode {
                 return null;
             }
         };
+    }
+
+    public int getIndex() {
+        return index;
     }
     
     @Override
@@ -212,7 +210,7 @@ class CompressedDAWGNode extends DAWGNode {
         if (letterPos == null)
             return null;
         int lp = letterPos;
-        int transitionsStart = index + 2;
+        int transitionsStart = index + 1;
         int intIndexOfLetterInArray = lp >>> 5;
         int transitionsEnd = transitionsStart + intIndexOfLetterInArray;
         lp &= 31;
@@ -226,7 +224,7 @@ class CompressedDAWGNode extends DAWGNode {
             pos += Integer.bitCount(graph.data[transitionsEnd] << (32 - lp));
         int transitionSizeInInts = graph.getTransitionSizeInInts();
         pos *= transitionSizeInInts;
-        pos += graph.data[index + 1];
+        pos += getTransitionSetBeginIndex();
         return new CompressedDAWGNode(graph, pos);
     }
 

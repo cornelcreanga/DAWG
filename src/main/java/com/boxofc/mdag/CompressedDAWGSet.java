@@ -113,14 +113,12 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
     
     int calculateTransitionSizeInInts() {
         // Int 0:
-        // Current letter (char)
-        // Accept node mark (boolean)
-        // Int 1:
-        // Outgoing nodes array begin index (int)
+        // Accept node mark (boolean, first bit)
+        // Outgoing nodes array begin index (int, 31 bits)
         // The rest:
         // Bit array for each char denoting if there exists a transition
         // from this node to the letter in a specified position
-        return transitionSizeInInts = 2 + ((letters.length + 31) >>> 5);
+        return transitionSizeInInts = 1 + ((letters.length + 31) >>> 5);
     }
 
     @Override
@@ -205,18 +203,25 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
         private final boolean desc;
         private final int from;
         private final int to;
+        private final int fromChars;
+        private final int toChars;
         
         public OutgoingTransitionsMap(CompressedDAWGNode cparent, boolean desc) {
             this.cparent = cparent;
             this.desc = desc;
             from = cparent.getTransitionSetBeginIndex();
             to = from + (cparent.getOutgoingTransitionsSize() - 1) * transitionSizeInInts;
+            fromChars = cparent.getIndex() + 1;
+            toChars = cparent.getIndex() + transitionSizeInInts - 1;
         }
         
         @Override
         public Iterator<SimpleEntry<Character, DAWGNode>> iterator() {
             return new Iterator<SimpleEntry<Character, DAWGNode>>() {
                 private int current = desc ? to : from;
+                private int currentCharInt = desc ? toChars : fromChars;
+                private int currentCharShift = (currentCharInt - fromChars) * 32;
+                private int currentCharSet = to < from ? 0 : data[currentCharInt];
 
                 @Override
                 public boolean hasNext() {
@@ -226,11 +231,27 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
                 @Override
                 public SimpleEntry<Character, DAWGNode> next() {
                     CompressedDAWGNode node = new CompressedDAWGNode(CompressedDAWGSet.this, current);
-                    if (desc)
+                    int charIndex;
+                    if (desc) {
                         current -= transitionSizeInInts;
-                    else
+                        while (currentCharSet == 0) {
+                            currentCharInt--;
+                            currentCharShift -= 32;
+                            currentCharSet = data[currentCharInt];
+                        }
+                        charIndex = Integer.highestOneBit(currentCharSet);
+                    } else {
                         current += transitionSizeInInts;
-                    return new SimpleEntry<>(node.getLetter(), node);
+                        while (currentCharSet == 0) {
+                            currentCharInt++;
+                            currentCharShift += 32;
+                            currentCharSet = data[currentCharInt];
+                        }
+                        charIndex = Integer.lowestOneBit(currentCharSet);
+                    }
+                    currentCharSet ^= charIndex;
+                    char letter = letters[currentCharShift + Integer.numberOfTrailingZeros(charIndex)];
+                    return new SimpleEntry<>(letter, node);
                 }
             };
         }
@@ -276,7 +297,7 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
                         current -= transitionSizeInInts;
                     else
                         current += transitionSizeInInts;
-                    return new SimpleEntry<>(node.getLetter(), null);
+                    return new SimpleEntry<>('\0', null);
                 }
             };
         }

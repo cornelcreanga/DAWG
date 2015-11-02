@@ -36,7 +36,7 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
-import org.junit.Assert;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,15 +45,6 @@ import org.junit.Test;
 public class DAWGSimpleTest {
     private static final Random RANDOM = new Random(System.nanoTime());
     private static final int DOES_NOT_MATTER = Integer.MIN_VALUE;
-    
-    private static void assertArrayEquals(int expected[], int actual[]) {
-        if (expected.length == actual.length) {
-            for (int i = 0; i < expected.length; i++)
-                if (expected[i] == DOES_NOT_MATTER)
-                    expected[i] = actual[i];
-        }
-        Assert.assertArrayEquals(expected, actual);
-    }
     
     @Test
     public void compress() {
@@ -64,11 +55,11 @@ public class DAWGSimpleTest {
         dawg.addAll(words);
         CompressedDAWGSet cdawg = dawg.compress();
         assertArrayEquals(new int[]{
-            0,               3,               9,
-            ('a' << 16) + 1, 9,               4,
-            'x' << 16,       12,              2,
-            ('s' << 16) + 1, DOES_NOT_MATTER, 0,
-            ('e' << 16) + 1, 9,               4
+            2,                                       9,
+            6 | CompressedDAWGNode.ACCEPT_NODE_MASK, 4,
+            8,                                       2,
+            8 | CompressedDAWGNode.ACCEPT_NODE_MASK, 0,
+            6 | CompressedDAWGNode.ACCEPT_NODE_MASK, 4
         }, cdawg.data);
         assertEquals(cdawg, dawg.compress());
     }
@@ -83,12 +74,12 @@ public class DAWGSimpleTest {
         Arrays.sort(words);
         CompressedDAWGSet cdawg = dawg.compress();
         assertArrayEquals(new int[]{
-            0,               3,               9,
-            ('a' << 16) + 1, DOES_NOT_MATTER, 0,
-            'x' << 16,       9,               6,
-            ('e' << 16) + 1, 15,              4,
-            ('s' << 16) + 1, DOES_NOT_MATTER, 0,
-            ('s' << 16) + 1, DOES_NOT_MATTER, 0
+            2,                                        9,
+            6 | CompressedDAWGNode.ACCEPT_NODE_MASK,  0,
+            6,                                        6,
+            10 | CompressedDAWGNode.ACCEPT_NODE_MASK, 4,
+            6 | CompressedDAWGNode.ACCEPT_NODE_MASK,  0,
+            6 | CompressedDAWGNode.ACCEPT_NODE_MASK,  0
         }, cdawg.data);
         assertEquals(cdawg, dawg.compress());
 
@@ -637,7 +628,7 @@ public class DAWGSimpleTest {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.addAll();
         CompressedDAWGSet cdawg = dawg.compress();
-        assertArrayEquals(new int[]{0, 2}, cdawg.data);
+        assertArrayEquals(new int[]{1}, cdawg.data);
         assertFalse(cdawg.contains(""));
         assertFalse(cdawg.contains("\0"));
         assertFalse(cdawg.contains("a"));
@@ -691,7 +682,7 @@ public class DAWGSimpleTest {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.addAll("");
         CompressedDAWGSet cdawg = dawg.compress();
-        assertArrayEquals(new int[]{1, 2}, cdawg.data);
+        assertArrayEquals(new int[]{1 | CompressedDAWGNode.ACCEPT_NODE_MASK}, cdawg.data);
         assertEquals(0, cdawg.getMaxLength(cdawg.getSourceNode(), 0));
         
         assertTrue(dawg.contains(""));

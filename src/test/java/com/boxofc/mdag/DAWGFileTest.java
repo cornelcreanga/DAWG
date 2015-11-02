@@ -205,7 +205,7 @@ public class DAWGFileTest {
     }
     
     @Test
-    public void getAllWordsTest() {
+    public void getAllStringsTest() {
         NavigableSet<String> wordNavigableSet1 = new TreeSet<>();
         for (String word : dawg1.getAllStrings())
             wordNavigableSet1.add(word);
@@ -230,7 +230,7 @@ public class DAWGFileTest {
     }
     
     @Test
-    public void getAllWordsWithPrefixTest() {
+    public void getStringsStartingWithTest() {
         for (String prefixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
             List<String> controlSet = new ArrayList<>();
 
