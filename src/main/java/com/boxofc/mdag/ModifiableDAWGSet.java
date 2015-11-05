@@ -169,8 +169,13 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @param strCollection     a {@link java.util.Collection} containing Strings to be added to the ModifiableDAWGSet
      * @return true if and only if this ModifiableDAWGSet was changed as a result of this call
      */
-    public final boolean addAll(String... strCollection) {
+    public boolean addAll(String... strCollection) {
         return addAll(Arrays.asList(strCollection));
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends String> c) {
+        return addAll((Iterable<? extends String>)c);
     }
     
     /**
@@ -179,7 +184,7 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @param strCollection     a {@link java.util.Iterable} containing Strings to be added to the ModifiableDAWGSet
      * @return true if and only if this ModifiableDAWGSet was changed as a result of this call
      */
-    public final boolean addAll(Iterable<? extends String> strCollection) {
+    public boolean addAll(Iterable<? extends String> strCollection) {
         boolean result = false;
         boolean empty = true;
         String previousString = "";
@@ -282,10 +287,12 @@ public class ModifiableDAWGSet extends DAWGSet {
     /**
      * Removes a String from the ModifiableDAWGSet.
      
-     * @param str       the String to be removed from the ModifiableDAWGSet
+     * @param o       the String to be removed from the ModifiableDAWGSet
      * @return true if ModifiableDAWGSet already contained this string
      */
-    public boolean remove(String str) {
+    @Override
+    public boolean remove(Object o) {
+        String str = (String)o;
         //Split the transition path corresponding to str to ensure that
         //any other transition paths sharing nodes with it are not affected
         splitTransitionPath(sourceNode, str);
@@ -797,6 +804,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         return transitionCount;
     }
     
+    @Override
     public int size() {
         return size;
     }
@@ -809,6 +817,25 @@ public class ModifiableDAWGSet extends DAWGSet {
     @Override
     SemiNavigableMap<Character, Collection<? extends DAWGNode>> getIncomingTransitions(DAWGNode parent) {
         return new IncomingTransitionsMap((ModifiableDAWGNode)parent, false);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    @Override
+    public void clear() {
+        id = 2;
+        maxLength = 0;
+        size = 0;
+        transitionCount = 0;
+        equivalenceClassMDAGNodeHashMap.clear();
+        charTreeSet.clear();
+        endNode.removeAllIncomingTransitions();
+        sourceNode.removeAllOutgoingTransitions();
+        sourceNode.setAcceptStateStatus(false);
+        sourceNode.clearStoredHashCode();
     }
     
     private static class OutgoingTransitionsMap implements SemiNavigableMap<Character, DAWGNode> {

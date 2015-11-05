@@ -389,4 +389,14 @@ class ModifiableDAWGNode extends DAWGNode {
             storedHashCode = (isAcceptNode ? 1 : 0) + outgoingTransitionTreeMap.hashCode() * 2;
         return storedHashCode;
     }
+
+    public void removeAllOutgoingTransitions() {
+        outgoingTransitionTreeMap.clear();
+    }
+
+    public void removeAllIncomingTransitions() {
+        if (incomingTransitionTreeMap != null)
+            incomingTransitionTreeMap.clear();
+        incomingTransitionCount = 0;
+    }
 }

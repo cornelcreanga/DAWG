@@ -244,6 +244,33 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
         }
         return ret < 0 ? -(low + 1) : ret;
     }
+
+    @Override
+    public boolean isEmpty() {
+        if (size == null)
+            return !getSourceNode().isAcceptNode() && getSourceNode().getOutgoingTransitionsSize() == 0;
+        return size == 0;
+    }
+
+    @Override
+    public boolean add(String e) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean remove(Object o) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends String> c) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear() throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
+    }
     
     private class OutgoingTransitionsMap implements SemiNavigableMap<Character, DAWGNode> {
         private final CompressedDAWGNode cparent;

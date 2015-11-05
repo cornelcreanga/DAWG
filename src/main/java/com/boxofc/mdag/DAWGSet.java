@@ -3,6 +3,7 @@ package com.boxofc.mdag;
 import com.boxofc.mdag.util.SemiNavigableMap;
 import com.boxofc.mdag.util.LookaheadIterator;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,8 +19,9 @@ import java.util.Iterator;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
-public abstract class DAWGSet implements Iterable<String> {
+public abstract class DAWGSet implements Set<String> {
     /**
      * Folder where to save images when {@link #saveAsImage} is called. Default is the relative directory named "temp".
      */
@@ -142,8 +144,9 @@ public abstract class DAWGSet implements Iterable<String> {
      * @param str       the String to be searched for
      * @return          true if {@code str} is present in the DAWGSet, and false otherwise
      */
-    public boolean contains(String str) {
-        DAWGNode targetNode = getSourceNode().transition(str);
+    @Override
+    public boolean contains(Object str) {
+        DAWGNode targetNode = getSourceNode().transition((String)str);
         return targetNode != null && targetNode.isAcceptNode();
     }
 
@@ -583,6 +586,69 @@ public abstract class DAWGSet implements Iterable<String> {
                 };
             }
         };
+    }
+
+    @Override
+    public String[] toArray() {
+        String ret[] = new String[size()];
+        int i = 0;
+        for (String s : this)
+            ret[i++] = s;
+        return ret;
+    }
+
+    @Override
+    public <T> T[] toArray(T a[]) {
+        int size = size();
+        a = a.length >= size ? a : (T[])Array.newInstance(a.getClass().getComponentType(), size);
+        int i = 0;
+        for (String s : this)
+            a[i++] = (T)s;
+        return a;
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> c) {
+        for (Object e : c)
+            if (!contains((String)e))
+                return false;
+        return true;
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        int in = 0;
+        int out = 0;
+        for (Object e : c)
+            if (contains((String)e))
+                in++;
+            else
+                out++;
+        if (out == 0)
+            return false;
+        if (in > out) {
+            ModifiableDAWGSet outSet = new ModifiableDAWGSet();
+            for (Object e : c)
+                if (!contains((String)e))
+                    outSet.add((String)e);
+            removeAll(outSet);
+        } else {
+            ModifiableDAWGSet inSet = new ModifiableDAWGSet();
+            for (Object e : c)
+                if (contains((String)e))
+                    inSet.add((String)e);
+            clear();
+            addAll(inSet);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        boolean ret = false;
+        for (Object e : c)
+            ret |= remove((String)e);
+        return ret;
     }
     
     //Enum containing fields collectively denoting the set of all conditions that can be applied to a search on the ModifiableDAWGSet
