@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -59,7 +59,7 @@ public abstract class DAWGSet implements Iterable<String> {
         dot.append("graph [rankdir=LR, ratio=fill];\n");
         dot.append("node [fontsize=14, shape=circle];\n");
         dot.append("edge [fontsize=12];\n");
-        Deque<DAWGNode> stack = new LinkedList<>();
+        Deque<DAWGNode> stack = new ArrayDeque<>();
         BitSet visited = new BitSet();
         stack.add(getSourceNode());
         visited.set(getSourceNode().getId());
@@ -214,7 +214,7 @@ public abstract class DAWGSet implements Iterable<String> {
                         private Deque<Character> charsStack;
                         private Deque<Integer> levelsStack;
                         private Deque<Boolean> checkSubStack;
-                        private final Deque<DAWGNode> stack = new LinkedList<>();
+                        private final Deque<DAWGNode> stack = new ArrayDeque<>();
                         private char from[];
                         private char to[];
                         private char sub[];
@@ -225,11 +225,11 @@ public abstract class DAWGSet implements Iterable<String> {
                                 buffer = new char[getMaxLength()];
                                 System.arraycopy(suffixString.toCharArray(), 0, buffer, buffer.length - suffixString.length(), suffixString.length());
                                 stack.addAll(originNodes);
-                                checkSubStack = new LinkedList<>();
+                                checkSubStack = new ArrayDeque<>();
                                 checkSubStack.addAll(Collections.nCopies(originNodes.size(), true));
-                                levelsStack = new LinkedList<>();
+                                levelsStack = new ArrayDeque<>();
                                 levelsStack.addAll(Collections.nCopies(originNodes.size(), suffixString.length()));
-                                charsStack = new LinkedList<>();
+                                charsStack = new ArrayDeque<>();
                                 if (subString != null && !subString.isEmpty() && !suffixString.contains(subString))
                                     sub = subString.toCharArray();
                                 if (fromString != null && (!inclFrom || !fromString.isEmpty()))
@@ -328,7 +328,7 @@ public abstract class DAWGSet implements Iterable<String> {
                     private Deque<Character> charsStack;
                     private Deque<Integer> levelsStack;
                     private Deque<Integer> flagsStack;
-                    private final Deque<DAWGNode> stack = new LinkedList<>();
+                    private final Deque<DAWGNode> stack = new ArrayDeque<>();
                     private char from[];
                     private char to[];
                     private char sub[];
@@ -376,10 +376,10 @@ public abstract class DAWGSet implements Iterable<String> {
                             buffer = new char[getMaxLength()];
                             System.arraycopy(prefixStr.toCharArray(), 0, buffer, 0, prefixStr.length());
                             stack.add(originNode);
-                            levelsStack = new LinkedList<>();
+                            levelsStack = new ArrayDeque<>();
                             levelsStack.add(prefixStr.length() - 1);
-                            charsStack = new LinkedList<>();
-                            flagsStack = new LinkedList<>();
+                            charsStack = new ArrayDeque<>();
+                            flagsStack = new ArrayDeque<>();
                             flagsStack.add(encodeFlags(true, true, true));
                             if (fromStr != null && (!inclFrom || !fromStr.isEmpty()))
                                 from = fromStr.toCharArray();

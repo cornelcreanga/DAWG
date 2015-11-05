@@ -38,7 +38,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -689,7 +689,7 @@ public class ModifiableDAWGSet extends DAWGSet {
             compressed.outgoingData[0] |= CompressedDAWGNode.ACCEPT_NODE_MASK;
         createCompressedOutgoingTransitionsData(compressed.outgoingData, sourceNode, 0, compressedNodeSize, compressedNodeSize, compressed.getLettersIndex());
         //Clear all transition begin indexes.
-        Deque<ModifiableDAWGNode> stack = new LinkedList<>();
+        Deque<ModifiableDAWGNode> stack = new ArrayDeque<>();
         stack.add(sourceNode);
         while (true) {
             ModifiableDAWGNode node = stack.pollLast();
@@ -703,7 +703,7 @@ public class ModifiableDAWGSet extends DAWGSet {
             compressed.incomingData = new int[(transitionCount + endNode.getIncomingTransitionCount() + 1) * CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS];
             createCompressedIncomingTransitionsData(compressed.incomingData, endNode, 0, '\0', CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS, new int[]{CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS});
             //Clear all transition begin indexes.
-            stack = new LinkedList<>();
+            stack = new ArrayDeque<>();
             stack.add(endNode);
             while (true) {
                 ModifiableDAWGNode node = stack.pollLast();
