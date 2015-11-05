@@ -99,7 +99,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     }
     
     /**
-     * Creates a ModifiableDAWGSet from a newline delimited file containing the data of interest.
+     * Creates a ModifiableDAWGSet from a newline delimited file containing the outgoingData of interest.
      
      * @param dataFile          a {@link java.io.File} representation of a file
                           containing the Strings that the ModifiableDAWGSet will contain
@@ -113,7 +113,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     }
     
     /**
-     * Creates a ModifiableDAWGSet from a newline delimited file containing the data of interest.
+     * Creates a ModifiableDAWGSet from a newline delimited file containing the outgoingData of interest.
      
      * @param dataFile          a {@link java.io.InputStream} representation of a file
                           containing the Strings that the ModifiableDAWGSet will contain
@@ -321,6 +321,7 @@ public class ModifiableDAWGSet extends DAWGSet {
             if (soleInternalTransitionPathLength == internalTransitionPathLength) {
                 sourceNode.removeOutgoingTransition(str.charAt(0));
                 transitionCount -= str.length();
+                endNode.removeIncomingTransition(str.charAt(str.length() - 1), strEndNode);
             } else {
                 //Remove the sub-path in str's transition path that is only used by str
                 int toBeRemovedTransitionLabelCharIndex = internalTransitionPathLength - soleInternalTransitionPathLength;
@@ -395,9 +396,9 @@ public class ModifiableDAWGSet extends DAWGSet {
     }
     
     /**
-     * Determines and retrieves data related to the first confluence node
-     * (defined as a node with two or more incoming transitions) of a
-     * transition path corresponding to a given String from a given node.
+     * Determines and retrieves outgoingData related to the first confluence node
+ (defined as a node with two or more incoming transitions) of a
+ transition path corresponding to a given String from a given node.
      
      * @param originNode        the ModifiableDAWGNode from which the transition path corresponding to str starts from
      * @param str               a String corresponding to a transition path in the ModifiableDAWGSet
@@ -591,7 +592,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         String prefixString = determineLongestPrefixInMDAG(str);
         String suffixString = str.substring(prefixString.length());
 
-        //Retrive the data related to the first confluence node (a node with two or more incoming transitions)
+        //Retrive the outgoingData related to the first confluence node (a node with two or more incoming transitions)
         //in the transition path from sourceNode corresponding to prefixString.
         HashMap<String, Object> firstConfluenceNodeDataHashMap = getTransitionPathFirstConfluenceNodeData(sourceNode, prefixString);
         ModifiableDAWGNode firstConfluenceNodeInPrefix = (ModifiableDAWGNode)firstConfluenceNodeDataHashMap.get("confluenceNode");
@@ -615,7 +616,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         return addTransitionPath(sourceNode.transition(prefixString), suffixString);
     }
     
-    private int createCompressedTransitionsData(int data[], ModifiableDAWGNode node, int currentNodeIndex, int onePastLastCreatedTransitionSetIndex, int compressedNodeSize, Map<Character, Integer> lettersIndex) {
+    private int createCompressedOutgoingTransitionsData(int data[], ModifiableDAWGNode node, int currentNodeIndex, int onePastLastCreatedTransitionSetIndex, int compressedNodeSize, Map<Character, Integer> lettersIndex) {
         int pivotIndex = onePastLastCreatedTransitionSetIndex;
         node.setTransitionSetBeginIndex(pivotIndex);
         currentNodeIndex += 1;
@@ -634,7 +635,7 @@ public class ModifiableDAWGSet extends DAWGSet {
             //If targetTransitionNode's outgoing transition set hasn't been inserted in to mdagDataArray yet, call this method on it to do so.
             //After this call returns, transitionTargetNode will contain the index in mdagDataArray that its transition set starts from
             if (transitionTargetNode.getTransitionSetBeginIndex() == -1)
-                onePastLastCreatedTransitionSetIndex = createCompressedTransitionsData(data, transitionTargetNode, pivotIndex, onePastLastCreatedTransitionSetIndex, compressedNodeSize, lettersIndex);
+                onePastLastCreatedTransitionSetIndex = createCompressedOutgoingTransitionsData(data, transitionTargetNode, pivotIndex, onePastLastCreatedTransitionSetIndex, compressedNodeSize, lettersIndex);
             else
                 System.arraycopy(transitionTargetNode.getTransitionSetLetters(), 0, data, pivotIndex + 1, compressedNodeSize - 1);
             
@@ -647,6 +648,27 @@ public class ModifiableDAWGSet extends DAWGSet {
         return onePastLastCreatedTransitionSetIndex;
     }
     
+    private void createCompressedIncomingTransitionsData(int incomingData[], ModifiableDAWGNode node, int nodeStart, char letter, int childrenStart, int nextFreeIndex[]) {
+        incomingData[nodeStart] = letter;
+        incomingData[nodeStart + 1] = childrenStart;
+        incomingData[nodeStart + 2] = node.getIncomingTransitionCount();
+        nextFreeIndex[0] = Math.max(nextFreeIndex[0], childrenStart + node.getIncomingTransitionCount() * CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS);
+        node.setTransitionSetBeginIndex(nodeStart);
+        for (Map.Entry<Character, Map<Integer, ModifiableDAWGNode>> e : node.getIncomingTransitions().entrySet()) {
+            char c = e.getKey();
+            for (ModifiableDAWGNode child : e.getValue().values()) {
+                if (child.getTransitionSetBeginIndex() == -1) {
+                    createCompressedIncomingTransitionsData(incomingData, child, childrenStart, c, nextFreeIndex[0], nextFreeIndex);
+                    childrenStart += CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS;
+                } else {
+                    incomingData[childrenStart++] = c;
+                    incomingData[childrenStart++] = incomingData[child.getTransitionSetBeginIndex() + 1];
+                    incomingData[childrenStart++] = child.getIncomingTransitionCount();
+                }
+            }
+        }
+    }
+    
     /**
      * Creates a space-saving version of the ModifiableDAWGSet in the form of an array.
      * Once the ModifiableDAWGSet is simplified, Strings can no longer be added to or removed from it.
@@ -654,7 +676,6 @@ public class ModifiableDAWGSet extends DAWGSet {
      */
     public CompressedDAWGSet compress() {
         CompressedDAWGSet compressed = new CompressedDAWGSet();
-        compressed.withIncomingTransitions = isWithIncomingTransitions();
         compressed.size = size();
         compressed.maxLength = getMaxLength();
         compressed.letters = new char[charTreeSet.size()];
@@ -662,11 +683,11 @@ public class ModifiableDAWGSet extends DAWGSet {
         for (char c : charTreeSet)
             compressed.letters[i++] = c;
         int compressedNodeSize = compressed.calculateTransitionSizeInInts();
-        compressed.data = new int[(transitionCount + 1) * compressedNodeSize];
-        compressed.data[0] = compressedNodeSize;
+        compressed.outgoingData = new int[(transitionCount + 1) * compressedNodeSize];
+        compressed.outgoingData[0] = compressedNodeSize;
         if (sourceNode.isAcceptNode())
-            compressed.data[0] |= CompressedDAWGNode.ACCEPT_NODE_MASK;
-        createCompressedTransitionsData(compressed.data, sourceNode, 0, compressedNodeSize, compressedNodeSize, compressed.getLettersIndex());
+            compressed.outgoingData[0] |= CompressedDAWGNode.ACCEPT_NODE_MASK;
+        createCompressedOutgoingTransitionsData(compressed.outgoingData, sourceNode, 0, compressedNodeSize, compressedNodeSize, compressed.getLettersIndex());
         //Clear all transition begin indexes.
         Deque<ModifiableDAWGNode> stack = new LinkedList<>();
         stack.add(sourceNode);
@@ -677,6 +698,21 @@ public class ModifiableDAWGSet extends DAWGSet {
             node.setTransitionSetBeginIndex(-1);
             node.setTransitionSetLetters(null);
             stack.addAll(node.getOutgoingTransitions().values());
+        }
+        if (isWithIncomingTransitions()) {
+            compressed.incomingData = new int[(transitionCount + endNode.getIncomingTransitionCount() + 1) * CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS];
+            createCompressedIncomingTransitionsData(compressed.incomingData, endNode, 0, '\0', CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS, new int[]{CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS});
+            //Clear all transition begin indexes.
+            stack = new LinkedList<>();
+            stack.add(endNode);
+            while (true) {
+                ModifiableDAWGNode node = stack.pollLast();
+                if (node == null)
+                    break;
+                node.setTransitionSetBeginIndex(-1);
+                for (Map<Integer, ModifiableDAWGNode> map : node.getIncomingTransitions().values())
+                    stack.addAll(map.values());
+            }
         }
         return compressed;
     }

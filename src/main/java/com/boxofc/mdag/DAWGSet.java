@@ -204,7 +204,7 @@ public abstract class DAWGSet implements Iterable<String> {
     abstract int getMaxLength();
     
     Iterable<String> getStrings(String prefixString, String subString, String suffixString, boolean descending, String fromString, boolean inclFrom, String toString, boolean inclTo) {
-        if (suffixString != null && !suffixString.isEmpty() && isWithIncomingTransitions() && getEndNode() != null && (prefixString == null || prefixString.isEmpty())) {
+        if (suffixString != null && !suffixString.isEmpty() && isWithIncomingTransitions() && (prefixString == null || prefixString.isEmpty())) {
             // Suffix search.
             return new Iterable<String>() {
                 @Override
@@ -275,7 +275,7 @@ public abstract class DAWGSet implements Iterable<String> {
                                     levelsStack.addAll(Collections.nCopies(children.size(), level + 1));
                                     checkSubStack.addAll(Collections.nCopies(children.size(), checkSub));
                                 }
-                                if (!skipCurrent && node.getId() == DAWGNode.START) {
+                                if (!skipCurrent && childrenMap.isEmpty()) {
                                     if (from != null) {
                                         int length = Math.min(level, from.length);
                                         boolean equal = true;

@@ -44,7 +44,6 @@ import org.junit.Test;
 
 public class DAWGSimpleTest {
     private static final Random RANDOM = new Random(System.nanoTime());
-    private static final int DOES_NOT_MATTER = Integer.MIN_VALUE;
     
     @Test
     public void compress() {
@@ -60,8 +59,39 @@ public class DAWGSimpleTest {
             8,                                       2,
             8 | CompressedDAWGNode.ACCEPT_NODE_MASK, 0,
             6 | CompressedDAWGNode.ACCEPT_NODE_MASK, 4
-        }, cdawg.data);
+        }, cdawg.outgoingData);
         assertEquals(cdawg, dawg.compress());
+        
+        assertEquals(1, cdawg.getNodesBySuffix("a").size());
+        assertEquals(1, cdawg.getNodesBySuffix("s").size());
+        assertEquals(1, cdawg.getNodesBySuffix("e").size());
+        assertEquals(0, cdawg.getNodesBySuffix("x").size());
+        assertEquals(1, cdawg.getNodesBySuffix("as").size());
+        assertEquals(1, cdawg.getNodesBySuffix("es").size());
+        assertEquals(1, cdawg.getNodesBySuffix("xe").size());
+        assertEquals(1, cdawg.getNodesBySuffix("xes").size());
+        assertEquals(0, cdawg.getNodesBySuffix("b").size());
+        assertEquals(0, cdawg.getNodesBySuffix("bb").size());
+        assertEquals(0, cdawg.getNodesBySuffix("bbb").size());
+        assertEquals(0, cdawg.getNodesBySuffix("bbbb").size());
+        assertEquals(0, cdawg.getNodesBySuffix("xs").size());
+        assertEquals(0, cdawg.getNodesBySuffix("xb").size());
+        assertEquals(0, cdawg.getNodesBySuffix("bs").size());
+        assertEquals(0, cdawg.getNodesBySuffix("aes").size());
+        assertEquals(0, cdawg.getNodesBySuffix("bes").size());
+        assertEquals(0, cdawg.getNodesBySuffix("axes").size());
+        assertEquals(0, cdawg.getNodesBySuffix("bxes").size());
+        
+        Set<String> expected = new HashSet<>(Arrays.asList("as", "xes"));
+        Set<String> actual = new HashSet<>();
+        for (String word : dawg.getStringsEndingWith("s"))
+            actual.add(word);
+        assertEquals(expected, actual);
+        
+        actual = new HashSet<>();
+        for (String word : cdawg.getStringsEndingWith("s"))
+            actual.add(word);
+        assertEquals(expected, actual);
     }
     
     @Test
@@ -80,8 +110,13 @@ public class DAWGSimpleTest {
             10 | CompressedDAWGNode.ACCEPT_NODE_MASK, 4,
             6 | CompressedDAWGNode.ACCEPT_NODE_MASK,  0,
             6 | CompressedDAWGNode.ACCEPT_NODE_MASK,  0
-        }, cdawg.data);
+        }, cdawg.outgoingData);
         assertEquals(cdawg, dawg.compress());
+        
+        assertEquals(2, cdawg.getNodesBySuffix("s").size());
+        assertEquals(1, cdawg.getNodesBySuffix("xs").size());
+        assertEquals(1, cdawg.getNodesBySuffix("es").size());
+        assertEquals(1, cdawg.getNodesBySuffix("xes").size());
 
         int i = 0;
         for (String word : dawg.getAllStrings())
@@ -628,7 +663,7 @@ public class DAWGSimpleTest {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.addAll();
         CompressedDAWGSet cdawg = dawg.compress();
-        assertArrayEquals(new int[]{1}, cdawg.data);
+        assertArrayEquals(new int[]{1}, cdawg.outgoingData);
         assertFalse(cdawg.contains(""));
         assertFalse(cdawg.contains("\0"));
         assertFalse(cdawg.contains("a"));
@@ -682,7 +717,7 @@ public class DAWGSimpleTest {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.addAll("");
         CompressedDAWGSet cdawg = dawg.compress();
-        assertArrayEquals(new int[]{1 | CompressedDAWGNode.ACCEPT_NODE_MASK}, cdawg.data);
+        assertArrayEquals(new int[]{1 | CompressedDAWGNode.ACCEPT_NODE_MASK}, cdawg.outgoingData);
         assertEquals(0, cdawg.getMaxLength(cdawg.getSourceNode(), 0));
         
         assertTrue(dawg.contains(""));
@@ -755,6 +790,26 @@ public class DAWGSimpleTest {
         assertFalse(cdawg.contains("\0"));
         assertFalse(dawg.contains("a"));
         assertFalse(cdawg.contains("a"));
+
+        assertFalse(dawg.iterator().hasNext());
+        assertFalse(dawg.getStringsEndingWith("").iterator().hasNext());
+
+        assertFalse(cdawg.iterator().hasNext());
+        assertFalse(cdawg.getStringsEndingWith("").iterator().hasNext());
+    }
+
+    @Test
+    public void severalLettersWord() {
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
+        dawg.add("add");
+        CompressedDAWGSet cdawg = dawg.compress();
+        assertTrue(cdawg.contains("add"));
+        assertFalse(cdawg.contains("ad"));
+        assertFalse(cdawg.contains("a"));
+        assertFalse(cdawg.contains(""));
+        
+        dawg.remove("add");
+        cdawg = dawg.compress();
 
         assertFalse(dawg.iterator().hasNext());
         assertFalse(dawg.getStringsEndingWith("").iterator().hasNext());
@@ -1299,5 +1354,28 @@ public class DAWGSimpleTest {
 
         assertFalse(cdawg.getStringsStartingWith("b").iterator().hasNext());
         assertFalse(cdawg.getStringsEndingWith("b").iterator().hasNext());
+    }
+    
+    @Test
+    public void binarySearchFirstOccurence() {
+        int array[] = {1, 13, 42, 42, 42, 77, 78};
+        assertEquals(2, CompressedDAWGSet.binarySearchFirstOccurrence(array, 0, array.length, 42, 1));
+        assertEquals(-3, CompressedDAWGSet.binarySearchFirstOccurrence(array, 0, array.length, 32, 1));
+        assertEquals(-6, CompressedDAWGSet.binarySearchFirstOccurrence(array, 0, array.length, 52, 1));
+        int idx = Arrays.binarySearch(array, 0, array.length, 42);
+        assertTrue(2 <= idx && idx <= 4);
+        assertEquals(-3, Arrays.binarySearch(array, 0, array.length, 32));
+        assertEquals(-6, Arrays.binarySearch(array, 0, array.length, 52));
+        
+        array = new int[]{1, 8, 13, 7, 42, 5, 42, 7, 42, 6, 77, 8, 78, 9};
+        assertEquals(4, CompressedDAWGSet.binarySearchFirstOccurrence(array, 0, array.length, 42, 2));
+        assertEquals(-5, CompressedDAWGSet.binarySearchFirstOccurrence(array, 0, array.length, 32, 2));
+        assertEquals(-11, CompressedDAWGSet.binarySearchFirstOccurrence(array, 0, array.length, 52, 2));
+        
+        array = new int[]{1, 8, 8, 13, 7, 8, 42, 5, 8, 42, 7, 8, 42, 6, 8, 77, 8, 8, 78, 9, 8};
+        assertEquals(6, CompressedDAWGSet.binarySearchFirstOccurrence(array, 0, array.length, 42, 3));
+        assertEquals(-7, CompressedDAWGSet.binarySearchFirstOccurrence(array, 0, array.length, 32, 3));
+        assertEquals(-16, CompressedDAWGSet.binarySearchFirstOccurrence(array, 0, array.length, 52, 3));
+        assertEquals(6, CompressedDAWGSet.binarySearchFirstOccurrence(array, 6, 12, 42, 3));
     }
 }

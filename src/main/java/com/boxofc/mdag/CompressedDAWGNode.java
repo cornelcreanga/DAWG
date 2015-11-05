@@ -22,9 +22,7 @@
 
 package com.boxofc.mdag;
 
-import com.boxofc.mdag.util.SemiNavigableMap;
 import com.boxofc.mdag.util.LookaheadIterator;
-import com.boxofc.mdag.util.SimpleEntry;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -64,7 +62,7 @@ class CompressedDAWGNode extends DAWGNode {
      */
     @Override
     public boolean isAcceptNode() {
-        return index < 0 ? true : (graph.data[index] & ACCEPT_NODE_MASK) == ACCEPT_NODE_MASK;
+        return index < 0 ? true : (graph.outgoingData[index] & ACCEPT_NODE_MASK) == ACCEPT_NODE_MASK;
     }
     
     /**
@@ -73,7 +71,7 @@ class CompressedDAWGNode extends DAWGNode {
      * @return      an int of the index in this node's containing array at which its transition set begins
      */
     public int getTransitionSetBeginIndex() {
-        return index < 0 ? 0 : graph.data[index] & TRANSITION_SET_BEGIN_INDEX_MASK;
+        return index < 0 ? 0 : graph.outgoingData[index] & TRANSITION_SET_BEGIN_INDEX_MASK;
     }
     
     /**
@@ -87,10 +85,10 @@ class CompressedDAWGNode extends DAWGNode {
                 transitionSetSize = 0;
             else {
                 int from = index + 1;
-                int to = index + graph.getTransitionSizeInInts();
+                int to = index + graph.getOutgoingTransitionSizeInInts();
                 int s = 0;
                 for (int i = from; i < to; i++)
-                    s += Integer.bitCount(graph.data[i]);
+                    s += Integer.bitCount(graph.outgoingData[i]);
                 transitionSetSize = s;
             }
         }
@@ -99,7 +97,7 @@ class CompressedDAWGNode extends DAWGNode {
     
     public Iterable<CompressedDAWGNode> getOutgoingTransitionsNodes() {
         return new Iterable<CompressedDAWGNode>() {
-            private final int transitionSizeInInts = graph.getTransitionSizeInInts();
+            private final int transitionSizeInInts = graph.getOutgoingTransitionSizeInInts();
             private final int size = getOutgoingTransitionsSize();
             
             @Override
@@ -123,52 +121,42 @@ class CompressedDAWGNode extends DAWGNode {
         };
     }
     
-    public SemiNavigableMap<Character, CompressedDAWGNode> getOutgoingTransitions() {
-        return new SemiNavigableMap<Character, CompressedDAWGNode>() {
-            private final int transitionSizeInInts = graph.getTransitionSizeInInts();
-            private final int start = index + 1;
-            private final int end = index + transitionSizeInInts;
+    public Iterable<CompressedDAWGNode> getIncomingTransitions(char c) {
+        return new Iterable<CompressedDAWGNode>() {
+            private final int from;
+            private final int to;
+            
+            {
+                // Start node has no incoming transitions.
+                if (index == START) {
+                    from = -1;
+                    to = -1;
+                } else {
+                    // End node is located at the beginning.
+                    int idx = index == END ? 0 : index;
+                    int begin = graph.incomingData[idx + 1];
+                    to = begin + graph.incomingData[idx + 2] * CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS;
+                    from = CompressedDAWGSet.binarySearchFirstOccurrence(graph.incomingData, begin, to, c, CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS);
+                }
+            }
             
             @Override
-            public Iterator<SimpleEntry<Character, CompressedDAWGNode>> iterator() {
-                return new LookaheadIterator<SimpleEntry<Character, CompressedDAWGNode>>() {
-                    private int currentIdx = start;
-                    private int currentValue = end == start ? 0 : graph.data[currentIdx];
-                    private int childrenIdx = getTransitionSetBeginIndex();
+            public Iterator<CompressedDAWGNode> iterator() {
+                return new LookaheadIterator<CompressedDAWGNode>() {
+                    private int pos = from;
                     
                     @Override
-                    public SimpleEntry<Character, CompressedDAWGNode> nextElement() throws NoSuchElementException {
-                        while (true) {
-                            if (currentValue == 0) {
-                                currentIdx++;
-                                if (currentIdx >= end)
-                                    throw new NoSuchElementException();
-                                childrenIdx += transitionSizeInInts;
-                                currentValue = graph.data[currentIdx];
-                            } else {
-                                int lowest = Integer.lowestOneBit(currentValue);
-                                currentValue ^= lowest;
-                                int bitShift = Integer.numberOfLeadingZeros(lowest);
-                                char childLetter = graph.letters[((currentIdx - start) << 5) + bitShift];
-                                CompressedDAWGNode child = new CompressedDAWGNode(graph, graph.data[childrenIdx + bitShift]);
-                                return new SimpleEntry<>(childLetter, child);
-                            }
-                        }
+                    public CompressedDAWGNode nextElement() throws NoSuchElementException {
+                        if (pos < 0 || pos >= to)
+                            throw new NoSuchElementException();
+                        char letter = (char)graph.incomingData[pos];
+                        if (letter != c)
+                            throw new NoSuchElementException();
+                        CompressedDAWGNode ret = graph.incomingData[pos + 2] == 0 ? graph.getSourceNode() : new CompressedDAWGNode(graph, pos);
+                        pos += CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS;
+                        return ret;
                     }
                 };
-            }
-
-            @Override
-            public boolean isEmpty() {
-                for (int i = start; i < end; i++)
-                    if (graph.data[i] != 0)
-                        return false;
-                return true;
-            }
-
-            @Override
-            public SemiNavigableMap<Character, CompressedDAWGNode> descendingMap() {
-                return null;
             }
         };
     }
@@ -179,7 +167,7 @@ class CompressedDAWGNode extends DAWGNode {
     
     @Override
     public int getId() {
-        return index / graph.getTransitionSizeInInts();
+        return index / graph.getOutgoingTransitionSizeInInts();
     }
 
     @Override
@@ -215,14 +203,14 @@ class CompressedDAWGNode extends DAWGNode {
         int transitionsEnd = transitionsStart + intIndexOfLetterInArray;
         lp &= 31;
         int bitIndexOfLetterInInt = 1 << lp;
-        if ((graph.data[transitionsEnd] & bitIndexOfLetterInInt) == 0)
+        if ((graph.outgoingData[transitionsEnd] & bitIndexOfLetterInInt) == 0)
             return null;
         int pos = 0;
         for (int i = transitionsStart; i < transitionsEnd; i++)
-            pos += Integer.bitCount(graph.data[i]);
+            pos += Integer.bitCount(graph.outgoingData[i]);
         if (lp > 0)
-            pos += Integer.bitCount(graph.data[transitionsEnd] << (32 - lp));
-        int transitionSizeInInts = graph.getTransitionSizeInInts();
+            pos += Integer.bitCount(graph.outgoingData[transitionsEnd] << (32 - lp));
+        int transitionSizeInInts = graph.getOutgoingTransitionSizeInInts();
         pos *= transitionSizeInInts;
         pos += getTransitionSetBeginIndex();
         return new CompressedDAWGNode(graph, pos);
