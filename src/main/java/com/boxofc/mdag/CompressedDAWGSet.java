@@ -68,7 +68,7 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
      */
     private void readObject( ObjectInputStream ois ) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
-        transitionSizeInInts = calculateTransitionSizeInInts();
+        calculateCachedValues();
     }
     
     /**
@@ -138,14 +138,14 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
         return transitionSizeInInts;
     }
     
-    int calculateTransitionSizeInInts() {
+    void calculateCachedValues() {
         // Int 0:
         // Accept node mark (boolean, first bit)
         // Outgoing nodes array begin index (int, 31 bits)
         // The rest:
         // Bit array for each char denoting if there exists a transition
         // from this node to the letter in a specified position
-        return transitionSizeInInts = 1 + ((letters.length + 31) >>> 5);
+        transitionSizeInInts = 1 + ((letters.length + 31) >>> 5);
     }
 
     @Override

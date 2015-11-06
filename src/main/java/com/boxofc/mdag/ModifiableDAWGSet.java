@@ -44,8 +44,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.NoSuchElementException;
-import java.util.Stack;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -263,25 +261,24 @@ public class ModifiableDAWGSet extends DAWGSet {
      *                  corresponding to {@code str} that is only used by {@code str}
      */
     private int calculateSoleTransitionPathLength(String str) {
-        Stack<ModifiableDAWGNode> transitionPathNodeStack = sourceNode.getTransitionPathNodes(str);
-        transitionPathNodeStack.pop();  //The ModifiableDAWGNode at the top of the stack is not needed
+        Deque<ModifiableDAWGNode> transitionPathNodeStack = sourceNode.getTransitionPathNodes(str);
+        transitionPathNodeStack.pollLast();  //The ModifiableDAWGNode at the top of the stack is not needed
                                         //(we are processing the outgoing transitions of nodes inside str's transition path,
                                         //the outgoing transitions of the ModifiableDAWGNode at the top of the stack are outside this path)
         
-        transitionPathNodeStack.trimToSize();
+        int sizeBefore = transitionPathNodeStack.size();
 
         //Process each node in transitionPathNodeStack, using each to determine whether the
         //transition path corresponding to str is only used by str.  This is true if and only if
         //each node in the transition path has a single outgoing transition and is not an accept state.
         while (!transitionPathNodeStack.isEmpty()) {
-            ModifiableDAWGNode currentNode = transitionPathNodeStack.peek();
+            ModifiableDAWGNode currentNode = transitionPathNodeStack.peekLast();
             if (currentNode.getOutgoingTransitionCount() <= 1 && !currentNode.isAcceptNode())
-                transitionPathNodeStack.pop();
+                transitionPathNodeStack.pollLast();
             else
                 break;
         }
-        
-        return transitionPathNodeStack.capacity() - transitionPathNodeStack.size();
+        return sizeBefore - transitionPathNodeStack.size();
     }
     
     /**
@@ -689,7 +686,8 @@ public class ModifiableDAWGSet extends DAWGSet {
         int i = 0;
         for (char c : charTreeSet)
             compressed.letters[i++] = c;
-        int compressedNodeSize = compressed.calculateTransitionSizeInInts();
+        compressed.calculateCachedValues();
+        int compressedNodeSize = compressed.getOutgoingTransitionSizeInInts();
         compressed.outgoingData = new int[(transitionCount + 1) * compressedNodeSize];
         compressed.outgoingData[0] = compressedNodeSize;
         if (sourceNode.isAcceptNode())
@@ -782,7 +780,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     private void countNodes(ModifiableDAWGNode originNode, HashSet<Integer> nodeIDHashSet) {
         nodeIDHashSet.add(originNode.getId());
         
-        TreeMap<Character, ModifiableDAWGNode> transitionTreeMap = originNode.getOutgoingTransitions();
+        NavigableMap<Character, ModifiableDAWGNode> transitionTreeMap = originNode.getOutgoingTransitions();
         
         for (ModifiableDAWGNode transition : transitionTreeMap.values())
             countNodes(transition, nodeIDHashSet);

@@ -22,11 +22,13 @@
 
 package com.boxofc.mdag;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
-import java.util.Stack;
+import java.util.NavigableMap;
 
 /**
  * The class which represents a node in a MDAG.
@@ -40,7 +42,7 @@ class ModifiableDAWGNode extends DAWGNode {
     private boolean isAcceptNode;
     
     //The TreeMap to containing entries that represent a transition (label and target node)
-    private final TreeMap<Character, ModifiableDAWGNode> outgoingTransitionTreeMap;
+    private final NavigableMap<Character, ModifiableDAWGNode> outgoingTransitionTreeMap;
 
     //The int representing this node's incoming transition node count
     private int incomingTransitionCount;
@@ -55,7 +57,7 @@ class ModifiableDAWGNode extends DAWGNode {
     
     private final ModifiableDAWGSet graph;
     
-    private final TreeMap<Character, Map<Integer, ModifiableDAWGNode>> incomingTransitionTreeMap;
+    private final NavigableMap<Character, Map<Integer, ModifiableDAWGNode>> incomingTransitionTreeMap;
     
     /**
      * Constructs an MDAGNode.
@@ -261,11 +263,11 @@ class ModifiableDAWGNode extends DAWGNode {
      * from this node corresponding to a given String .
      
      * @param str       a String corresponding to a transition path starting from this node
-     * @return          a Stack of MDAGNodes containing the nodes in the transition path
+     * @return          a Deque of MDAGNodes containing the nodes in the transition path
      *                  denoted by {@code str}, in the order they are encountered in during transitioning
      */
-    public Stack<ModifiableDAWGNode> getTransitionPathNodes(String str) {
-        Stack<ModifiableDAWGNode> nodeStack = new Stack<>();
+    public Deque<ModifiableDAWGNode> getTransitionPathNodes(String str) {
+        Deque<ModifiableDAWGNode> nodeStack = new ArrayDeque<>();
         
         ModifiableDAWGNode currentNode = this;
         int numberOfChars = str.length();
@@ -286,11 +288,11 @@ class ModifiableDAWGNode extends DAWGNode {
      * @return      a TreeMap containing entries collectively representing
      *              all of this node's outgoing transitions
      */
-    public TreeMap<Character, ModifiableDAWGNode> getOutgoingTransitions() {
+    public NavigableMap<Character, ModifiableDAWGNode> getOutgoingTransitions() {
         return outgoingTransitionTreeMap;
     }
 
-    public TreeMap<Character, Map<Integer, ModifiableDAWGNode>> getIncomingTransitions() {
+    public NavigableMap<Character, Map<Integer, ModifiableDAWGNode>> getIncomingTransitions() {
         return incomingTransitionTreeMap;
     }
     
