@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.AbstractSet;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -19,9 +20,8 @@ import java.util.Iterator;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 
-public abstract class DAWGSet implements Set<String> {
+public abstract class DAWGSet extends AbstractSet<String> {
     /**
      * Folder where to save images when {@link #saveAsImage} is called. Default is the relative directory named "temp".
      */
@@ -607,20 +607,13 @@ public abstract class DAWGSet implements Set<String> {
         return a;
     }
 
-    @Override
-    public boolean containsAll(Collection<?> c) {
-        for (Object e : c)
-            if (!contains((String)e))
-                return false;
-        return true;
-    }
-
+    // TODO: remove this overriding when iterator().remove() method would be implemented.
     @Override
     public boolean retainAll(Collection<?> c) {
         int in = 0;
         int out = 0;
-        for (Object e : c)
-            if (contains((String)e))
+        for (Object e : this)
+            if (c.contains((String)e))
                 in++;
             else
                 out++;

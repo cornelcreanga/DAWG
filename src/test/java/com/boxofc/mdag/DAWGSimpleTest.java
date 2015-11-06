@@ -23,8 +23,12 @@
 package com.boxofc.mdag;
 
 import com.boxofc.mdag.util.Permutations;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -544,7 +548,7 @@ public class DAWGSimpleTest {
     }
 
     @Test
-    public void add() {
+    public void add() throws IOException, ClassNotFoundException {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         String words[] = {
             "aient", "ais", "ait", "ai", "ant",
@@ -564,6 +568,15 @@ public class DAWGSimpleTest {
             assertEquals(words[i++], word);
         assertEquals(words.length, i);
         
+        assertArrayEquals(words, dawg.toArray());
+        assertArrayEquals(words, cdawg.toArray());
+        assertArrayEquals(words, dawg.toArray(new String[2]));
+        assertArrayEquals(words, cdawg.toArray(new String[2]));
+        assertArrayEquals(words, dawg.toArray(new String[words.length]));
+        assertArrayEquals(words, cdawg.toArray(new String[words.length]));
+        assertArrayEquals(Arrays.copyOf(words, words.length + 2), dawg.toArray(new String[words.length + 2]));
+        assertArrayEquals(Arrays.copyOf(words, words.length + 2), cdawg.toArray(new String[words.length + 2]));
+        
         i = 0;
         for (String word : cdawg)
             assertEquals(words[i++], word);
@@ -573,6 +586,13 @@ public class DAWGSimpleTest {
         i = 0;
         for (String word : dawg.getStringsStartingWith("as"))
             assertEquals(wordsAs[i++], word);
+        
+        assertTrue(dawg.containsAll(Arrays.asList(wordsAs)));
+        assertTrue(cdawg.containsAll(Arrays.asList(wordsAs)));
+        assertTrue(dawg.containsAll(Arrays.asList(words)));
+        assertTrue(cdawg.containsAll(Arrays.asList(words)));
+        assertFalse(dawg.containsAll(Arrays.asList("asses", "assess")));
+        assertFalse(cdawg.containsAll(Arrays.asList("asses", "assess")));
         
         i = 0;
         for (String word : cdawg.getStringsStartingWith("as"))
@@ -610,27 +630,83 @@ public class DAWGSimpleTest {
         
         int maxLength = Arrays.stream(words).mapToInt(s -> s.length()).max().orElse(0);
         assertEquals(maxLength, cdawg.getMaxLength(cdawg.getSourceNode(), 0));
+        
+        assertEquals(cdawg, serializeAndRead(cdawg));
+        
+        ModifiableDAWGSet removed = cdawg.uncompress();
+        removed.removeAll(Arrays.asList(wordsOns));
+        assertFalse(removed.getStringsEndingWith("ons").iterator().hasNext());
+        expected = new HashSet<>(Arrays.asList(words));
+        expected.removeAll(Arrays.asList(wordsOns));
+        actual = new HashSet<>();
+        for (String word : removed)
+            actual.add(word);
+        assertEquals(expected, actual);
+        
+        ModifiableDAWGSet retained = cdawg.uncompress();
+        retained.retainAll(Arrays.asList(wordsOns));
+        expected = new HashSet<>(Arrays.asList(words));
+        expected.retainAll(Arrays.asList(wordsOns));
+        actual = new HashSet<>();
+        for (String word : retained)
+            actual.add(word);
+        assertEquals(expected, actual);
+        expected = actual;
+        actual = new HashSet<>();
+        for (String word : retained.getStringsEndingWith("ons"))
+            actual.add(word);
+        assertEquals(expected, actual);
+        
+        dawg.clear();
+        assertTrue(dawg.isEmpty());
+        assertEquals(new ModifiableDAWGSet().compress(), dawg.compress());
+        assertFalse(dawg.iterator().hasNext());
+        assertFalse(dawg.getStringsEndingWith("a").iterator().hasNext());
+        assertFalse(dawg.contains(""));
+        assertFalse(dawg.contains("\0"));
+        assertFalse(dawg.contains("a"));
     }
 
     @Test(expected = NoSuchElementException.class)
     public void empty() {
         DAWGSet dawg = new ModifiableDAWGSet();
         assertFalse(dawg.iterator().hasNext());
+        assertFalse(dawg.getStringsEndingWith("a").iterator().hasNext());
         assertFalse(dawg.contains(""));
         assertFalse(dawg.contains("\0"));
         assertFalse(dawg.contains("a"));
+        assertTrue(dawg.isEmpty());
         dawg.iterator().next();
     }
 
     @Test(expected = NoSuchElementException.class)
-    public void emptyCompressed() {
+    public void emptyCompressed() throws IOException, ClassNotFoundException {
         CompressedDAWGSet dawg = new ModifiableDAWGSet().compress();
         assertEquals(0, dawg.getMaxLength(dawg.getSourceNode(), 0));
         assertFalse(dawg.contains(""));
         assertFalse(dawg.contains("\0"));
         assertFalse(dawg.contains("a"));
         assertFalse(dawg.iterator().hasNext());
+        assertTrue(dawg.isEmpty());
         dawg.iterator().next();
+        
+        CompressedDAWGSet serialized = serializeAndRead(dawg);
+        assertTrue(serialized.isEmpty());
+        assertEquals(dawg, serialized);
+    }
+    
+    private static CompressedDAWGSet serializeAndRead(CompressedDAWGSet dawg) throws IOException, ClassNotFoundException {
+        byte data[];
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+            oos.writeObject(dawg);
+            oos.flush();
+            data = baos.toByteArray();
+        }
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
+             ObjectInputStream ois = new ObjectInputStream(bais)) {
+            return (CompressedDAWGSet)ois.readObject();
+        }
     }
 
     @Test(expected = NoSuchElementException.class)
@@ -671,8 +747,16 @@ public class DAWGSimpleTest {
         cdawg.getStringsEndingWith("").iterator().next();
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void clearCompressed() {
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
+        dawg.addAll("a");
+        CompressedDAWGSet cdawg = dawg.compress();
+        cdawg.clear();
+    }
+
     @Test
-    public void file() throws IOException {
+    public void file() throws IOException, ClassNotFoundException {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         // Source: http://www.mieliestronk.com/wordlist.html
         try (FileInputStream fis = new FileInputStream("corncob_lowercase.txt")) {
@@ -710,6 +794,9 @@ public class DAWGSimpleTest {
         for (String word : udawg.getStringsEndingWith(""))
             i++;
         assertEquals(58109, i);
+        
+        CompressedDAWGSet serialized = serializeAndRead(cdawg);
+        assertEquals(cdawg, serialized);
     }
 
     @Test

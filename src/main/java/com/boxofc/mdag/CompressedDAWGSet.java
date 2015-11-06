@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class CompressedDAWGSet extends DAWGSet implements Serializable {
     private static final CompressedDAWGNode EMPTY_NODE = new CompressedDAWGNode(null, DAWGNode.EMPTY);
@@ -199,13 +200,14 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
-        if (!(obj instanceof CompressedDAWGSet))
-            return false;
-        CompressedDAWGSet other = (CompressedDAWGSet) obj;
-        return isWithIncomingTransitions() == other.isWithIncomingTransitions() &&
-               Arrays.equals(letters, other.letters) &&
-               Arrays.equals(outgoingData, other.outgoingData) &&
-               Arrays.equals(incomingData, other.incomingData);
+        if (obj instanceof CompressedDAWGSet) {
+            CompressedDAWGSet other = (CompressedDAWGSet)obj;
+            return isWithIncomingTransitions() == other.isWithIncomingTransitions() &&
+                   Arrays.equals(letters, other.letters) &&
+                   Arrays.equals(outgoingData, other.outgoingData) &&
+                   Arrays.equals(incomingData, other.incomingData);
+        }
+        return super.equals(obj);
     }
     
     public ModifiableDAWGSet uncompress() {
@@ -250,26 +252,6 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
         if (size == null)
             return !getSourceNode().isAcceptNode() && getSourceNode().getOutgoingTransitionsSize() == 0;
         return size == 0;
-    }
-
-    @Override
-    public boolean add(String e) throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean remove(Object o) throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean addAll(Collection<? extends String> c) throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void clear() throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
     }
     
     private class OutgoingTransitionsMap implements SemiNavigableMap<Character, DAWGNode> {
