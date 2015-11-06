@@ -151,6 +151,11 @@ public abstract class DAWGSet extends AbstractSet<String> {
     }
 
     @Override
+    public boolean remove(Object o) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Iterator<String> iterator() {
         return getAllStrings().iterator();
     }
@@ -331,16 +336,21 @@ public abstract class DAWGSet extends AbstractSet<String> {
                     private Deque<Character> charsStack;
                     private Deque<Integer> levelsStack;
                     private Deque<Integer> flagsStack;
-                    private final Deque<DAWGNode> stack = new ArrayDeque<>();
+                    private Deque<DAWGNode> stack;
                     private char from[];
                     private char to[];
                     private char sub[];
                     private char suffix[];
                     
                     {
+                        init(fromString, inclFrom, toString, inclTo);
+                    }
+                    
+                    private void init(String fromString, boolean inclFrom, String toString, boolean inclTo) {
                         String fromStr = fromString;
                         String toStr = toString;
                         String subStr = subString;
+                        stack = new ArrayDeque<>();
                         //attempt to transition down the path denoted by prefixStr
                         DAWGNode originNode = getSourceNode().transition(prefixStr);
                         if (originNode != null && fromStr != null) {
@@ -583,6 +593,15 @@ public abstract class DAWGSet extends AbstractSet<String> {
                                 return String.valueOf(buffer, 0, level);
                         }
                     }
+
+                    @Override
+                    public void remove(String word) {
+                        DAWGSet.this.remove(word);
+                        if (descending)
+                            init(fromString, inclFrom, word, false);
+                        else
+                            init(word, false, toString, inclTo);
+                    }
                 };
             }
         };
@@ -605,35 +624,6 @@ public abstract class DAWGSet extends AbstractSet<String> {
         for (String s : this)
             a[i++] = (T)s;
         return a;
-    }
-
-    // TODO: remove this overriding when iterator().remove() method would be implemented.
-    @Override
-    public boolean retainAll(Collection<?> c) {
-        int in = 0;
-        int out = 0;
-        for (Object e : this)
-            if (c.contains((String)e))
-                in++;
-            else
-                out++;
-        if (out == 0)
-            return false;
-        if (in > out) {
-            ModifiableDAWGSet outSet = new ModifiableDAWGSet();
-            for (Object e : c)
-                if (!contains((String)e))
-                    outSet.add((String)e);
-            removeAll(outSet);
-        } else {
-            ModifiableDAWGSet inSet = new ModifiableDAWGSet();
-            for (Object e : c)
-                if (contains((String)e))
-                    inSet.add((String)e);
-            clear();
-            addAll(inSet);
-        }
-        return true;
     }
 
     @Override

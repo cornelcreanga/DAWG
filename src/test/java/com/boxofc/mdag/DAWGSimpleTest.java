@@ -665,6 +665,33 @@ public class DAWGSimpleTest {
         assertFalse(dawg.contains(""));
         assertFalse(dawg.contains("\0"));
         assertFalse(dawg.contains("a"));
+        
+        for (String removingWord : words) {
+            dawg = cdawg.uncompress();
+            dawg.remove(removingWord);
+            assertEquals(words.length - 1, dawg.size());
+            expected = new HashSet<>(Arrays.asList(words));
+            expected.remove(removingWord);
+            actual = new HashSet<>();
+            for (String word : dawg)
+                actual.add(word);
+            assertEquals(expected, actual);
+            
+            actual = new HashSet<>();
+            dawg = cdawg.uncompress();
+            for (Iterator<String> it = dawg.iterator(); it.hasNext();) {
+                String word = it.next();
+                if (word.equals(removingWord))
+                    it.remove();
+                else
+                    actual.add(word);
+            }
+            assertEquals(expected, actual);
+            actual = new HashSet<>();
+            for (String word : dawg)
+                actual.add(word);
+            assertEquals(expected, actual);
+        }
     }
 
     @Test(expected = NoSuchElementException.class)

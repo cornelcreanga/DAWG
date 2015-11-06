@@ -6,6 +6,7 @@ import java.util.NoSuchElementException;
 public abstract class LookaheadIterator<E> implements Iterator<E> {
     private E current;
     private boolean called;
+    private boolean ableToRemove;
     private NoSuchElementException ex;
     
     @Override
@@ -27,10 +28,24 @@ public abstract class LookaheadIterator<E> implements Iterator<E> {
     public E next() throws NoSuchElementException {
         if (hasNext()) {
             called = false;
+            ableToRemove = true;
             return current;
         } else
             throw ex;
     }
+
+    @Override
+    public void remove() throws IllegalStateException {
+        if (ableToRemove && ex == null) {
+            ableToRemove = false;
+            remove(current);
+        } else
+            throw new IllegalStateException();
+    }
     
     public abstract E nextElement() throws NoSuchElementException;
+    
+    public void remove(E element) {
+        throw new UnsupportedOperationException();
+    }
 }
