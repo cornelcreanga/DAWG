@@ -643,13 +643,13 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
     
     public abstract boolean isImmutable();
     
-    private static String getFirstValue(Iterable<String> i) {
+    private static String getFirstElement(Iterable<String> i) {
         for (String s : i)
             return s;
         return null;
     }
     
-    private static String pollFirstValue(Iterable<String> i) {
+    private static String pollFirstElement(Iterable<String> i) {
         for (Iterator<String> it = i.iterator(); it.hasNext();) {
             String s = it.next();
             it.remove();
@@ -666,45 +666,45 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
     @Override
     public String lower(String e) {
         checkNotNull(e);
-        return getFirstValue(getStrings("", null, null, true, null, false, e, false));
+        return getFirstElement(getStrings("", null, null, true, null, false, e, false));
     }
 
     @Override
     public String floor(String e) {
         checkNotNull(e);
-        return getFirstValue(getStrings("", null, null, true, null, false, e, true));
+        return getFirstElement(getStrings("", null, null, true, null, false, e, true));
     }
 
     @Override
     public String ceiling(String e) {
         checkNotNull(e);
-        return getFirstValue(getStrings("", null, null, false, e, true, null, false));
+        return getFirstElement(getStrings("", null, null, false, e, true, null, false));
     }
 
     @Override
     public String higher(String e) {
         checkNotNull(e);
-        return getFirstValue(getStrings("", null, null, false, e, false, null, false));
+        return getFirstElement(getStrings("", null, null, false, e, false, null, false));
     }
 
     @Override
     public String pollFirst() {
-        return pollFirstValue(getStrings("", null, null, false, null, false, null, false));
+        return pollFirstElement(getStrings("", null, null, false, null, false, null, false));
     }
 
     @Override
     public String pollLast() {
-        return pollFirstValue(getStrings("", null, null, true, null, false, null, false));
+        return pollFirstElement(getStrings("", null, null, true, null, false, null, false));
     }
 
     @Override
     public String first() {
-        return getFirstValue(getStrings("", null, null, false, null, false, null, false));
+        return getFirstElement(getStrings("", null, null, false, null, false, null, false));
     }
 
     @Override
     public String last() {
-        return getFirstValue(getStrings("", null, null, true, null, false, null, false));
+        return getFirstElement(getStrings("", null, null, true, null, false, null, false));
     }
 
     @Override
@@ -800,13 +800,13 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
         private String absLower(String e, boolean incl) {
             e = concatPrefix(e);
             int cmp = to == null ? -1 : e.compareTo(to);
-            return getFirstValue(getStrings(prefix, null, null, true, from, inclFrom, cmp > 0 ? to : e, cmp > 0 ? inclTo : cmp < 0 ? incl : incl && inclTo));
+            return getFirstElement(getStrings(prefix, null, null, true, from, inclFrom, cmp > 0 ? to : e, cmp > 0 ? inclTo : cmp < 0 ? incl : incl && inclTo));
         }
         
         private String absHigher(String e, boolean incl) {
             e = concatPrefix(e);
             int cmp = from == null ? 1 : e.compareTo(from);
-            return getFirstValue(getStrings(prefix, null, null, false, cmp < 0 ? from : e, cmp < 0 ? inclFrom : cmp > 0 ? incl : incl && inclFrom, to, inclTo));
+            return getFirstElement(getStrings(prefix, null, null, false, cmp < 0 ? from : e, cmp < 0 ? inclFrom : cmp > 0 ? incl : incl && inclFrom, to, inclTo));
         }
 
         @Override
@@ -831,22 +831,22 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
 
         @Override
         public String first() {
-            return getFirstValue(getStrings(prefix, null, null, desc, from, inclFrom, to, inclTo));
+            return getFirstElement(getStrings(prefix, null, null, desc, from, inclFrom, to, inclTo));
         }
 
         @Override
         public String last() {
-            return getFirstValue(getStrings(prefix, null, null, !desc, from, inclFrom, to, inclTo));
+            return getFirstElement(getStrings(prefix, null, null, !desc, from, inclFrom, to, inclTo));
         }
 
         @Override
         public String pollFirst() {
-            return pollFirstValue(getStrings(prefix, null, null, desc, from, inclFrom, to, inclTo));
+            return pollFirstElement(getStrings(prefix, null, null, desc, from, inclFrom, to, inclTo));
         }
 
         @Override
         public String pollLast() {
-            return pollFirstValue(getStrings(prefix, null, null, !desc, from, inclFrom, to, inclTo));
+            return pollFirstElement(getStrings(prefix, null, null, !desc, from, inclFrom, to, inclTo));
         }
 
         @Override
