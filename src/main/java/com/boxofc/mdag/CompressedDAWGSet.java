@@ -253,6 +253,11 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
             return !getSourceNode().isAcceptNode() && getSourceNode().getOutgoingTransitionsSize() == 0;
         return size == 0;
     }
+
+    @Override
+    public boolean isImmutable() {
+        return true;
+    }
     
     private class OutgoingTransitionsMap implements SemiNavigableMap<Character, DAWGNode> {
         private final CompressedDAWGNode cparent;

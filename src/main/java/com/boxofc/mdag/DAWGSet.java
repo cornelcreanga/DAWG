@@ -18,10 +18,12 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.ArrayDeque;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 
-public abstract class DAWGSet extends AbstractSet<String> {
+public abstract class DAWGSet extends AbstractSet<String> implements NavigableSet<String> {
     /**
      * Folder where to save images when {@link #saveAsImage} is called. Default is the relative directory named "temp".
      */
@@ -157,7 +159,12 @@ public abstract class DAWGSet extends AbstractSet<String> {
 
     @Override
     public Iterator<String> iterator() {
-        return getAllStrings().iterator();
+        return getStrings("", null, null, false, null, false, null, false).iterator();
+    }
+
+    @Override
+    public Iterator<String> descendingIterator() {
+        return getStrings("", null, null, true, null, false, null, false).iterator();
     }
     
     /**
@@ -634,37 +641,365 @@ public abstract class DAWGSet extends AbstractSet<String> {
         return ret;
     }
     
-    //Enum containing fields collectively denoting the set of all conditions that can be applied to a search on the ModifiableDAWGSet
-    static enum SearchCondition {
-        NO_SEARCH_CONDITION, SUBSTRING_SEARCH_CONDITION, SUFFIX_SEARCH_CONDITION;
-        
-        /**
-        * Determines whether two Strings have a given type of relationship.
-
-        * @param processingString      a String
-        * @param conditionString       a String
-        * @param searchCondition       an int denoting the type of condition to be satisfied
-        * @return                      true if {@code processingString} has a relationship with
-        *                              {@code conditionString} described by the condition
-        *                              represented by {@code searchCondition}
-        */
-        public boolean satisfiesCondition(String str1, String str2) {
-            boolean satisfiesSearchCondition;
-         
-            switch (this) {
-                case SUBSTRING_SEARCH_CONDITION:
-                    // When we find a string ending with a given pattern,
-                    // we accept all strings starting with the found one.
-                    // So, all these strings would contain a pattern as substring.
-                case SUFFIX_SEARCH_CONDITION:
-                    satisfiesSearchCondition = str1.endsWith(str2);
-                    break;
-                default:
-                    satisfiesSearchCondition = true;
-                    break;
-            }
-
-            return satisfiesSearchCondition;
+    public abstract boolean isImmutable();
+    
+    private static String getFirstValue(Iterable<String> i) {
+        for (String s : i)
+            return s;
+        return null;
+    }
+    
+    private static String pollFirstValue(Iterable<String> i) {
+        for (Iterator<String> it = i.iterator(); it.hasNext();) {
+            String s = it.next();
+            it.remove();
+            return s;
         }
-    };
+        return null;
+    }
+    
+    private static void checkNotNull(String e) {
+        if (e == null)
+            throw new NullPointerException();
+    }
+
+    @Override
+    public String lower(String e) {
+        checkNotNull(e);
+        return getFirstValue(getStrings("", null, null, true, null, false, e, false));
+    }
+
+    @Override
+    public String floor(String e) {
+        checkNotNull(e);
+        return getFirstValue(getStrings("", null, null, true, null, false, e, true));
+    }
+
+    @Override
+    public String ceiling(String e) {
+        checkNotNull(e);
+        return getFirstValue(getStrings("", null, null, false, e, true, null, false));
+    }
+
+    @Override
+    public String higher(String e) {
+        checkNotNull(e);
+        return getFirstValue(getStrings("", null, null, false, e, false, null, false));
+    }
+
+    @Override
+    public String pollFirst() {
+        return pollFirstValue(getStrings("", null, null, false, null, false, null, false));
+    }
+
+    @Override
+    public String pollLast() {
+        return pollFirstValue(getStrings("", null, null, true, null, false, null, false));
+    }
+
+    @Override
+    public String first() {
+        return getFirstValue(getStrings("", null, null, false, null, false, null, false));
+    }
+
+    @Override
+    public String last() {
+        return getFirstValue(getStrings("", null, null, true, null, false, null, false));
+    }
+
+    @Override
+    public Comparator<? super String> comparator() {
+        // Natural ordering.
+        return null;
+    }
+
+    @Override
+    public NavigableSet<String> descendingSet() {
+        return createSubSet("", true, null, false, null, false);
+    }
+
+    @Override
+    public NavigableSet<String> subSet(String fromElement, boolean fromInclusive, String toElement, boolean toInclusive) {
+        if (fromElement.compareTo(toElement) > 0)
+            throw new IllegalArgumentException("fromElement > toElement");
+        if (fromInclusive && fromElement.isEmpty())
+            fromElement = null;
+        return createSubSet("", false, fromElement, fromInclusive, toElement, toInclusive);
+    }
+
+    @Override
+    public NavigableSet<String> headSet(String toElement, boolean inclusive) {
+        checkNotNull(toElement);
+        return createSubSet("", false, null, false, toElement, inclusive);
+    }
+
+    @Override
+    public NavigableSet<String> tailSet(String fromElement, boolean inclusive) {
+        if (inclusive) {
+            if (fromElement.isEmpty())
+                return this;
+        } else
+            checkNotNull(fromElement);
+        return createSubSet("", false, fromElement, inclusive, null, false);
+    }
+
+    @Override
+    public NavigableSet<String> subSet(String fromElement, String toElement) {
+        if (fromElement.compareTo(toElement) > 0)
+            throw new IllegalArgumentException("fromElement > toElement");
+        if (fromElement.isEmpty())
+            fromElement = null;
+        return createSubSet("", false, fromElement, true, toElement, false);
+    }
+
+    @Override
+    public NavigableSet<String> headSet(String toElement) {
+        checkNotNull(toElement);
+        return createSubSet("", false, null, false, toElement, false);
+    }
+
+    @Override
+    public NavigableSet<String> tailSet(String fromElement) {
+        if (fromElement.isEmpty())
+            return this;
+        return createSubSet("", false, fromElement, true, null, false);
+    }
+
+    public NavigableSet<String> prefixSet(String prefix) {
+        if (prefix == null || prefix.isEmpty())
+            return this;
+        return createSubSet(prefix, false, null, false, null, false);
+    }
+    
+    private NavigableSet<String> createSubSet(String prefix, boolean descending, String fromElement, boolean fromInclusive, String toElement, boolean toInclusive) {
+        return new SubSet(prefix, descending, fromElement, fromInclusive, toElement, toInclusive);
+    }
+    
+    private class SubSet extends AbstractSet<String> implements NavigableSet<String> {
+        private final String prefix;
+        private final boolean desc;
+        private final String from;
+        private final boolean inclFrom;
+        private final String to;
+        private final boolean inclTo;
+        private int size = -1;
+
+        public SubSet(String prefix, boolean desc, String from, boolean inclFrom, String to, boolean inclTo) {
+            this.prefix = prefix;
+            this.desc = desc;
+            this.from = from;
+            this.inclFrom = inclFrom;
+            this.to = to;
+            this.inclTo = inclTo;
+        }
+        
+        private String concatPrefix(String e) {
+            return prefix.isEmpty() ? e : prefix + e;
+        }
+        
+        private String absLower(String e, boolean incl) {
+            e = concatPrefix(e);
+            int cmp = to == null ? -1 : e.compareTo(to);
+            return getFirstValue(getStrings(prefix, null, null, true, from, inclFrom, cmp > 0 ? to : e, cmp > 0 ? inclTo : cmp < 0 ? incl : incl && inclTo));
+        }
+        
+        private String absHigher(String e, boolean incl) {
+            e = concatPrefix(e);
+            int cmp = from == null ? 1 : e.compareTo(from);
+            return getFirstValue(getStrings(prefix, null, null, false, cmp < 0 ? from : e, cmp < 0 ? inclFrom : cmp > 0 ? incl : incl && inclFrom, to, inclTo));
+        }
+
+        @Override
+        public String lower(String e) {
+            return desc ? absHigher(e, false) : absLower(e, false);
+        }
+
+        @Override
+        public String floor(String e) {
+            return desc ? absHigher(e, true) : absLower(e, true);
+        }
+
+        @Override
+        public String ceiling(String e) {
+            return desc ? absLower(e, true) : absHigher(e, true);
+        }
+
+        @Override
+        public String higher(String e) {
+            return desc ? absLower(e, false) : absHigher(e, false);
+        }
+
+        @Override
+        public String first() {
+            return getFirstValue(getStrings(prefix, null, null, desc, from, inclFrom, to, inclTo));
+        }
+
+        @Override
+        public String last() {
+            return getFirstValue(getStrings(prefix, null, null, !desc, from, inclFrom, to, inclTo));
+        }
+
+        @Override
+        public String pollFirst() {
+            return pollFirstValue(getStrings(prefix, null, null, desc, from, inclFrom, to, inclTo));
+        }
+
+        @Override
+        public String pollLast() {
+            return pollFirstValue(getStrings(prefix, null, null, !desc, from, inclFrom, to, inclTo));
+        }
+
+        @Override
+        public Iterator<String> iterator() {
+            return getStrings(prefix, null, null, desc, from, inclFrom, to, inclTo).iterator();
+        }
+
+        @Override
+        public Iterator<String> descendingIterator() {
+            return getStrings(prefix, null, null, !desc, from, inclFrom, to, inclTo).iterator();
+        }
+
+        @Override
+        public NavigableSet<String> descendingSet() {
+            return createSubSet(prefix, !desc, from, inclFrom, to, inclTo);
+        }
+
+        @Override
+        public NavigableSet<String> subSet(String fromElement, boolean fromInclusive, String toElement, boolean toInclusive) {
+            if (!inRange(fromElement, fromInclusive))
+                throw new IllegalArgumentException("fromElement out of range");
+            if (!inRange(toElement, toInclusive))
+                throw new IllegalArgumentException("toElement out of range");
+            // fromElement lies in range && fromElement is empty => from = null
+            if (fromInclusive && fromElement.isEmpty())
+                fromElement = null;
+            return createSubSet(prefix, desc, fromElement, fromInclusive, toElement, toInclusive);
+        }
+
+        @Override
+        public NavigableSet<String> headSet(String toElement, boolean inclusive) {
+            if (!inRange(toElement, inclusive))
+                throw new IllegalArgumentException("toElement out of range");
+            return createSubSet(prefix, desc, from, inclFrom, toElement, inclusive);
+        }
+
+        @Override
+        public NavigableSet<String> tailSet(String fromElement, boolean inclusive) {
+            if (!inRange(fromElement, inclusive))
+                throw new IllegalArgumentException("fromElement out of range");
+            if (inclusive && fromElement.isEmpty())
+                return this;
+            return createSubSet(prefix, desc, fromElement, inclusive, to, inclTo);
+        }
+
+        @Override
+        public NavigableSet<String> subSet(String fromElement, String toElement) {
+            if (!inRange(fromElement))
+                throw new IllegalArgumentException("fromElement out of range");
+            if (!inRange(toElement))
+                throw new IllegalArgumentException("toElement out of range");
+            // fromElement lies in range && fromElement is empty => from = null
+            if (fromElement.isEmpty())
+                fromElement = null;
+            return createSubSet(prefix, desc, fromElement, true, toElement, true);
+        }
+
+        @Override
+        public NavigableSet<String> headSet(String toElement) {
+            if (!inRange(toElement))
+                throw new IllegalArgumentException("toElement out of range");
+            return createSubSet(prefix, desc, from, inclFrom, toElement, true);
+        }
+
+        @Override
+        public NavigableSet<String> tailSet(String fromElement) {
+            if (!inRange(fromElement))
+                throw new IllegalArgumentException("fromElement out of range");
+            if (fromElement.isEmpty())
+                return this;
+            return createSubSet(prefix, desc, fromElement, true, to, inclTo);
+        }
+
+        @Override
+        public Comparator<? super String> comparator() {
+            // Natural ordering.
+            return null;
+        }
+
+        @Override
+        public int size() {
+            if (size < 0) {
+                int s = 0;
+                for (String word : this)
+                    s++;
+                if (isImmutable())
+                    size = s;
+                else
+                    return s;
+            }
+            return size;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return size < 0 ? !iterator().hasNext() : size == 0;
+        }
+        
+        private boolean inRange(String s) {
+            if (!s.startsWith(prefix))
+                return false;
+            if (from != null) {
+                int cmp = s.compareTo(from);
+                if (cmp < 0 || cmp == 0 && !inclFrom)
+                    return false;
+            }
+            if (to != null) {
+                int cmp = s.compareTo(to);
+                if (cmp > 0 || cmp == 0 && !inclTo)
+                    return false;
+            }
+            return true;
+        }
+        
+        private boolean inRange(String s, boolean inclusive) {
+            if (inclusive)
+                return inRange(s);
+            return s.startsWith(prefix) &&
+                   (from == null || s.compareTo(from) >= 0) &&
+                   (to == null || s.compareTo(to) <= 0);
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return inRange((String)o) && DAWGSet.this.contains(o);
+        }
+
+        @Override
+        public boolean add(String element) {
+            if (!inRange(element))
+                throw new IllegalArgumentException("element out of range");
+            return DAWGSet.this.add(element);
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            return inRange((String)o) && DAWGSet.this.remove(o);
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends String> c) {
+            for (String e : c)
+                if (!inRange(e))
+                    throw new IllegalArgumentException("Value lies out of range");
+            return DAWGSet.this.addAll(c);
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            boolean ret = false;
+            for (Object e : c)
+                ret |= remove((String)e);
+            return ret;
+        }
+    }
 }

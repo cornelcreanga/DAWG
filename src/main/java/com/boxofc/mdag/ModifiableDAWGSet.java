@@ -835,6 +835,11 @@ public class ModifiableDAWGSet extends DAWGSet {
         sourceNode.setAcceptStateStatus(false);
         sourceNode.clearStoredHashCode();
     }
+
+    @Override
+    public boolean isImmutable() {
+        return false;
+    }
     
     private static class OutgoingTransitionsMap implements SemiNavigableMap<Character, DAWGNode> {
         private final ModifiableDAWGNode parent;

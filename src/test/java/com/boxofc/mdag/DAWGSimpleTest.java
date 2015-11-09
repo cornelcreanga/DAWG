@@ -1492,4 +1492,50 @@ public class DAWGSimpleTest {
         assertEquals(-16, CompressedDAWGSet.binarySearchFirstOccurrence(array, 0, array.length, 52, 3));
         assertEquals(6, CompressedDAWGSet.binarySearchFirstOccurrence(array, 6, 12, 42, 3));
     }
+    
+    @Test
+    public void navigableSet() {
+        List<String> words = Arrays.asList("abcd", "beast", "bench", "best", "car");
+        List<String> wordsReversed = new ArrayList<>(words);
+        Collections.reverse(wordsReversed);
+        ModifiableDAWGSet mdawg = new ModifiableDAWGSet(words);
+        for (int i = 0; i < 2; i++) {
+            DAWGSet dawg = i == 0 ? mdawg : mdawg.compress();
+            NavigableSet<String> set = dawg.descendingSet();
+            assertFalse(set.isEmpty());
+            assertEquals(5, set.size());
+            assertFalse(set.isEmpty());
+            assertArrayEquals(wordsReversed.toArray(), set.toArray());
+            
+            for (int j = 0; j < 2; j++) {
+                set = j == 0 ? set.descendingSet() : dawg;
+                assertFalse(set.isEmpty());
+                assertEquals(5, set.size());
+                assertFalse(set.isEmpty());
+                assertArrayEquals(words.toArray(), set.toArray());
+                assertEquals("abcd", set.first());
+                assertEquals("car", set.last());
+                assertEquals(null, set.lower("abcd"));
+                assertEquals("beast", set.higher("abcd"));
+                assertEquals("beast", set.higher("bean"));
+                assertEquals("beast", set.ceiling("bean"));
+                assertEquals("beast", set.ceiling("beast"));
+            }
+            
+            set = dawg.subSet("beast", true, "beast", true);
+            assertEquals(1, set.size());
+            set = dawg.subSet("beast", true, "beast", false);
+            assertEquals(0, set.size());
+            set = dawg.subSet("beast", false, "beast", false);
+            assertEquals(0, set.size());
+            set = dawg.subSet("beast", false, "beast", true);
+            assertEquals(0, set.size());
+            set = dawg.subSet("bean", true, "bean", true);
+            assertEquals(0, set.size());
+            set = dawg.prefixSet("be");
+            assertEquals(3, set.size());
+            set = dawg.prefixSet("be").subSet("beast", true, "beast", true);
+            assertEquals(1, set.size());
+        }
+    }
 }
