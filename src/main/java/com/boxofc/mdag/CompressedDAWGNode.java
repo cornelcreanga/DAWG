@@ -107,7 +107,7 @@ class CompressedDAWGNode extends DAWGNode {
                     private int childrenIdx = getTransitionSetBeginIndex();
                     
                     @Override
-                    public CompressedDAWGNode nextElement() throws NoSuchElementException {
+                    public CompressedDAWGNode nextElement() {
                         if (current < size) {
                             CompressedDAWGNode child = new CompressedDAWGNode(graph, childrenIdx);
                             current++;
@@ -146,7 +146,7 @@ class CompressedDAWGNode extends DAWGNode {
                     private int pos = from;
                     
                     @Override
-                    public CompressedDAWGNode nextElement() throws NoSuchElementException {
+                    public CompressedDAWGNode nextElement() {
                         if (pos < 0 || pos >= to)
                             throw new NoSuchElementException();
                         char letter = (char)graph.incomingData[pos];

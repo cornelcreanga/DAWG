@@ -49,6 +49,9 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
     public static void setDotExecutablePath(String dotExecutablePath) {
         DAWGSet.dotExecutablePath = dotExecutablePath;
     }
+    
+    DAWGSet() {
+    }
 
     public abstract boolean isWithIncomingTransitions();
     
@@ -255,7 +258,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                         }
                         
                         @Override
-                        public String nextElement() throws NoSuchElementException {
+                        public String nextElement() {
                             while (true) {
                                 DAWGNode node = stack.pollLast();
                                 if (node == null)
@@ -426,7 +429,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                     }
                     
                     @Override
-                    public String nextElement() throws NoSuchElementException {
+                    public String nextElement() {
                         while (true) {
                             DAWGNode node = stack.pollLast();
                             if (node == null)

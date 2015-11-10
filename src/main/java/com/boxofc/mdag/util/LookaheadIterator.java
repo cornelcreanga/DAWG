@@ -25,7 +25,7 @@ public abstract class LookaheadIterator<E> implements Iterator<E> {
     }
 
     @Override
-    public E next() throws NoSuchElementException {
+    public E next() {
         if (hasNext()) {
             called = false;
             ableToRemove = true;
@@ -35,7 +35,7 @@ public abstract class LookaheadIterator<E> implements Iterator<E> {
     }
 
     @Override
-    public void remove() throws IllegalStateException {
+    public void remove() {
         if (ableToRemove && ex == null) {
             ableToRemove = false;
             remove(current);
@@ -43,7 +43,7 @@ public abstract class LookaheadIterator<E> implements Iterator<E> {
             throw new IllegalStateException();
     }
     
-    public abstract E nextElement() throws NoSuchElementException;
+    public abstract E nextElement();
     
     public void remove(E element) {
         throw new UnsupportedOperationException();
