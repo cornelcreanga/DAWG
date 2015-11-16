@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.TreeSet;
 
@@ -70,7 +71,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     private final HashMap<ModifiableDAWGNode, ModifiableDAWGNode> equivalenceClassMDAGNodeHashMap = new HashMap<>();
     
     //NavigableSet which will contain the set of unique characters used as transition labels in the ModifiableDAWGSet
-    private final TreeSet<Character> charTreeSet = new TreeSet<>();
+    private final NavigableSet<Character> alphabet = new TreeSet<>();
     
     //An int denoting the total number of transitions between the nodes of the ModifiableDAWGSet
     private int transitionCount;
@@ -182,6 +183,7 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @param strCollection     a {@link java.util.Iterable} containing Strings to be added to the ModifiableDAWGSet
      * @return true if and only if this ModifiableDAWGSet was changed as a result of this call
      */
+    @Override
     public boolean addAll(Iterable<? extends String> strCollection) {
         boolean result = false;
         boolean empty = true;
@@ -494,7 +496,7 @@ public class ModifiableDAWGSet extends DAWGSet {
                 currentNode = currentNode.addOutgoingTransition(this, currentChar, isLastChar, id++);
                 if (isLastChar)
                     endNode.addIncomingTransition(currentChar, currentNode);
-                charTreeSet.add(currentChar);
+                alphabet.add(currentChar);
             }
             size++;
             return true;
@@ -682,9 +684,9 @@ public class ModifiableDAWGSet extends DAWGSet {
         CompressedDAWGSet compressed = new CompressedDAWGSet();
         compressed.size = size();
         compressed.maxLength = getMaxLength();
-        compressed.letters = new char[charTreeSet.size()];
+        compressed.letters = new char[alphabet.size()];
         int i = 0;
-        for (char c : charTreeSet)
+        for (char c : alphabet)
             compressed.letters[i++] = c;
         compressed.calculateCachedValues();
         int compressedNodeSize = compressed.getOutgoingTransitionSizeInInts();
@@ -742,6 +744,20 @@ public class ModifiableDAWGSet extends DAWGSet {
         }
         return ret;
     }
+    
+    public void optimizeLetters() {
+        NavigableSet<Character> newLetters = new TreeSet<>();
+        enumerateAllLetters(sourceNode, newLetters);
+        alphabet.clear();
+        alphabet.addAll(newLetters);
+    }
+    
+    private void enumerateAllLetters(ModifiableDAWGNode node, NavigableSet<Character> newLetters) {
+        for (Entry<Character, ModifiableDAWGNode> e : node.getOutgoingTransitions().entrySet()) {
+            newLetters.add(e.getKey());
+            enumerateAllLetters(e.getValue(), newLetters);
+        }
+    }
 
     @Override
     int getMaxLength() {
@@ -773,8 +789,8 @@ public class ModifiableDAWGSet extends DAWGSet {
      
      * @return      a TreeSet of chars which collectively label all the transitions in the ModifiableDAWGSet
      */
-    public TreeSet<Character> getTransitionLabelSet() {
-        return charTreeSet;
+    public NavigableSet<Character> getAlphabet() {
+        return alphabet;
     }
     
     private void countNodes(ModifiableDAWGNode originNode, HashSet<Integer> nodeIDHashSet) {
@@ -829,7 +845,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         size = 0;
         transitionCount = 0;
         equivalenceClassMDAGNodeHashMap.clear();
-        charTreeSet.clear();
+        alphabet.clear();
         endNode.removeAllIncomingTransitions();
         sourceNode.removeAllOutgoingTransitions();
         sourceNode.setAcceptStateStatus(false);
