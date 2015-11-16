@@ -160,6 +160,10 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
         throw new UnsupportedOperationException();
     }
 
+    public boolean addAll(Iterable<? extends String> c) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public Iterator<String> iterator() {
         return getStrings("", null, null, false, null, false, null, false).iterator();
@@ -718,7 +722,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
 
     @Override
     public NavigableSet<String> descendingSet() {
-        return createSubSet("", true, null, false, null, false);
+        return new SubSet("", true, null, false, null, false);
     }
 
     @Override
@@ -727,13 +731,13 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
             throw new IllegalArgumentException("fromElement > toElement");
         if (fromInclusive && fromElement.isEmpty())
             fromElement = null;
-        return createSubSet("", false, fromElement, fromInclusive, toElement, toInclusive);
+        return new SubSet("", false, fromElement, fromInclusive, toElement, toInclusive);
     }
 
     @Override
     public NavigableSet<String> headSet(String toElement, boolean inclusive) {
         checkNotNull(toElement);
-        return createSubSet("", false, null, false, toElement, inclusive);
+        return new SubSet("", false, null, false, toElement, inclusive);
     }
 
     @Override
@@ -743,7 +747,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                 return this;
         } else
             checkNotNull(fromElement);
-        return createSubSet("", false, fromElement, inclusive, null, false);
+        return new SubSet("", false, fromElement, inclusive, null, false);
     }
 
     @Override
@@ -752,30 +756,26 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
             throw new IllegalArgumentException("fromElement > toElement");
         if (fromElement.isEmpty())
             fromElement = null;
-        return createSubSet("", false, fromElement, true, toElement, false);
+        return new SubSet("", false, fromElement, true, toElement, false);
     }
 
     @Override
     public NavigableSet<String> headSet(String toElement) {
         checkNotNull(toElement);
-        return createSubSet("", false, null, false, toElement, false);
+        return new SubSet("", false, null, false, toElement, false);
     }
 
     @Override
     public NavigableSet<String> tailSet(String fromElement) {
         if (fromElement.isEmpty())
             return this;
-        return createSubSet("", false, fromElement, true, null, false);
+        return new SubSet("", false, fromElement, true, null, false);
     }
 
     public NavigableSet<String> prefixSet(String prefix) {
         if (prefix == null || prefix.isEmpty())
             return this;
-        return createSubSet(prefix, false, null, false, null, false);
-    }
-    
-    private NavigableSet<String> createSubSet(String prefix, boolean descending, String fromElement, boolean fromInclusive, String toElement, boolean toInclusive) {
-        return new SubSet(prefix, descending, fromElement, fromInclusive, toElement, toInclusive);
+        return new SubSet(prefix, false, null, false, null, false);
     }
     
     private class SubSet extends AbstractSet<String> implements NavigableSet<String> {
@@ -796,18 +796,12 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
             this.inclTo = inclTo;
         }
         
-        private String concatPrefix(String e) {
-            return prefix.isEmpty() ? e : prefix + e;
-        }
-        
         private String absLower(String e, boolean incl) {
-            e = concatPrefix(e);
             int cmp = to == null ? -1 : e.compareTo(to);
             return getFirstElement(getStrings(prefix, null, null, true, from, inclFrom, cmp > 0 ? to : e, cmp > 0 ? inclTo : cmp < 0 ? incl : incl && inclTo));
         }
         
         private String absHigher(String e, boolean incl) {
-            e = concatPrefix(e);
             int cmp = from == null ? 1 : e.compareTo(from);
             return getFirstElement(getStrings(prefix, null, null, false, cmp < 0 ? from : e, cmp < 0 ? inclFrom : cmp > 0 ? incl : incl && inclFrom, to, inclTo));
         }
@@ -864,7 +858,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
 
         @Override
         public NavigableSet<String> descendingSet() {
-            return createSubSet(prefix, !desc, from, inclFrom, to, inclTo);
+            return new SubSet(prefix, !desc, from, inclFrom, to, inclTo);
         }
 
         @Override
@@ -876,14 +870,14 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
             // fromElement lies in range && fromElement is empty => from = null
             if (fromInclusive && fromElement.isEmpty())
                 fromElement = null;
-            return createSubSet(prefix, desc, fromElement, fromInclusive, toElement, toInclusive);
+            return new SubSet(prefix, desc, fromElement, fromInclusive, toElement, toInclusive);
         }
 
         @Override
         public NavigableSet<String> headSet(String toElement, boolean inclusive) {
             if (!inRange(toElement, inclusive))
                 throw new IllegalArgumentException("toElement out of range");
-            return createSubSet(prefix, desc, from, inclFrom, toElement, inclusive);
+            return new SubSet(prefix, desc, from, inclFrom, toElement, inclusive);
         }
 
         @Override
@@ -892,7 +886,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                 throw new IllegalArgumentException("fromElement out of range");
             if (inclusive && fromElement.isEmpty())
                 return this;
-            return createSubSet(prefix, desc, fromElement, inclusive, to, inclTo);
+            return new SubSet(prefix, desc, fromElement, inclusive, to, inclTo);
         }
 
         @Override
@@ -904,14 +898,14 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
             // fromElement lies in range && fromElement is empty => from = null
             if (fromElement.isEmpty())
                 fromElement = null;
-            return createSubSet(prefix, desc, fromElement, true, toElement, true);
+            return new SubSet(prefix, desc, fromElement, true, toElement, true);
         }
 
         @Override
         public NavigableSet<String> headSet(String toElement) {
             if (!inRange(toElement))
                 throw new IllegalArgumentException("toElement out of range");
-            return createSubSet(prefix, desc, from, inclFrom, toElement, true);
+            return new SubSet(prefix, desc, from, inclFrom, toElement, true);
         }
 
         @Override
@@ -920,13 +914,12 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                 throw new IllegalArgumentException("fromElement out of range");
             if (fromElement.isEmpty())
                 return this;
-            return createSubSet(prefix, desc, fromElement, true, to, inclTo);
+            return new SubSet(prefix, desc, fromElement, true, to, inclTo);
         }
 
         @Override
         public Comparator<? super String> comparator() {
-            // Natural ordering.
-            return null;
+            return desc ? Collections.reverseOrder() : null;
         }
 
         @Override

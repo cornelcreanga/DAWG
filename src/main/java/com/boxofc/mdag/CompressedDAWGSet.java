@@ -13,9 +13,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class CompressedDAWGSet extends DAWGSet implements Serializable {
+    private static final long serialVersionUID = 1L;
     private static final CompressedDAWGNode EMPTY_NODE = new CompressedDAWGNode(null, DAWGNode.EMPTY);
     static final int INCOMING_TRANSITION_SIZE_IN_INTS = 3;
     
@@ -66,7 +66,7 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
      * This method is invoked when the object is read from input stream.
      * @see Serializable
      */
-    private void readObject( ObjectInputStream ois ) throws IOException, ClassNotFoundException {
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
         calculateCachedValues();
     }
