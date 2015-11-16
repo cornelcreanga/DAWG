@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
-public abstract class DAWGMap extends AbstractMap<String, String> implements NavigableMap<String, String> {
+public class DAWGMap extends AbstractMap<String, String> implements NavigableMap<String, String> {
     private static final char KEY_VALUE_SEPARATOR = '\0';
     private static final char KEY_VALUE_SEPARATOR_EXCLUSIVE = '\1';
     DAWGSet dawg;

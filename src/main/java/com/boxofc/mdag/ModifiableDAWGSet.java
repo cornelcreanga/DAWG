@@ -745,6 +745,10 @@ public class ModifiableDAWGSet extends DAWGSet {
         return ret;
     }
     
+    /**
+     * This method removes unused letters from the alphabet of this DAWG.
+     * Use it before compression if the removal of words was performed.
+     */
     public void optimizeLetters() {
         NavigableSet<Character> newLetters = new TreeSet<>();
         enumerateAllLetters(sourceNode, newLetters);
