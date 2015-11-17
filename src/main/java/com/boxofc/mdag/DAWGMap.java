@@ -713,57 +713,67 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
     
     private class SubMap extends AbstractMap<String, String> implements NavigableMap<String, String> {
         private final NavigableSet<String> delegate;
+        private final boolean desc;
 
         public SubMap(NavigableSet<String> delegate) {
             this.delegate = delegate;
+            desc = delegate.comparator() != null;
+        }
+        
+        private char keyValueSeparator() {
+            return desc ? KEY_VALUE_SEPARATOR_EXCLUSIVE : KEY_VALUE_SEPARATOR;
+        }
+        
+        private char keyValueSeparatorExclusive() {
+            return desc ? KEY_VALUE_SEPARATOR : KEY_VALUE_SEPARATOR_EXCLUSIVE;
         }
 
         @Override
         public Entry<String, String> lowerEntry(String key) {
             checkNotNullAndContainsNoZeros(key);
-            return entryOfStringEntry(delegate.lower(key + KEY_VALUE_SEPARATOR));
+            return entryOfStringEntry(delegate.lower(key + keyValueSeparator()));
         }
 
         @Override
         public String lowerKey(String key) {
             checkNotNullAndContainsNoZeros(key);
-            return keyOfStringEntry(delegate.lower(key + KEY_VALUE_SEPARATOR));
+            return keyOfStringEntry(delegate.lower(key + keyValueSeparator()));
         }
 
         @Override
         public Entry<String, String> floorEntry(String key) {
             checkNotNullAndContainsNoZeros(key);
-            return entryOfStringEntry(delegate.lower(key + KEY_VALUE_SEPARATOR_EXCLUSIVE));
+            return entryOfStringEntry(delegate.lower(key + keyValueSeparatorExclusive()));
         }
 
         @Override
         public String floorKey(String key) {
             checkNotNullAndContainsNoZeros(key);
-            return keyOfStringEntry(delegate.lower(key + KEY_VALUE_SEPARATOR_EXCLUSIVE));
+            return keyOfStringEntry(delegate.lower(key + keyValueSeparatorExclusive()));
         }
 
         @Override
         public Entry<String, String> ceilingEntry(String key) {
             checkNotNullAndContainsNoZeros(key);
-            return entryOfStringEntry(delegate.ceiling(key + KEY_VALUE_SEPARATOR));
+            return entryOfStringEntry(delegate.ceiling(key + keyValueSeparator()));
         }
 
         @Override
         public String ceilingKey(String key) {
             checkNotNullAndContainsNoZeros(key);
-            return keyOfStringEntry(delegate.ceiling(key + KEY_VALUE_SEPARATOR));
+            return keyOfStringEntry(delegate.ceiling(key + keyValueSeparator()));
         }
 
         @Override
         public Entry<String, String> higherEntry(String key) {
             checkNotNullAndContainsNoZeros(key);
-            return entryOfStringEntry(delegate.ceiling(key + KEY_VALUE_SEPARATOR_EXCLUSIVE));
+            return entryOfStringEntry(delegate.ceiling(key + keyValueSeparatorExclusive()));
         }
 
         @Override
         public String higherKey(String key) {
             checkNotNullAndContainsNoZeros(key);
-            return keyOfStringEntry(delegate.ceiling(key + KEY_VALUE_SEPARATOR_EXCLUSIVE));
+            return keyOfStringEntry(delegate.ceiling(key + keyValueSeparatorExclusive()));
         }
 
         @Override
@@ -840,13 +850,13 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
             else
                 checkNotNullAndContainsNoZeros(fromKey);
             checkNotNullAndContainsNoZeros(toKey);
-            return new SubMap(delegate.subSet(fromKey + (fromInclusive ? KEY_VALUE_SEPARATOR : KEY_VALUE_SEPARATOR_EXCLUSIVE), true, toKey + (toInclusive ? KEY_VALUE_SEPARATOR_EXCLUSIVE : KEY_VALUE_SEPARATOR), false));
+            return new SubMap(delegate.subSet(fromKey + (fromInclusive ? keyValueSeparator() : keyValueSeparatorExclusive()), true, toKey + (toInclusive ? keyValueSeparatorExclusive() : keyValueSeparator()), false));
         }
 
         @Override
         public NavigableMap<String, String> headMap(String toKey, boolean inclusive) {
             checkNotNullAndContainsNoZeros(toKey);
-            return new SubMap(delegate.headSet(toKey + (inclusive ? KEY_VALUE_SEPARATOR_EXCLUSIVE : KEY_VALUE_SEPARATOR), false));
+            return new SubMap(delegate.headSet(toKey + (inclusive ? keyValueSeparatorExclusive() : keyValueSeparator()), false));
         }
 
         @Override
@@ -854,7 +864,7 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
             if (inclusive && fromKey.isEmpty())
                 return this;
             checkNotNullAndContainsNoZeros(fromKey);
-            return new SubMap(delegate.tailSet(fromKey + (inclusive ? KEY_VALUE_SEPARATOR : KEY_VALUE_SEPARATOR_EXCLUSIVE), true));
+            return new SubMap(delegate.tailSet(fromKey + (inclusive ? keyValueSeparator() : keyValueSeparatorExclusive()), true));
         }
 
         @Override
@@ -866,13 +876,13 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
             else
                 checkNotNullAndContainsNoZeros(fromKey);
             checkNotNullAndContainsNoZeros(toKey);
-            return new SubMap(delegate.subSet(fromKey + KEY_VALUE_SEPARATOR, true, toKey + KEY_VALUE_SEPARATOR, false));
+            return new SubMap(delegate.subSet(fromKey + keyValueSeparator(), true, toKey + keyValueSeparator(), false));
         }
 
         @Override
         public SortedMap<String, String> headMap(String toKey) {
             checkNotNullAndContainsNoZeros(toKey);
-            return new SubMap(delegate.headSet(toKey + KEY_VALUE_SEPARATOR, false));
+            return new SubMap(delegate.headSet(toKey + keyValueSeparator(), false));
         }
 
         @Override
@@ -880,7 +890,7 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
             if (fromKey.isEmpty())
                 return this;
             checkNotNullAndContainsNoZeros(fromKey);
-            return new SubMap(delegate.tailSet(fromKey + KEY_VALUE_SEPARATOR, true));
+            return new SubMap(delegate.tailSet(fromKey + keyValueSeparator(), true));
         }
 
         private Iterator<String> keyIterator(boolean desc) {

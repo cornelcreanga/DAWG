@@ -85,10 +85,10 @@ public class DAWGMapTest {
         assertEquals("key@val2", concat(dawg.ceilingEntry("key")));
         assertEquals("key1@val2", concat(dawg.higherEntry("key")));
         
-      //  assertEquals("key1@val2", concat(dawg.descendingMap().lowerEntry("key")));
-       // assertEquals("key@val2", concat(dawg.descendingMap().floorEntry("key")));
-//        assertEquals("key@val2", concat(dawg.descendingMap().ceilingEntry("key")));
-     //   assertEquals("kexy@val2", concat(dawg.descendingMap().higherEntry("key")));
+        assertEquals("key1@val2", concat(dawg.descendingMap().lowerEntry("key")));
+        assertEquals("key@val2", concat(dawg.descendingMap().floorEntry("key")));
+        assertEquals("key@val2", concat(dawg.descendingMap().ceilingEntry("key")));
+        assertEquals("kexy@val2", concat(dawg.descendingMap().higherEntry("key")));
         
         assertEquals(dawg, dawg.prefixMap("ke"));
         NavigableMap<String, String> prefixed = dawg.prefixMap("key");
