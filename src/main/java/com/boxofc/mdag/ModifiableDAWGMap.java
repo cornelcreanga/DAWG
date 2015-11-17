@@ -14,8 +14,8 @@ public class ModifiableDAWGMap extends DAWGMap {
     }
     
     /**
-     * This method removes unused letters from the alphabet of this DAWG.
-     * Use it before compression if the removal of words was performed.
+     * This method removes unused letters from the alphabet of this DAWG.<br>
+     * Use it before compression if the removal of words was performed (or replacement by {@link #put} operation).
      */
     public void optimizeLetters() {
         ((ModifiableDAWGSet)dawg).optimizeLetters();

@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 
-public abstract class DAWGSet extends AbstractSet<String> implements NavigableSet<String> {
+public abstract class DAWGSet extends AbstractSet<String> implements NavigableSet<String>, StringsFilter {
     /**
      * Folder where to save images when {@link #saveAsImage} is called. Default is the relative directory named "temp".
      */
@@ -179,6 +179,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
      
      * @return      a NavigableSet containing all the Strings that have been inserted into the DAWGSet
      */
+    @Override
     public Iterable<String> getAllStrings() {
         return getStrings("", null, null, false, null, false, null, false);
     }
@@ -189,6 +190,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
      * @param prefixStr     a String that is the prefix for all the desired Strings
      * @return              a NavigableSet containing all the Strings present in the DAWGSet that begin with {@code prefixString}
      */
+    @Override
     public Iterable<String> getStringsStartingWith(String prefixStr) {
         return getStrings(prefixStr, null, null, false, null, false, null, false);
     }
@@ -199,6 +201,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
      * @param str       a String that is contained in all the desired Strings
      * @return          a NavigableSet containing all the Strings present in the DAWGSet that begin with {@code prefixString}
      */
+    @Override
     public Iterable<String> getStringsWithSubstring(String str) {
         return getStrings("", str, null, false, null, false, null, false);
     }
@@ -209,6 +212,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
      * @param suffixStr         a String that is the suffix for all the desired Strings
      * @return                  a NavigableSet containing all the Strings present in the DAWGSet that end with {@code suffixStr}
      */
+    @Override
     public Iterable<String> getStringsEndingWith(String suffixStr) {
         return getStrings("", null, suffixStr, false, null, false, null, false);
     }
@@ -648,6 +652,8 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
         return ret;
     }
     
+    public abstract boolean isAlphabetOptimized();
+    
     public abstract boolean isImmutable();
     
     private static String getFirstElement(Iterable<String> i) {
@@ -778,7 +784,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
         return new SubSet(prefix, false, null, false, null, false);
     }
     
-    private class SubSet extends AbstractSet<String> implements NavigableSet<String> {
+    private class SubSet extends AbstractSet<String> implements NavigableSet<String>, StringsFilter {
         private final String prefix;
         private final boolean desc;
         private final String from;
@@ -847,6 +853,30 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
         }
 
         @Override
+        public Iterable<String> getAllStrings() {
+            return getStrings(prefix, null, null, desc, from, inclFrom, to, inclTo);
+        }
+        
+        @Override
+        public Iterable<String> getStringsStartingWith(String prefix) {
+            if (prefix == null || this.prefix.startsWith(prefix))
+                prefix = this.prefix;
+            else if (!prefix.startsWith(this.prefix))
+                return Collections.EMPTY_LIST;
+            return getStrings(prefix, null, null, desc, from, inclFrom, to, inclTo);
+        }
+
+        @Override
+        public Iterable<String> getStringsWithSubstring(String substring) {
+            return getStrings(prefix, substring, null, desc, from, inclFrom, to, inclTo);
+        }
+        
+        @Override
+        public Iterable<String> getStringsEndingWith(String suffix) {
+            return getStrings(prefix, null, suffix, desc, from, inclFrom, to, inclTo);
+        }
+
+        @Override
         public Iterator<String> iterator() {
             return getStrings(prefix, null, null, desc, from, inclFrom, to, inclTo).iterator();
         }
@@ -867,7 +897,16 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                 throw new IllegalArgumentException("fromElement out of range");
             if (!inRange(toElement, toInclusive))
                 throw new IllegalArgumentException("toElement out of range");
-            // fromElement lies in range && fromElement is empty => from = null
+            if (desc) {
+                String swap = fromElement;
+                fromElement = toElement;
+                toElement = swap;
+                boolean bSwap = fromInclusive;
+                fromInclusive = toInclusive;
+                toInclusive = bSwap;
+            }
+            // fromElement lies in range && fromElement is empty =>
+            // from = null => no need to limit the range by fromElement
             if (fromInclusive && fromElement.isEmpty())
                 fromElement = null;
             return new SubSet(prefix, desc, fromElement, fromInclusive, toElement, toInclusive);
@@ -877,6 +916,11 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
         public NavigableSet<String> headSet(String toElement, boolean inclusive) {
             if (!inRange(toElement, inclusive))
                 throw new IllegalArgumentException("toElement out of range");
+            if (desc) {
+                if (inclusive && toElement.isEmpty())
+                    return this;
+                return new SubSet(prefix, desc, toElement, inclusive, to, inclTo);
+            }
             return new SubSet(prefix, desc, from, inclFrom, toElement, inclusive);
         }
 
@@ -884,6 +928,8 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
         public NavigableSet<String> tailSet(String fromElement, boolean inclusive) {
             if (!inRange(fromElement, inclusive))
                 throw new IllegalArgumentException("fromElement out of range");
+            if (desc)
+                return new SubSet(prefix, desc, from, inclFrom, fromElement, inclusive);
             if (inclusive && fromElement.isEmpty())
                 return this;
             return new SubSet(prefix, desc, fromElement, inclusive, to, inclTo);
@@ -895,23 +941,36 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                 throw new IllegalArgumentException("fromElement out of range");
             if (!inRange(toElement))
                 throw new IllegalArgumentException("toElement out of range");
-            // fromElement lies in range && fromElement is empty => from = null
+            if (desc) {
+                String swap = fromElement;
+                fromElement = toElement;
+                toElement = swap;
+            }
+            // fromElement lies in range && fromElement is empty =>
+            // from = null => no need to limit the range by fromElement
             if (fromElement.isEmpty())
                 fromElement = null;
-            return new SubSet(prefix, desc, fromElement, true, toElement, true);
+            return new SubSet(prefix, desc, fromElement, !desc, toElement, desc);
         }
 
         @Override
         public NavigableSet<String> headSet(String toElement) {
             if (!inRange(toElement))
                 throw new IllegalArgumentException("toElement out of range");
-            return new SubSet(prefix, desc, from, inclFrom, toElement, true);
+            if (desc) {
+                if (toElement.isEmpty())
+                    return this;
+                return new SubSet(prefix, desc, toElement, false, to, inclTo);
+            }
+            return new SubSet(prefix, desc, from, inclFrom, toElement, false);
         }
 
         @Override
         public NavigableSet<String> tailSet(String fromElement) {
             if (!inRange(fromElement))
                 throw new IllegalArgumentException("fromElement out of range");
+            if (desc)
+                return new SubSet(prefix, desc, from, inclFrom, fromElement, true);
             if (fromElement.isEmpty())
                 return this;
             return new SubSet(prefix, desc, fromElement, true, to, inclTo);

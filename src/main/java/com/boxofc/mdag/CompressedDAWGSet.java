@@ -7,6 +7,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +41,11 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
      * Quantity of words in this DAWG.
      */
     transient Integer size;
+    
+    /**
+     * A flag indicating that all the letters from the alphabet are used in words contained in this DAWG.
+     */
+    transient Boolean optimized;
     
     /**
      * Maximal length of words contained in this DAWG.
@@ -167,6 +173,7 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
         return outgoingData.length / transitionSizeInInts - 1;
     }
     
+    @Override
     public int size() {
         if (size == null) {
             int s = 0;
@@ -202,12 +209,39 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
             return true;
         if (obj instanceof CompressedDAWGSet) {
             CompressedDAWGSet other = (CompressedDAWGSet)obj;
-            return isWithIncomingTransitions() == other.isWithIncomingTransitions() &&
-                   Arrays.equals(letters, other.letters) &&
-                   Arrays.equals(outgoingData, other.outgoingData) &&
-                   Arrays.equals(incomingData, other.incomingData);
+            if (isAlphabetOptimized() && other.isAlphabetOptimized())
+                return isWithIncomingTransitions() == other.isWithIncomingTransitions() &&
+                       Arrays.equals(letters, other.letters) &&
+                       Arrays.equals(outgoingData, other.outgoingData) &&
+                       Arrays.equals(incomingData, other.incomingData);
         }
         return super.equals(obj);
+    }
+    
+    @Override
+    public boolean isAlphabetOptimized() {
+        if (optimized == null) {
+            int lettersFound = 0;
+            BitSet lettersInUse = new BitSet(letters.length);
+            for (int i = 0; i < outgoingData.length; i += transitionSizeInInts) {
+                int shift = 0;
+                for (int j = i + 1; j < i + transitionSizeInInts; j++) {
+                    int nodeLetters = outgoingData[j];
+                    while (nodeLetters != 0) {
+                        if ((nodeLetters & 1) == 1 && !lettersInUse.get(shift)) {
+                            lettersInUse.set(shift);
+                            lettersFound++;
+                            if (lettersFound >= letters.length)
+                                return optimized = Boolean.TRUE;
+                        }
+                        shift++;
+                        nodeLetters >>>= 1;
+                    }
+                }
+            }
+            optimized = Boolean.FALSE;
+        }
+        return optimized;
     }
     
     public ModifiableDAWGSet uncompress() {

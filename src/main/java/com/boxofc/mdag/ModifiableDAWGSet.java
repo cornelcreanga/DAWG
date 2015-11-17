@@ -79,6 +79,13 @@ public class ModifiableDAWGSet extends DAWGSet {
     //Total number of words contained in this ModifiableDAWGSet.
     private int size;
     
+    /**
+     * A flag indicating that the optimization of the alphabet won't change it
+     * (i.e. no removals were performed). False value means that the alphabet probably
+     * may be reduced by a call of {@link #optimizeLetters}.
+     */
+    private boolean optimized = true;
+    
     //Maximal length of all words added to this DAWG. Does not decrease on removing.
     private int maxLength;
     
@@ -316,8 +323,10 @@ public class ModifiableDAWGSet extends DAWGSet {
                     if (isWithIncomingTransitions())
                         for (char c : strEndNode.getIncomingTransitions().keySet())
                             endNode.removeIncomingTransition(c, strEndNode);
-                } else
+                } else {
                     endNode.removeIncomingTransition(str.charAt(str.length() - 1), strEndNode);
+                    optimized = false;
+                }
             }
             return result;
         } else {
@@ -339,6 +348,7 @@ public class ModifiableDAWGSet extends DAWGSet {
                 replaceOrRegister(sourceNode, prefix);
             }
             size--;
+            optimized = false;
             return true;
         }
     }
@@ -684,6 +694,8 @@ public class ModifiableDAWGSet extends DAWGSet {
         CompressedDAWGSet compressed = new CompressedDAWGSet();
         compressed.size = size();
         compressed.maxLength = getMaxLength();
+        if (isAlphabetOptimized())
+            compressed.optimized = true;
         compressed.letters = new char[alphabet.size()];
         int i = 0;
         for (char c : alphabet)
@@ -746,14 +758,22 @@ public class ModifiableDAWGSet extends DAWGSet {
     }
     
     /**
-     * This method removes unused letters from the alphabet of this DAWG.
+     * This method removes unused letters from the alphabet of this DAWG.<br>
      * Use it before compression if the removal of words was performed.
      */
     public void optimizeLetters() {
+        if (optimized)
+            return;
         NavigableSet<Character> newLetters = new TreeSet<>();
         enumerateAllLetters(sourceNode, newLetters);
         alphabet.clear();
         alphabet.addAll(newLetters);
+        optimized = true;
+    }
+    
+    @Override
+    public boolean isAlphabetOptimized() {
+        return optimized;
     }
     
     private void enumerateAllLetters(ModifiableDAWGNode node, NavigableSet<Character> newLetters) {
@@ -847,6 +867,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         id = 2;
         maxLength = 0;
         size = 0;
+        optimized = true;
         transitionCount = 0;
         equivalenceClassMDAGNodeHashMap.clear();
         alphabet.clear();

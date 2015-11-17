@@ -1538,4 +1538,29 @@ public class DAWGSimpleTest {
             assertEquals(1, set.size());
         }
     }
+    
+    private static List<String> toList(Iterator<String> it) {
+        List<String> ret = new ArrayList<>();
+        while (it.hasNext())
+            ret.add(it.next());
+        return ret;
+    }
+    
+    @Test
+    public void descending() {
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
+        dawg.addAll("kex", "kexx", "kexy", "key", "keyx", "keyy", "kez");
+        assertEquals(Arrays.asList("kex", "kexx", "kexy"), new ArrayList<>(dawg.headSet("key", false)));
+        assertEquals(Arrays.asList("kexy", "kexx", "kex"), new ArrayList<>(dawg.descendingSet().tailSet("key", false)));
+        assertEquals(Arrays.asList("kexy", "kexx", "kex"), new ArrayList<>(dawg.headSet("key", false).descendingSet()));
+        assertEquals(Arrays.asList("kexy", "kexx", "kex"), toList(dawg.headSet("key", false).descendingIterator()));
+        assertEquals(Arrays.asList("kex", "kexx", "kexy"), toList(dawg.descendingSet().tailSet("key", false).descendingIterator()));
+        assertEquals(Arrays.asList("kex", "kexx", "kexy"), toList(dawg.headSet("key", false).descendingSet().descendingIterator()));
+        assertEquals(Arrays.asList("kex", "kexx", "kexy"), toList(dawg.headSet("key", false).iterator()));
+        assertEquals(Arrays.asList("kexy", "kexx", "kex"), toList(dawg.descendingSet().tailSet("key", false).iterator()));
+        assertEquals(Arrays.asList("kexy", "kexx", "kex"), toList(dawg.headSet("key", false).descendingSet().iterator()));
+        assertEquals(Arrays.asList("kex", "kexx", "kexy"), toList(((StringsFilter)dawg.headSet("key", false)).getAllStrings().iterator()));
+        assertEquals(Arrays.asList("kexy", "kexx", "kex"), toList(((StringsFilter)dawg.descendingSet().tailSet("key", false)).getAllStrings().iterator()));
+        assertEquals(Arrays.asList("kexy", "kexx", "kex"), toList(((StringsFilter)dawg.headSet("key", false).descendingSet()).getAllStrings().iterator()));
+    }
 }
