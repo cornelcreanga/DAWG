@@ -27,20 +27,13 @@ public class DAWGMapTest {
         assertEquals("c", dawg.get("a"));
         
         CompressedDAWGMap cdawg = dawg.compress();
-        assertFalse(dawg.isAlphabetOptimized());
-        assertFalse(cdawg.isAlphabetOptimized());
-        assertFalse(serializeAndRead(cdawg).isAlphabetOptimized());
         assertEquals("ed", cdawg.get("d"));
         assertEquals("c", cdawg.get("a"));
         assertEquals(dawg, cdawg.uncompress());
         assertEquals(cdawg, cdawg.uncompress().compress());
         assertEquals(cdawg, serializeAndRead(cdawg));
         
-        dawg.optimizeLetters();
         cdawg = dawg.compress();
-        assertTrue(dawg.isAlphabetOptimized());
-        assertTrue(cdawg.isAlphabetOptimized());
-        assertTrue(serializeAndRead(cdawg).isAlphabetOptimized());
         assertEquals(dawg, cdawg.uncompress());
         assertEquals(cdawg, cdawg.uncompress().compress());
         assertEquals(cdawg, serializeAndRead(cdawg));

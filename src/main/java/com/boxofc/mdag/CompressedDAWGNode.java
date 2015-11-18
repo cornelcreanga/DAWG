@@ -27,8 +27,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * The class capable of representing a MDAG node, its transition set, and one of its incoming transitions;
- * objects of this class are used to represent a MDAG after its been simplified in order to save space.
+ * The class capable of representing a DAWG node, its transition set, and one of its incoming transitions;
+ * objects of this class are used to represent a DAWG after its been simplified in order to save space.
  
  * @author Kevin
  */
@@ -44,10 +44,10 @@ class CompressedDAWGNode extends DAWGNode {
     private final CompressedDAWGSet graph;
     
     /**
-     * Constructs a SimpleMDAGNode.
+     * Constructs a CompressedDAWGNode.
      
-     * @param letter                a char representing the transition label leading to this SimpleMDAGNode
-     * @param isAcceptNode          a boolean representing the accept state status of this SimpleMDAGNode
+     * @param letter                a char representing the transition label leading to this CompressedDAWGNode
+     * @param isAcceptNode          a boolean representing the accept state status of this CompressedDAWGNode
      * @param transitionSetSize     an int denoting the size of this transition set
      */
     public CompressedDAWGNode(CompressedDAWGSet graph, int index) {
@@ -219,9 +219,9 @@ class CompressedDAWGNode extends DAWGNode {
     /**
      * Follows a transition path starting from this node.
      
-     * @param str               a String corresponding a transition path in the MDAG
+     * @param str               a String corresponding a transition path in the DAWG
      * @return                  the CompressedDAWGNode at the end of the transition path corresponding to
-                          {@code str}, or null if such a transition path is not present in the MDAG
+                          {@code str}, or null if such a transition path is not present in the DAWG
      */
     @Override
     public CompressedDAWGNode transition(String str) {

@@ -1,6 +1,7 @@
 package com.boxofc.mdag.util;
 
 import com.boxofc.mdag.StringsFilter;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Predicate;
@@ -10,6 +11,10 @@ public class IterableStringsFilter implements StringsFilter {
 
     public IterableStringsFilter(Iterable<String> delegate) {
         this.delegate = delegate;
+    }
+
+    public IterableStringsFilter(String... delegate) {
+        this.delegate = Arrays.asList(delegate);
     }
 
     @Override

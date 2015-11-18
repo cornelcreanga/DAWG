@@ -624,6 +624,31 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
             }
         };
     }
+    
+    /**
+     * Determines the longest prefix of a given String that is
+ the prefix of another String previously added to the DAWGSet.
+     
+     * @param str       the String to be processed
+     * @return          a String of the longest prefix of {@code str}
+                  that is also a prefix of a String contained in the ModifiableDAWGSet
+     */
+    public String determineLongestPrefixInDAWG(String str) {
+        DAWGNode currentNode = getSourceNode();
+        char text[] = str.toCharArray();
+        
+        //Loop through the characters in str, using them in sequence to transition
+        //through the DAWGSet until the currently processing node doesn't have a transition
+        //labeled with the current processing char, or there are no more characters to process.
+        for (int i = 0; i < text.length; i++) {
+            char currentChar = str.charAt(i);
+            currentNode = currentNode.transition(currentChar);
+            if (currentNode == null)
+                return str.substring(0, i);
+        }
+        
+        return str;
+    }
 
     @Override
     public String[] toArray() {
@@ -652,7 +677,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
         return ret;
     }
     
-    public abstract boolean isAlphabetOptimized();
+    public abstract NavigableSet<Character> getAlphabet();
     
     public abstract boolean isImmutable();
     

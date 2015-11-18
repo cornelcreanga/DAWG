@@ -58,17 +58,17 @@ public class ModifiableDAWGSet extends DAWGSet {
     //Increment for node identifiers.
     private int id;
     
-    private boolean withIncomingTransitions = true;
+    private final boolean withIncomingTransitions;
     
-    //MDAGNode from which all others in the structure are reachable (all manipulation and non-simplified ModifiableDAWGSet search operations begin from this).
-    private final ModifiableDAWGNode sourceNode = new ModifiableDAWGNode(this, false, id++);
+    //ModifiableDAWGNode from which all others in the structure are reachable (all manipulation and non-simplified ModifiableDAWGSet search operations begin from this).
+    private final ModifiableDAWGNode sourceNode;
     
-    private final ModifiableDAWGNode endNode = new ModifiableDAWGNode(this, false, id++);
+    private final ModifiableDAWGNode endNode;
 
-    //HashMap which contains the MDAGNodes collectively representing the all unique equivalence classes in the ModifiableDAWGSet.
+    //HashMap which contains the DAWGNodes collectively representing the all unique equivalence classes in the ModifiableDAWGSet.
     //Uniqueness is defined by the types of transitions allowed from, and number and type of nodes reachable
     //from the node of interest. Since there are no duplicate nodes in an ModifiableDAWGSet, # of equivalence classes == # of nodes.
-    private final HashMap<ModifiableDAWGNode, ModifiableDAWGNode> equivalenceClassMDAGNodeHashMap = new HashMap<>();
+    private final HashMap<ModifiableDAWGNode, ModifiableDAWGNode> equivalenceClassNodeHashMap = new HashMap<>();
     
     //NavigableSet which will contain the set of unique characters used as transition labels in the ModifiableDAWGSet
     private final NavigableSet<Character> alphabet = new TreeSet<>();
@@ -90,18 +90,40 @@ public class ModifiableDAWGSet extends DAWGSet {
     private int maxLength;
     
     /**
-     * Creates an MDAG from a collection of Strings.
-     
-     * @param strCollection     a {@link java.util.Iterable} containing Strings that the MDAG will contain
+     * Creates a DAWG from an iterable of Strings with incoming transitions for fast suffix search.
+     * @param strCollection     an {@link java.util.Iterable} containing Strings that the DAWG will contain
      */
     public ModifiableDAWGSet(Iterable<? extends String> strCollection) {
+        this(true, strCollection);
+    }
+    
+    /**
+     * Creates a DAWG from an iterable of Strings.
+     * @param withIncomingTransitions a flag indicating that the DAWG should store incoming transitions
+     * for fast suffix search
+     * @param strCollection     an {@link java.util.Iterable} containing Strings that the DAWG will contain
+     */
+    public ModifiableDAWGSet(boolean withIncomingTransitions, Iterable<? extends String> strCollection) {
+        this(withIncomingTransitions);
         addAll(strCollection);
     }
     
     /**
-     * Creates empty MDAG. Use {@link #addString} to fill it.
+     * Creates empty DAWG with incoming transitions for fast suffix search. Use {@link #addString} to fill it.
      */
     public ModifiableDAWGSet() {
+        this(true);
+    }
+    
+    /**
+     * Creates empty DAWG. Use {@link #addString} to fill it.
+     * @param withIncomingTransitions a flag indicating that the DAWG should store incoming transitions
+     * for fast suffix search
+     */
+    public ModifiableDAWGSet(boolean withIncomingTransitions) {
+        this.withIncomingTransitions = withIncomingTransitions;
+        sourceNode = new ModifiableDAWGNode(this, false, id++);
+        endNode = new ModifiableDAWGNode(this, false, id++);
     }
     
     /**
@@ -229,6 +251,7 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @param str       the String to be added to the ModifiableDAWGSet
      * @return true if ModifiableDAWGSet didn't contain this string yet
      */
+    @Override
     public boolean add(String str) {
         boolean result = addStringInternal(str);
         if (!str.isEmpty())
@@ -239,10 +262,6 @@ public class ModifiableDAWGSet extends DAWGSet {
     @Override
     public boolean isWithIncomingTransitions() {
         return withIncomingTransitions;
-    }
-
-    public void setWithIncomingTransitions(boolean withIncomingTransitions) {
-        this.withIncomingTransitions = withIncomingTransitions;
     }
     
     private void splitTransitionPath(ModifiableDAWGNode originNode, String storedStringSubstr) {
@@ -303,7 +322,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         //any other transition paths sharing nodes with it are not affected
         splitTransitionPath(sourceNode, str);
 
-        //Remove from equivalenceClassMDAGNodeHashMap, the entries of all the nodes in the transition path corresponding to str.
+        //Remove from equivalenceClassNodeHashMap, the entries of all the nodes in the transition path corresponding to str.
         removeTransitionPathRegisterEntries(str);
 
         //Get the last node in the transition path corresponding to str
@@ -385,33 +404,6 @@ public class ModifiableDAWGSet extends DAWGSet {
     }
     
     /**
-     * Determines the longest prefix of a given String that is
- the prefix of another String previously added to the ModifiableDAWGSet.
-     
-     * @param str       the String to be processed
-     * @return          a String of the longest prefix of {@code str}
-                  that is also a prefix of a String contained in the ModifiableDAWGSet
-     */
-    public String determineLongestPrefixInMDAG(String str) {
-        ModifiableDAWGNode currentNode = sourceNode;
-        int numberOfChars = str.length();
-        int onePastPrefixEndIndex = 0;
-        
-        //Loop through the characters in str, using them in sequence to transition
-        //through the ModifiableDAWGSet until the currently processing node doesn't have a transition
-        //labeled with the current processing char, or there are no more characters to process.
-        for (int i = 0; i < numberOfChars; i++, onePastPrefixEndIndex++) {
-            char currentChar = str.charAt(i);
-            if (currentNode.hasOutgoingTransition(currentChar))
-                currentNode = currentNode.transition(currentChar);
-            else
-                break;
-        }
-        
-        return str.substring(0, onePastPrefixEndIndex);
-    }
-    
-    /**
      * Determines and retrieves outgoingData related to the first confluence node
  (defined as a node with two or more incoming transitions) of a
  transition path corresponding to a given String from a given node.
@@ -468,14 +460,14 @@ public class ModifiableDAWGSet extends DAWGSet {
         if (relevantTargetNode.hasOutgoingTransitions() && str.length() > 1)
             replaceOrRegister(relevantTargetNode, str.substring(1));
 
-        //Get the node representing the equivalence class that relevantTargetNode belongs to. MDAGNodes hash on the
+        //Get the node representing the equivalence class that relevantTargetNode belongs to. DAWGNodes hash on the
         //transitions paths that can be traversed from them and nodes able to be reached from them;
         //nodes with the same equivalence classes will hash to the same bucket.
-        ModifiableDAWGNode equivalentNode = equivalenceClassMDAGNodeHashMap.get(relevantTargetNode);
+        ModifiableDAWGNode equivalentNode = equivalenceClassNodeHashMap.get(relevantTargetNode);
         
         //if there is no node with the same right language as relevantTargetNode
         if (equivalentNode == null)
-            equivalenceClassMDAGNodeHashMap.put(relevantTargetNode, relevantTargetNode);
+            equivalenceClassNodeHashMap.put(relevantTargetNode, relevantTargetNode);
         //if there is another node with the same right language as relevantTargetNode, reassign the
         //transition between originNode and relevantTargetNode, to originNode and the node representing the equivalence class of interest
         else if (equivalentNode != relevantTargetNode) {
@@ -521,7 +513,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     }
     
     /**
-     * Removes from equivalenceClassMDAGNodeHashmap the entries of all the nodes in a transition path.
+     * Removes from equivalenceClassNodeHashmap the entries of all the nodes in a transition path.
      
      * @param str       a String corresponding to a transition path from sourceNode
      */
@@ -537,11 +529,11 @@ public class ModifiableDAWGSet extends DAWGSet {
             if (currentNode == null)
                 break;
             
-            if (equivalenceClassMDAGNodeHashMap.get(currentNode) == currentNode)
-                equivalenceClassMDAGNodeHashMap.remove(currentNode);
+            if (equivalenceClassNodeHashMap.get(currentNode) == currentNode)
+                equivalenceClassNodeHashMap.remove(currentNode);
             
             //The hashCode of an ModifiableDAWGNode is cached the first time a hash is performed without a cache value present.
-            //Since we just hashed currentNode, we must clear this regardless of its presence in equivalenceClassMDAGNodeHashMap
+            //Since we just hashed currentNode, we must clear this regardless of its presence in equivalenceClassNodeHashMap
             //since we're not actually declaring equivalence class representatives here.
             currentNode.clearStoredHashCode();
         }
@@ -605,7 +597,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     private boolean addStringInternal(String str) {
         if (maxLength < str.length())
             maxLength = str.length();
-        String prefixString = determineLongestPrefixInMDAG(str);
+        String prefixString = determineLongestPrefixInDAWG(str);
         String suffixString = str.substring(prefixString.length());
 
         //Retrive the outgoingData related to the first confluence node (a node with two or more incoming transitions)
@@ -639,17 +631,17 @@ public class ModifiableDAWGSet extends DAWGSet {
         onePastLastCreatedTransitionSetIndex += node.getOutgoingTransitionCount() * compressedNodeSize;
 
         //Create a CompressedDAWGNode representing each transition label/target combo in transitionTreeMap, recursively calling this method (if necessary)
-        //to set indices in these SimpleMDAGNodes that the set of transitions emitting from their respective transition targets starts from.
+        //to set indices in these CompressedDAWGNodes that the set of transitions emitting from their respective transition targets starts from.
         for (Entry<Character, ModifiableDAWGNode> transitionKeyValuePair : node.getOutgoingTransitions().entrySet()) {
             //Use the current transition's label and target node to create a CompressedDAWGNode
-            //(which is a space-saving representation of the transition), and insert it in to mdagDataArray
+            //(which is a space-saving representation of the transition), and insert it in to data
             char transitionLabelChar = transitionKeyValuePair.getKey();
             int letterIndex = lettersIndex.get(transitionLabelChar);
             data[currentNodeIndex + (letterIndex >>> 5)] |= 1 << letterIndex;
             ModifiableDAWGNode transitionTargetNode = transitionKeyValuePair.getValue();
             
-            //If targetTransitionNode's outgoing transition set hasn't been inserted in to mdagDataArray yet, call this method on it to do so.
-            //After this call returns, transitionTargetNode will contain the index in mdagDataArray that its transition set starts from
+            //If targetTransitionNode's outgoing transition set hasn't been inserted in to data yet, call this method on it to do so.
+            //After this call returns, transitionTargetNode will contain the index in data that its transition set starts from
             if (transitionTargetNode.getTransitionSetBeginIndex() == -1)
                 onePastLastCreatedTransitionSetIndex = createCompressedOutgoingTransitionsData(data, transitionTargetNode, pivotIndex, onePastLastCreatedTransitionSetIndex, compressedNodeSize, lettersIndex);
             else
@@ -691,11 +683,11 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @return an instance of {@link CompressedDAWGSet} containing all the words added to this DAWG
      */
     public CompressedDAWGSet compress() {
+        optimizeLetters();
         CompressedDAWGSet compressed = new CompressedDAWGSet();
         compressed.size = size();
         compressed.maxLength = getMaxLength();
-        if (isAlphabetOptimized())
-            compressed.optimized = true;
+        compressed.alphabet = getAlphabet();
         compressed.letters = new char[alphabet.size()];
         int i = 0;
         for (char c : alphabet)
@@ -761,7 +753,7 @@ public class ModifiableDAWGSet extends DAWGSet {
      * This method removes unused letters from the alphabet of this DAWG.<br>
      * Use it before compression if the removal of words was performed.
      */
-    public void optimizeLetters() {
+    private void optimizeLetters() {
         if (optimized)
             return;
         NavigableSet<Character> newLetters = new TreeSet<>();
@@ -769,11 +761,6 @@ public class ModifiableDAWGSet extends DAWGSet {
         alphabet.clear();
         alphabet.addAll(newLetters);
         optimized = true;
-    }
-    
-    @Override
-    public boolean isAlphabetOptimized() {
-        return optimized;
     }
     
     private void enumerateAllLetters(ModifiableDAWGNode node, NavigableSet<Character> newLetters) {
@@ -813,8 +800,9 @@ public class ModifiableDAWGSet extends DAWGSet {
      
      * @return      a TreeSet of chars which collectively label all the transitions in the ModifiableDAWGSet
      */
+    @Override
     public NavigableSet<Character> getAlphabet() {
-        return alphabet;
+        return Collections.unmodifiableNavigableSet(alphabet);
     }
     
     private void countNodes(ModifiableDAWGNode originNode, HashSet<Integer> nodeIDHashSet) {
@@ -834,7 +822,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     }
     
     public int getEquivalenceClassCount() {
-        return equivalenceClassMDAGNodeHashMap.size();
+        return equivalenceClassNodeHashMap.size();
     }
     
     @Override
@@ -869,7 +857,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         size = 0;
         optimized = true;
         transitionCount = 0;
-        equivalenceClassMDAGNodeHashMap.clear();
+        equivalenceClassNodeHashMap.clear();
         alphabet.clear();
         endNode.removeAllIncomingTransitions();
         sourceNode.removeAllOutgoingTransitions();

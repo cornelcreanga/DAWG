@@ -26,6 +26,10 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
     DAWGMap(DAWGSet dawg) {
         this.dawg = dawg;
     }
+    
+    public DAWGSet getUnderlyingSet() {
+        return new UnmodifiableDAWGSet(dawg);
+    }
 
     @Override
     public int size() {
@@ -233,10 +237,6 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
     public Comparator<? super String> comparator() {
         // Natural ordering.
         return null;
-    }
-
-    public boolean isAlphabetOptimized() {
-        return dawg.isAlphabetOptimized();
     }
 
     @Override

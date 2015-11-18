@@ -31,7 +31,7 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 
 /**
- * The class which represents a node in a MDAG.
+ * The class which represents a node in a DAWG.
 
  * @author Kevin
  */
@@ -60,7 +60,7 @@ class ModifiableDAWGNode extends DAWGNode {
     private final NavigableMap<Character, Map<Integer, ModifiableDAWGNode>> incomingTransitionTreeMap;
     
     /**
-     * Constructs an MDAGNode.
+     * Constructs an ModifiableDAWGNode.
      
      * @param isAcceptNode     a boolean denoting the accept state status of this node
      * @param id               identifier of this node
@@ -74,10 +74,10 @@ class ModifiableDAWGNode extends DAWGNode {
     }
     
     /**
-     * Constructs an MDAGNode possessing the same accept state status and outgoing transitions as another.
+     * Constructs an ModifiableDAWGNode possessing the same accept state status and outgoing transitions as another.
      
-     * @param node      the MDAGNode possessing the accept state status and
-     *                  outgoing transitions that the to-be-created MDAGNode is to take on
+     * @param node      the ModifiableDAWGNode possessing the accept state status and
+     *                  outgoing transitions that the to-be-created ModifiableDAWGNode is to take on
      * @param id        identifier of the cloned node
      */
     public ModifiableDAWGNode(ModifiableDAWGNode node, int id) {
@@ -134,10 +134,10 @@ class ModifiableDAWGNode extends DAWGNode {
     }
 
     /**
-     * Retrieves the index in a simplified mdag data array that the SimpleMDAGNode
+     * Retrieves the index in a CompressedDAWGSet data array that the CompressedDAWGNode
      * representation of this node's outgoing transition set begins at.
      
-     * @return      the index in a simplified mdag data array that this node's transition set begins at,
+     * @return      the index in a CompressedDAWGSet data array that this node's transition set begins at,
      *              or -1 if its transition set is not present in such an array
      */
     public int getTransitionSetBeginIndex() {
@@ -201,7 +201,7 @@ class ModifiableDAWGNode extends DAWGNode {
     
     /**
      * Records the index that this node's transition set starts at
-     * in an array containing this node's containing MDAG data (simplified MDAG).
+     * in an array containing this node's containing DAWG data (CompressedDAWGSet).
      
      * @param transitionSetBeginIndex       a transition set
      */
@@ -263,7 +263,7 @@ class ModifiableDAWGNode extends DAWGNode {
      * from this node corresponding to a given String .
      
      * @param str       a String corresponding to a transition path starting from this node
-     * @return          a Deque of MDAGNodes containing the nodes in the transition path
+     * @return          a Deque of DAWGNodes containing the nodes in the transition path
      *                  denoted by {@code str}, in the order they are encountered in during transitioning
      */
     public Deque<ModifiableDAWGNode> getTransitionPathNodes(String str) {
@@ -272,7 +272,7 @@ class ModifiableDAWGNode extends DAWGNode {
         ModifiableDAWGNode currentNode = this;
         int numberOfChars = str.length();
         
-        //Iteratively transition through the MDAG using the chars in str,
+        //Iteratively transition through the DAWG using the chars in str,
         //putting each encountered node in nodeStack
         for (int i = 0; i < numberOfChars && currentNode != null; i++) {
             currentNode = currentNode.transition(str.charAt(i));

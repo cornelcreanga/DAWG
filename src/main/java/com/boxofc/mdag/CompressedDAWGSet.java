@@ -7,13 +7,15 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
+import java.util.TreeSet;
 
 public class CompressedDAWGSet extends DAWGSet implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -42,10 +44,7 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
      */
     transient Integer size;
     
-    /**
-     * A flag indicating that all the letters from the alphabet are used in words contained in this DAWG.
-     */
-    transient Boolean optimized;
+    transient NavigableSet<Character> alphabet;
     
     /**
      * Maximal length of words contained in this DAWG.
@@ -55,7 +54,7 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
     private transient int transitionSizeInInts;
     
     /**
-     * SimpleMDAGNode from which all others in the structure are reachable (will be defined if this ModifiableDAWGSet is simplified)
+     * CompressedDAWGNode from which all others in the structure are reachable (will be defined if this ModifiableDAWGSet is simplified)
      */
     private transient CompressedDAWGNode sourceNode;
     
@@ -209,44 +208,27 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
             return true;
         if (obj instanceof CompressedDAWGSet) {
             CompressedDAWGSet other = (CompressedDAWGSet)obj;
-            if (isAlphabetOptimized() && other.isAlphabetOptimized())
-                return isWithIncomingTransitions() == other.isWithIncomingTransitions() &&
-                       Arrays.equals(letters, other.letters) &&
-                       Arrays.equals(outgoingData, other.outgoingData) &&
-                       Arrays.equals(incomingData, other.incomingData);
+            return isWithIncomingTransitions() == other.isWithIncomingTransitions() &&
+                   Arrays.equals(letters, other.letters) &&
+                   Arrays.equals(outgoingData, other.outgoingData) &&
+                   Arrays.equals(incomingData, other.incomingData);
         }
         return super.equals(obj);
     }
-    
+
     @Override
-    public boolean isAlphabetOptimized() {
-        if (optimized == null) {
-            int lettersFound = 0;
-            BitSet lettersInUse = new BitSet(letters.length);
-            for (int i = 0; i < outgoingData.length; i += transitionSizeInInts) {
-                int shift = 0;
-                for (int j = i + 1; j < i + transitionSizeInInts; j++) {
-                    int nodeLetters = outgoingData[j];
-                    while (nodeLetters != 0) {
-                        if ((nodeLetters & 1) == 1 && !lettersInUse.get(shift)) {
-                            lettersInUse.set(shift);
-                            lettersFound++;
-                            if (lettersFound >= letters.length)
-                                return optimized = Boolean.TRUE;
-                        }
-                        shift++;
-                        nodeLetters >>>= 1;
-                    }
-                }
-            }
-            optimized = Boolean.FALSE;
+    public NavigableSet<Character> getAlphabet() {
+        if (alphabet == null) {
+            NavigableSet<Character> lettersSet = new TreeSet<>();
+            for (char c : letters)
+                lettersSet.add(c);
+            alphabet = Collections.unmodifiableNavigableSet(lettersSet);
         }
-        return optimized;
+        return alphabet;
     }
     
     public ModifiableDAWGSet uncompress() {
-        ModifiableDAWGSet ret = new ModifiableDAWGSet();
-        ret.setWithIncomingTransitions(isWithIncomingTransitions());
+        ModifiableDAWGSet ret = new ModifiableDAWGSet(isWithIncomingTransitions());
         ret.addAll(this);
         return ret;
     }

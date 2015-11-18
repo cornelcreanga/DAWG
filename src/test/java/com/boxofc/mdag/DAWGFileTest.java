@@ -77,13 +77,13 @@ public class DAWGFileTest {
     
     @Test
     public void dawgBGetLongestStoredSubsequenceTest() {
-        assertEquals("do", dawg1.determineLongestPrefixInMDAG("do"));
-        assertEquals("doggy", dawg1.determineLongestPrefixInMDAG("doggy"));
-        assertEquals("c", dawg1.determineLongestPrefixInMDAG("c"));
-        assertEquals("cats", dawg1.determineLongestPrefixInMDAG("catsing"));
-        assertEquals("bro", dawg1.determineLongestPrefixInMDAG("brolic"));
-        assertEquals("", dawg1.determineLongestPrefixInMDAG("1234"));
-        assertEquals("Czechoslovakians", dawg1.determineLongestPrefixInMDAG("Czechoslovakians"));
+        assertEquals("do", dawg1.determineLongestPrefixInDAWG("do"));
+        assertEquals("doggy", dawg1.determineLongestPrefixInDAWG("doggy"));
+        assertEquals("c", dawg1.determineLongestPrefixInDAWG("c"));
+        assertEquals("cats", dawg1.determineLongestPrefixInDAWG("catsing"));
+        assertEquals("bro", dawg1.determineLongestPrefixInDAWG("brolic"));
+        assertEquals("", dawg1.determineLongestPrefixInDAWG("1234"));
+        assertEquals("Czechoslovakians", dawg1.determineLongestPrefixInDAWG("Czechoslovakians"));
     }
     
     @Test

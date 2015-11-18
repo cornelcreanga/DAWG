@@ -21,14 +21,14 @@ abstract class DAWGNode {
     /**
      * Follows a transition path starting from this node.
      
-     * @param str               a String corresponding a transition path in the MDAG
+     * @param str               a String corresponding a transition path in the DAWG
      * @return                  the ModifiableDAWGNode at the end of the transition path corresponding to
-                          {@code str}, or null if such a transition path is not present in the MDAG
+                          {@code str}, or null if such a transition path is not present in the DAWG
      */
     public DAWGNode transition(String str) {
         DAWGNode currentNode = this;
         
-        //Iteratively transition through the MDAG using the chars in str
+        //Iteratively transition through the DAWG using the chars in str
         for (char c : str.toCharArray()) {
             currentNode = currentNode.transition(c);
             if (currentNode == null)
