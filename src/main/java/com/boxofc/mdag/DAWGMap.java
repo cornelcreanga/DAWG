@@ -28,12 +28,6 @@ public class DAWGMap extends AbstractDAWGMap<String> {
         int idx = stringEntry.indexOf(KEY_VALUE_SEPARATOR);
         return new MapEntry(stringEntry.substring(0, idx), stringEntry.substring(idx + 1));
     }
-    
-    private boolean containsEntry(Entry<String, String> e) {
-        checkNotNullAndContainsNoZeros(e.getKey());
-        checkNotNullAndContainsNoZeros(e.getValue());
-        return dawg.contains(e.getKey() + KEY_VALUE_SEPARATOR + e.getValue());
-    }
 
     @Override
     public String get(Object key) {
@@ -450,9 +444,9 @@ public class DAWGMap extends AbstractDAWGMap<String> {
                 return false;
             Entry<String, String> e = (Entry<String, String>)o;
             if (map instanceof DAWGMap)
-                return ((DAWGMap)map).containsEntry(e);
+                return ((DAWGMap)map).containsMapping(e.getKey(), e.getValue());
             else
-                return ((SubMap)map).containsEntry(e);
+                return ((SubMap)map).containsMapping(e.getKey(), e.getValue());
         }
 
         @Override
@@ -733,10 +727,10 @@ public class DAWGMap extends AbstractDAWGMap<String> {
             return DAWGMap.this.valueIterator(delegate);
         }
 
-        private boolean containsEntry(Entry<String, String> e) {
-            checkNotNullAndContainsNoZeros(e.getKey());
-            checkNotNullAndContainsNoZeros(e.getValue());
-            return delegate.contains(e.getKey() + KEY_VALUE_SEPARATOR + e.getValue());
+        private boolean containsMapping(String key, String value) {
+            checkNotNullAndContainsNoZeros(key);
+            checkNotNullAndContainsNoZeros(value);
+            return delegate.contains(key + KEY_VALUE_SEPARATOR + value);
         }
 
         @Override

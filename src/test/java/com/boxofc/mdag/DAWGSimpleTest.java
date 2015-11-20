@@ -23,12 +23,9 @@
 package com.boxofc.mdag;
 
 import com.boxofc.mdag.util.Permutations;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import com.boxofc.mdag.util.Serializer;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -631,7 +628,7 @@ public class DAWGSimpleTest {
         int maxLength = Arrays.stream(words).mapToInt(s -> s.length()).max().orElse(0);
         assertEquals(maxLength, cdawg.getMaxLength(cdawg.getSourceNode(), 0));
         
-        assertEquals(cdawg, serializeAndRead(cdawg));
+        assertEquals(cdawg, Serializer.serializeAndRead(cdawg));
         
         ModifiableDAWGSet removed = cdawg.uncompress();
         removed.removeAll(Arrays.asList(wordsOns));
@@ -717,23 +714,9 @@ public class DAWGSimpleTest {
         assertTrue(dawg.isEmpty());
         dawg.iterator().next();
         
-        CompressedDAWGSet serialized = serializeAndRead(dawg);
+        CompressedDAWGSet serialized = Serializer.serializeAndRead(dawg);
         assertTrue(serialized.isEmpty());
         assertEquals(dawg, serialized);
-    }
-    
-    private static CompressedDAWGSet serializeAndRead(CompressedDAWGSet dawg) throws IOException, ClassNotFoundException {
-        byte data[];
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-            oos.writeObject(dawg);
-            oos.flush();
-            data = baos.toByteArray();
-        }
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
-             ObjectInputStream ois = new ObjectInputStream(bais)) {
-            return (CompressedDAWGSet)ois.readObject();
-        }
     }
 
     @Test(expected = NoSuchElementException.class)
@@ -822,7 +805,7 @@ public class DAWGSimpleTest {
             i++;
         assertEquals(58109, i);
         
-        CompressedDAWGSet serialized = serializeAndRead(cdawg);
+        CompressedDAWGSet serialized = Serializer.serializeAndRead(cdawg);
         assertEquals(cdawg, serialized);
     }
 

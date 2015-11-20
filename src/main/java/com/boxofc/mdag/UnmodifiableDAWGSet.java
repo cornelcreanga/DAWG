@@ -298,8 +298,8 @@ class UnmodifiableDAWGSet extends DAWGSet {
     }
 
     @Override
-    Iterable<String> getStrings(String prefixString, String subString, String suffixString, boolean descending, String fromString, boolean inclFrom, String toString, boolean inclTo) {
-        return null;
+    public Iterable<String> getStrings(String prefixString, String subString, String suffixString, boolean descending, String fromString, boolean inclFrom, String toString, boolean inclTo) {
+        return new UnmodifiableIterable<>(delegate.getStrings(prefixString, subString, suffixString, descending, fromString, inclFrom, toString, inclTo));
     }
 
     @Override

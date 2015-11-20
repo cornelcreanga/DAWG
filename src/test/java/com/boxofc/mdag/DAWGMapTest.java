@@ -1,10 +1,7 @@
 package com.boxofc.mdag;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import com.boxofc.mdag.util.Serializer;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map.Entry;
@@ -31,12 +28,12 @@ public class DAWGMapTest {
         assertEquals("c", cdawg.get("a"));
         assertEquals(dawg, cdawg.uncompress());
         assertEquals(cdawg, cdawg.uncompress().compress());
-        assertEquals(cdawg, serializeAndRead(cdawg));
+        assertEquals(cdawg, Serializer.serializeAndRead(cdawg));
         
         cdawg = dawg.compress();
         assertEquals(dawg, cdawg.uncompress());
         assertEquals(cdawg, cdawg.uncompress().compress());
-        assertEquals(cdawg, serializeAndRead(cdawg));
+        assertEquals(cdawg, Serializer.serializeAndRead(cdawg));
         
         assertFalse(dawg.values().remove(""));
         assertTrue(dawg.values().remove("ed"));
@@ -45,20 +42,6 @@ public class DAWGMapTest {
         assertEquals(2, dawg.size());
         dawg.subMap("a", "g").values().remove("ed");
         assertEquals(1, dawg.size());
-    }
-    
-    private static CompressedDAWGMap serializeAndRead(CompressedDAWGMap dawg) throws IOException, ClassNotFoundException {
-        byte data[];
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-            oos.writeObject(dawg);
-            oos.flush();
-            data = baos.toByteArray();
-        }
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
-             ObjectInputStream ois = new ObjectInputStream(bais)) {
-            return (CompressedDAWGMap)ois.readObject();
-        }
     }
     
     private static String concat(Entry<String, String> e) {

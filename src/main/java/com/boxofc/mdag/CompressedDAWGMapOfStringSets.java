@@ -5,15 +5,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-public class CompressedDAWGMultiValuedMap extends DAWGMapOfStringSets implements Serializable {
+class CompressedDAWGMapOfStringSets extends DAWGMapOfStringSets implements Serializable {
     private static final long serialVersionUID = 1L;
     
-    CompressedDAWGMultiValuedMap(CompressedDAWGSet dawg) {
+    CompressedDAWGMapOfStringSets(CompressedDAWGSet dawg) {
         super(dawg);
     }
     
-    public ModifiableDAWGMultiValuedMap uncompress() {
-        return new ModifiableDAWGMultiValuedMap(((CompressedDAWGSet)dawg).uncompress());
+    public ModifiableDAWGMapOfStringSets uncompress() {
+        return new ModifiableDAWGMapOfStringSets(((CompressedDAWGSet)dawg).uncompress());
     }
 
     @Override
@@ -25,8 +25,8 @@ public class CompressedDAWGMultiValuedMap extends DAWGMapOfStringSets implements
     public boolean equals(Object o) {
         if (o == this)
             return true;
-        if (o instanceof CompressedDAWGMultiValuedMap) {
-            CompressedDAWGMultiValuedMap map = (CompressedDAWGMultiValuedMap)o;
+        if (o instanceof CompressedDAWGMapOfStringSets) {
+            CompressedDAWGMapOfStringSets map = (CompressedDAWGMapOfStringSets)o;
             return dawg.equals(map.dawg);
         }
         return super.equals(o);

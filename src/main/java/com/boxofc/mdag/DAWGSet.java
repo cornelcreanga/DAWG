@@ -229,7 +229,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
     
     abstract int getMaxLength();
     
-    Iterable<String> getStrings(String prefixString, String subString, String suffixString, boolean descending, String fromString, boolean inclFrom, String toString, boolean inclTo) {
+    public Iterable<String> getStrings(String prefixString, String subString, String suffixString, boolean descending, String fromString, boolean inclFrom, String toString, boolean inclTo) {
         if (suffixString != null && !suffixString.isEmpty() && isWithIncomingTransitions() && (prefixString == null || prefixString.isEmpty())) {
             // Suffix search.
             return new Iterable<String>() {
