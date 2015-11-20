@@ -2,6 +2,7 @@ package com.boxofc.mdag;
 
 import com.boxofc.mdag.util.LookaheadIterator;
 import java.util.AbstractCollection;
+import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -14,6 +15,7 @@ import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.SortedSet;
 
 class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
@@ -1144,6 +1146,301 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
                 return ((DAWGMapOfStringSets)map).putAll(c);
             else
                 return ((SubMap)map).putAll(c);
+        }
+    }
+    
+    private class SubMap extends AbstractMap<String, Set<String>> implements NavigableMap<String, Set<String>> {
+        private final NavigableSet<String> delegate;
+        private final boolean desc;
+        private int size = -1;
+
+        public SubMap(NavigableSet<String> delegate) {
+            this.delegate = delegate;
+            desc = delegate.comparator() != null;
+        }
+        
+        private char keyValueSeparator() {
+            return desc ? KEY_VALUE_SEPARATOR_EXCLUSIVE : KEY_VALUE_SEPARATOR;
+        }
+        
+        private char keyValueSeparatorExclusive() {
+            return desc ? KEY_VALUE_SEPARATOR : KEY_VALUE_SEPARATOR_EXCLUSIVE;
+        }
+
+        @Override
+        public Entry<String, Set<String>> lowerEntry(String key) {
+            key = lowerKey(key);
+            return key == null ? null : new MapEntry(key, get(key));
+        }
+
+        @Override
+        public String lowerKey(String key) {
+            checkNotNullAndContainsNoZeros(key);
+            return keyOfStringEntry(delegate.lower(key + keyValueSeparator()));
+        }
+
+        @Override
+        public Entry<String, Set<String>> floorEntry(String key) {
+            key = floorKey(key);
+            return key == null ? null : new MapEntry(key, get(key));
+        }
+
+        @Override
+        public String floorKey(String key) {
+            checkNotNullAndContainsNoZeros(key);
+            return keyOfStringEntry(delegate.lower(key + keyValueSeparatorExclusive()));
+        }
+
+        @Override
+        public Entry<String, Set<String>> ceilingEntry(String key) {
+            key = ceilingKey(key);
+            return key == null ? null : new MapEntry(key, get(key));
+        }
+
+        @Override
+        public String ceilingKey(String key) {
+            checkNotNullAndContainsNoZeros(key);
+            return keyOfStringEntry(delegate.ceiling(key + keyValueSeparator()));
+        }
+
+        @Override
+        public Entry<String, Set<String>> higherEntry(String key) {
+            key = higherKey(key);
+            return key == null ? null : new MapEntry(key, get(key));
+        }
+
+        @Override
+        public String higherKey(String key) {
+            checkNotNullAndContainsNoZeros(key);
+            return keyOfStringEntry(delegate.ceiling(key + keyValueSeparatorExclusive()));
+        }
+
+        @Override
+        public String firstKey() {
+            return keyOfStringEntry(delegate.first());
+        }
+
+        @Override
+        public String lastKey() {
+            return keyOfStringEntry(delegate.last());
+        }
+
+        @Override
+        public Entry<String, Set<String>> firstEntry() {
+            String key = firstKey();
+            return key == null ? null : new MapEntry(key, get(key));
+        }
+
+        @Override
+        public Entry<String, Set<String>> lastEntry() {
+            String key = lastKey();
+            return key == null ? null : new MapEntry(key, get(key));
+        }
+
+        @Override
+        public Entry<String, Set<String>> pollFirstEntry() {
+            String key = firstKey();
+            return key == null ? null : new MapEntry(key, remove(key));
+        }
+
+        @Override
+        public Entry<String, Set<String>> pollLastEntry() {
+            String key = lastKey();
+            return key == null ? null : new MapEntry(key, remove(key));
+        }
+
+        @Override
+        public Comparator<? super String> comparator() {
+            return delegate.comparator();
+        }
+        
+        @Override
+        public Set<Entry<String, Set<String>>> entrySet() {
+            return new EntrySet(this);
+        }
+
+        @Override
+        public Collection<Set<String>> values() {
+            return new Values(this);
+        }
+
+        @Override
+        public Set<String> keySet() {
+            return new KeySet(this, false);
+        }
+
+        @Override
+        public NavigableSet<String> navigableKeySet() {
+            return new KeySet(this, false);
+        }
+
+        @Override
+        public NavigableSet<String> descendingKeySet() {
+            return new KeySet(this, true);
+        }
+
+        @Override
+        public NavigableMap<String, Set<String>> descendingMap() {
+            return new SubMap(delegate.descendingSet());
+        }
+
+        @Override
+        public NavigableMap<String, Set<String>> subMap(String fromKey, boolean fromInclusive, String toKey, boolean toInclusive) {
+            if (fromKey.compareTo(toKey) > 0)
+                throw new IllegalArgumentException("fromKey > toKey");
+            if (fromInclusive && fromKey.isEmpty())
+                fromKey = null;
+            else
+                checkNotNullAndContainsNoZeros(fromKey);
+            checkNotNullAndContainsNoZeros(toKey);
+            return new SubMap(delegate.subSet(fromKey + (fromInclusive ? keyValueSeparator() : keyValueSeparatorExclusive()), true, toKey + (toInclusive ? keyValueSeparatorExclusive() : keyValueSeparator()), false));
+        }
+
+        @Override
+        public NavigableMap<String, Set<String>> headMap(String toKey, boolean inclusive) {
+            checkNotNullAndContainsNoZeros(toKey);
+            return new SubMap(delegate.headSet(toKey + (inclusive ? keyValueSeparatorExclusive() : keyValueSeparator()), false));
+        }
+
+        @Override
+        public NavigableMap<String, Set<String>> tailMap(String fromKey, boolean inclusive) {
+            if (inclusive && fromKey.isEmpty())
+                return this;
+            checkNotNullAndContainsNoZeros(fromKey);
+            return new SubMap(delegate.tailSet(fromKey + (inclusive ? keyValueSeparator() : keyValueSeparatorExclusive()), true));
+        }
+
+        @Override
+        public SortedMap<String, Set<String>> subMap(String fromKey, String toKey) {
+            if (fromKey.compareTo(toKey) > 0)
+                throw new IllegalArgumentException("fromKey > toKey");
+            if (fromKey.isEmpty())
+                fromKey = null;
+            else
+                checkNotNullAndContainsNoZeros(fromKey);
+            checkNotNullAndContainsNoZeros(toKey);
+            return new SubMap(delegate.subSet(fromKey + keyValueSeparator(), true, toKey + keyValueSeparator(), false));
+        }
+
+        @Override
+        public SortedMap<String, Set<String>> headMap(String toKey) {
+            checkNotNullAndContainsNoZeros(toKey);
+            return new SubMap(delegate.headSet(toKey + keyValueSeparator(), false));
+        }
+
+        @Override
+        public SortedMap<String, Set<String>> tailMap(String fromKey) {
+            if (fromKey.isEmpty())
+                return this;
+            checkNotNullAndContainsNoZeros(fromKey);
+            return new SubMap(delegate.tailSet(fromKey + keyValueSeparator(), true));
+        }
+
+        private Iterator<String> uniqueKeysIterator(boolean desc) {
+            return DAWGMapOfStringSets.this.uniqueKeysIterator(delegate, desc);
+        }
+
+        private Iterator<Entry<String, Set<String>>> entryWithSetValuesIterator() {
+            return DAWGMapOfStringSets.this.entryWithSetValuesIterator(delegate);
+        }
+
+        private Iterator<Set<String>> valueSetsIterator() {
+            return DAWGMapOfStringSets.this.valueSetsIterator(delegate);
+        }
+
+        private Iterator<String> flatKeysIterator(boolean desc) {
+            return DAWGMapOfStringSets.this.flatKeysIterator(delegate, desc);
+        }
+
+        private Iterator<Entry<String, String>> entryWithStringValuesIterator() {
+            return DAWGMapOfStringSets.this.entryWithStringValuesIterator(delegate);
+        }
+
+        private Iterator<String> flatValuesIterator() {
+            return DAWGMapOfStringSets.this.flatValuesIterator(delegate);
+        }
+
+        private boolean containsMapping(String key, String value) {
+            checkNotNullAndContainsNoZeros(key);
+            checkNotNullAndContainsNoZeros(value);
+            return delegate.contains(key + KEY_VALUE_SEPARATOR + value);
+        }
+
+        @Override
+        public boolean remove(Object key, Object value) {
+            checkNotNullAndContainsNoZeros(key);
+            checkNotNullAndContainsNoZeros(value);
+            return delegate.remove((String)key + KEY_VALUE_SEPARATOR + value);
+        }
+
+        private boolean removeValue(Object value) {
+            checkNotNullAndContainsNoZeros(value);
+            Iterator<String> it = ((StringsFilter)delegate).getStringsEndingWith(KEY_VALUE_SEPARATOR + (String)value).iterator();
+            if (it.hasNext()) {
+                String stringEntry = it.next();
+                return dawg.remove(stringEntry);
+            }
+            return false;
+        }
+
+        @Override
+        public String remove(Object key) {
+            checkNotNullAndContainsNoZeros(key);
+            return valueOfStringEntry(pollFirstElement(((StringsFilter)delegate).getStringsStartingWith((String)key + KEY_VALUE_SEPARATOR)), key);
+        }
+
+        @Override
+        public String put(String key, String value) {
+            checkNotNullAndContainsNoZeros(value);
+            String old = get(key);
+            if (old != null && old.equals(value))
+                return old;
+            String keyWithSeparator = key + KEY_VALUE_SEPARATOR;
+            delegate.add(keyWithSeparator + value);
+            if (old != null)
+                delegate.remove(keyWithSeparator + old);
+            return old;
+        }
+
+        @Override
+        public String get(Object key) {
+            checkNotNullAndContainsNoZeros(key);
+            return valueOfStringEntry(getFirstElement(((StringsFilter)delegate).getStringsStartingWith((String)key + KEY_VALUE_SEPARATOR)), key);
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            checkNotNullAndContainsNoZeros(key);
+            return ((StringsFilter)delegate).getStringsStartingWith((String)key + KEY_VALUE_SEPARATOR).iterator().hasNext();
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            checkNotNullAndContainsNoZeros(value);
+            return ((StringsFilter)delegate).getStringsEndingWith(KEY_VALUE_SEPARATOR + (String)value).iterator().hasNext();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return delegate.isEmpty();
+        }
+
+        @Override
+        public int size() {
+            if (size < 0) {
+                int s = 0;
+                for (Iterator<String> it = DAWGMapOfStringSets.this.uniqueKeysIterator(false); it.hasNext(); it.next())
+                    s++;
+                if (dawg.isImmutable())
+                    size = s;
+                else
+                    return s;
+            }
+            return size;
+        }
+        
+        public int flatSize() {
+            return delegate.size();
         }
     }
 }
