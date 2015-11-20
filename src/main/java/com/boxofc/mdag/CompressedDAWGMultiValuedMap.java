@@ -5,34 +5,28 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-public class CompressedDAWGMap extends DAWGMap implements Serializable {
+public class CompressedDAWGMultiValuedMap extends DAWGMapOfStringSets implements Serializable {
     private static final long serialVersionUID = 1L;
-    private transient Integer hashCode;
     
-    CompressedDAWGMap(CompressedDAWGSet dawg) {
+    CompressedDAWGMultiValuedMap(CompressedDAWGSet dawg) {
         super(dawg);
     }
     
-    public ModifiableDAWGMap uncompress() {
-        return new ModifiableDAWGMap(((CompressedDAWGSet)dawg).uncompress());
+    public ModifiableDAWGMultiValuedMap uncompress() {
+        return new ModifiableDAWGMultiValuedMap(((CompressedDAWGSet)dawg).uncompress());
     }
 
     @Override
     public int hashCode() {
-        // Hash code should return the same value for equal objects.
-        // Simplified equals() method is possible but simplification
-        // of hashCode() would give results that differ from other Map implementations.
-        if (hashCode == null)
-            hashCode = super.hashCode();
-        return hashCode;
+        return dawg.hashCode();
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == this)
             return true;
-        if (o instanceof CompressedDAWGMap) {
-            CompressedDAWGMap map = (CompressedDAWGMap)o;
+        if (o instanceof CompressedDAWGMultiValuedMap) {
+            CompressedDAWGMultiValuedMap map = (CompressedDAWGMultiValuedMap)o;
             return dawg.equals(map.dawg);
         }
         return super.equals(o);

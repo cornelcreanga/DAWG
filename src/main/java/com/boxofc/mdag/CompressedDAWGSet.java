@@ -60,6 +60,8 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
     
     private transient CompressedDAWGNode endNode;
     
+    private transient Integer hashCode;
+    
     /**
      * Package-private constructor.
      * Use {@link ModifiableDAWGSet#compress} to create instances of this class.
@@ -199,7 +201,12 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
 
     @Override
     public int hashCode() {
-        return (((Arrays.hashCode(letters) * 31 + Arrays.hashCode(outgoingData)) * 31 + Arrays.hashCode(incomingData)) << 1) + (isWithIncomingTransitions() ? 1 : 0);
+        // Hash code should return the same value for equal objects.
+        // Simplified equals() method is possible but simplification
+        // of hashCode() would give results that differ from other Set implementations.
+        if (hashCode == null)
+            hashCode = super.hashCode();
+        return hashCode;
     }
 
     @Override

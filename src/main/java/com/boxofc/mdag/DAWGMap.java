@@ -10,69 +10,16 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
-public class DAWGMap extends AbstractMap<String, String> implements NavigableMap<String, String> {
-    private static final char KEY_VALUE_SEPARATOR = '\0';
-    private static final char KEY_VALUE_SEPARATOR_EXCLUSIVE = '\1';
-    DAWGSet dawg;
-    
+public class DAWGMap extends AbstractDAWGMap<String> {
     DAWGMap() {
     }
     
     DAWGMap(DAWGSet dawg) {
-        this.dawg = dawg;
-    }
-    
-    public DAWGSet getUnderlyingSet() {
-        return new UnmodifiableDAWGSet(dawg);
-    }
-
-    @Override
-    public int size() {
-        return dawg.size();
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return dawg.isEmpty();
-    }
-    
-    private static void checkNotNullAndContainsNoZeros(Object o) {
-        if (o == null)
-            throw new NullPointerException();
-        if (((String)o).indexOf(KEY_VALUE_SEPARATOR) >= 0)
-            throw new IllegalArgumentException("Argument contains zero character");
-    }
-    
-    private static String getFirstElement(Iterable<String> i) {
-        for (String s : i)
-            return s;
-        return null;
-    }
-    
-    private static String pollFirstElement(Iterable<String> i) {
-        for (Iterator<String> it = i.iterator(); it.hasNext();) {
-            String s = it.next();
-            it.remove();
-            return s;
-        }
-        return null;
-    }
-    
-    private static String valueOfStringEntry(String stringEntry, Object key) {
-        return stringEntry == null ? null : stringEntry.substring(((String)key).length() + 1);
-    }
-    
-    private static String valueOfStringEntry(String stringEntry) {
-        return stringEntry == null ? null : stringEntry.substring(stringEntry.indexOf(KEY_VALUE_SEPARATOR) + 1);
-    }
-    
-    private static String keyOfStringEntry(String stringEntry) {
-        return stringEntry == null ? null : stringEntry.substring(0, stringEntry.indexOf(KEY_VALUE_SEPARATOR));
+        super(dawg);
     }
     
     private Entry<String, String> entryOfStringEntry(String stringEntry) {
@@ -86,28 +33,6 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
         checkNotNullAndContainsNoZeros(e.getKey());
         checkNotNullAndContainsNoZeros(e.getValue());
         return dawg.contains(e.getKey() + KEY_VALUE_SEPARATOR + e.getValue());
-    }
-
-    @Override
-    public boolean containsKey(Object key) {
-        checkNotNullAndContainsNoZeros(key);
-        return dawg.getStringsStartingWith((String)key + KEY_VALUE_SEPARATOR).iterator().hasNext();
-    }
-
-    @Override
-    public boolean containsValue(Object value) {
-        checkNotNullAndContainsNoZeros(value);
-        return dawg.getStringsEndingWith(KEY_VALUE_SEPARATOR + (String)value).iterator().hasNext();
-    }
-    
-    private boolean removeValue(Object value) {
-        checkNotNullAndContainsNoZeros(value);
-        Iterator<String> it = dawg.getStringsEndingWith(KEY_VALUE_SEPARATOR + (String)value).iterator();
-        if (it.hasNext()) {
-            String stringEntry = it.next();
-            return dawg.remove(stringEntry);
-        }
-        return false;
     }
 
     @Override
@@ -136,27 +61,9 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
     }
 
     @Override
-    public boolean remove(Object key, Object value) {
-        checkNotNullAndContainsNoZeros(key);
-        checkNotNullAndContainsNoZeros(value);
-        return dawg.remove((String)key + KEY_VALUE_SEPARATOR + value);
-    }
-
-    @Override
-    public void clear() {
-        dawg.clear();
-    }
-
-    @Override
     public Entry<String, String> lowerEntry(String key) {
         checkNotNullAndContainsNoZeros(key);
         return entryOfStringEntry(dawg.lower(key + KEY_VALUE_SEPARATOR));
-    }
-
-    @Override
-    public String lowerKey(String key) {
-        checkNotNullAndContainsNoZeros(key);
-        return keyOfStringEntry(dawg.lower(key + KEY_VALUE_SEPARATOR));
     }
 
     @Override
@@ -166,33 +73,15 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
     }
 
     @Override
-    public String floorKey(String key) {
-        checkNotNullAndContainsNoZeros(key);
-        return keyOfStringEntry(dawg.lower(key + KEY_VALUE_SEPARATOR_EXCLUSIVE));
-    }
-
-    @Override
     public Entry<String, String> ceilingEntry(String key) {
         checkNotNullAndContainsNoZeros(key);
         return entryOfStringEntry(dawg.ceiling(key + KEY_VALUE_SEPARATOR));
     }
 
     @Override
-    public String ceilingKey(String key) {
-        checkNotNullAndContainsNoZeros(key);
-        return keyOfStringEntry(dawg.ceiling(key + KEY_VALUE_SEPARATOR));
-    }
-
-    @Override
     public Entry<String, String> higherEntry(String key) {
         checkNotNullAndContainsNoZeros(key);
         return entryOfStringEntry(dawg.ceiling(key + KEY_VALUE_SEPARATOR_EXCLUSIVE));
-    }
-
-    @Override
-    public String higherKey(String key) {
-        checkNotNullAndContainsNoZeros(key);
-        return keyOfStringEntry(dawg.ceiling(key + KEY_VALUE_SEPARATOR_EXCLUSIVE));
     }
 
     @Override
@@ -206,19 +95,11 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
     }
 
     @Override
-    public String firstKey() {
-        return keyOfStringEntry(dawg.first());
-    }
-
-    @Override
-    public String lastKey() {
-        return keyOfStringEntry(dawg.last());
-    }
-
     public String pollFirstKey() {
         return keyOfStringEntry(dawg.pollFirst());
     }
 
+    @Override
     public String pollLastKey() {
         return keyOfStringEntry(dawg.pollLast());
     }
@@ -231,12 +112,6 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
     @Override
     public Entry<String, String> pollLastEntry() {
         return entryOfStringEntry(dawg.pollLast());
-    }
-
-    @Override
-    public Comparator<? super String> comparator() {
-        // Natural ordering.
-        return null;
     }
 
     @Override
@@ -401,53 +276,6 @@ public class DAWGMap extends AbstractMap<String, String> implements NavigableMap
                 delegate.remove();
             }
         };
-    }
-    
-    private class MapEntry implements Entry<String, String> {
-        private final String key;
-        private String value;
-        
-        public MapEntry(String key, String value) {
-            this.key = key;
-            this.value = value;
-        }
-        
-        @Override
-        public String getKey() {
-            return key;
-        }
-
-        @Override
-        public String getValue() {
-            return value;
-        }
-
-        @Override
-        public String setValue(String value) {
-            String old = put(key, value);
-            this.value = value;
-            return old;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(key) ^ Objects.hashCode(value);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this)
-                return true;
-            if (!(obj instanceof Entry))
-                return false;
-            Entry e = (Entry)obj;
-            return Objects.equals(key, e.getKey()) && Objects.equals(value, e.getValue());
-        }
-
-        @Override
-        public String toString() {
-            return key + '=' + value;
-        }
     }
     
     private static class KeySet extends AbstractSet<String> implements NavigableSet<String> {

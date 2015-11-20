@@ -24,7 +24,7 @@ public class SimpleEntry<K, V> implements Entry<K, V> {
 
     @Override
     public V setValue(V value) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
