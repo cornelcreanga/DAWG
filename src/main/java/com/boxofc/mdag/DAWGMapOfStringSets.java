@@ -115,6 +115,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
     }
     
     public boolean putAll(String key, Iterable<? extends String> values) {
+        checkNotNullAndContainsNoZeros(key);
         return dawg.addAll(new Iterable<String>() {
             @Override
             public Iterator<String> iterator() {
@@ -143,7 +144,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         putAll(entrySet);
     }
     
-    private boolean putAll(Iterable c) {
+    boolean putAll(Iterable c) {
         Iterator entryIt = c.iterator();
         if (!entryIt.hasNext())
             return false;
@@ -571,6 +572,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         }
     }
     
+    // TODO: implement NavigableSet interface.
     private class ValuesSetFromIterable extends AbstractSet<String> implements Set<String> {
         private final Iterable<String> values;
         private final String key;
@@ -602,7 +604,24 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
 
         @Override
         public Iterator<String> iterator() {
-            return values.iterator();
+            return new Iterator<String>() {
+                private final Iterator<String> it = values.iterator();
+                
+                @Override
+                public boolean hasNext() {
+                    return it.hasNext();
+                }
+
+                @Override
+                public String next() {
+                    return valueOfStringEntry(it.next());
+                }
+
+                @Override
+                public void remove() {
+                    it.remove();
+                }
+            };
         }
 
         @Override
@@ -1374,38 +1393,113 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         }
 
         private boolean removeValue(Object value) {
-            checkNotNullAndContainsNoZeros(value);
-            Iterator<String> it = ((StringsFilter)delegate).getStringsEndingWith(KEY_VALUE_SEPARATOR + (String)value).iterator();
-            if (it.hasNext()) {
-                String stringEntry = it.next();
-                return dawg.remove(stringEntry);
+            if (value instanceof String) {
+                checkNotNullAndContainsNoZeros(value);
+                Iterator<String> it = ((StringsFilter)delegate).getStringsEndingWith(KEY_VALUE_SEPARATOR + (String)value).iterator();
+                if (it.hasNext()) {
+                    String stringEntry = it.next();
+                    return dawg.remove(stringEntry);
+                }
+            }
+            Iterator<Entry<String, Set<String>>> i = entrySet().iterator();
+            while (i.hasNext()) {
+                Entry<String, Set<String>> e = i.next();
+                if (value.equals(e.getValue())) {
+                    i.remove();
+                    return true;
+                }
             }
             return false;
         }
 
         @Override
-        public String remove(Object key) {
-            checkNotNullAndContainsNoZeros(key);
-            return valueOfStringEntry(pollFirstElement(((StringsFilter)delegate).getStringsStartingWith((String)key + KEY_VALUE_SEPARATOR)), key);
+        public Set<String> remove(Object key) {
+            Set<String> ret = get((String)key);
+            if (ret.isEmpty())
+                ret = Collections.EMPTY_SET;
+            else // An unmodifiable set of previously stored data.
+                ret = new ModifiableDAWGSet(false, ret).compress();
+            for (String s : ret)
+                dawg.remove((String)key + KEY_VALUE_SEPARATOR + s);
+            return ret;
         }
 
         @Override
-        public String put(String key, String value) {
+        public Set<String> put(String key, Set<String> value) {
+            Set<String> ret = get(key);
+            if (ret.isEmpty())
+                ret = null;
+            else // An unmodifiable set of previously stored data.
+                ret = new ModifiableDAWGSet(false, ret).compress();
+            delegate.addAll(new AbstractSet<String>() {
+                @Override
+                public Iterator<String> iterator() {
+                    return new Iterator<String>() {
+                        private final Iterator<? extends String> it = value.iterator();
+
+                        @Override
+                        public String next() {
+                            String s = it.next();
+                            checkNotNullAndContainsNoZeros(s);
+                            return key + KEY_VALUE_SEPARATOR + s;
+                        }
+
+                        @Override
+                        public boolean hasNext() {
+                            return it.hasNext();
+                        }
+                    };
+                }
+
+                @Override
+                public int size() {
+                    return value.size();
+                }
+            });
+            return ret;
+        }
+    
+        public boolean put(String key, String value) {
+            checkNotNullAndContainsNoZeros(key);
             checkNotNullAndContainsNoZeros(value);
-            String old = get(key);
-            if (old != null && old.equals(value))
-                return old;
-            String keyWithSeparator = key + KEY_VALUE_SEPARATOR;
-            delegate.add(keyWithSeparator + value);
-            if (old != null)
-                delegate.remove(keyWithSeparator + old);
-            return old;
+            return delegate.add(key + KEY_VALUE_SEPARATOR + value);
+        }
+    
+        private boolean putAll(Collection<? extends Entry<String, String>> c) {
+            return delegate.addAll(new AbstractCollection<String>() {
+                private final Iterator entryIt = c.iterator();
+                
+                @Override
+                public Iterator<String> iterator() {
+                    return new Iterator<String>() {
+                        @Override
+                        public String next() {
+                            Entry e = (Entry)entryIt.next();
+                            String key = (String)e.getKey();
+                            checkNotNullAndContainsNoZeros(key);
+                            String value = (String)e.getValue();
+                            checkNotNullAndContainsNoZeros(value);
+                            return key + KEY_VALUE_SEPARATOR + value;
+                        }
+
+                        @Override
+                        public boolean hasNext() {
+                            return entryIt.hasNext();
+                        }
+                    };
+                }
+
+                @Override
+                public int size() {
+                    return c.size();
+                }
+            });
         }
 
         @Override
-        public String get(Object key) {
+        public Set<String> get(Object key) {
             checkNotNullAndContainsNoZeros(key);
-            return valueOfStringEntry(getFirstElement(((StringsFilter)delegate).getStringsStartingWith((String)key + KEY_VALUE_SEPARATOR)), key);
+            return new ValuesSetFromIterable(((StringsFilter)delegate).getStringsStartingWith((String)key + KEY_VALUE_SEPARATOR), (String)key);
         }
 
         @Override
@@ -1416,8 +1510,17 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
 
         @Override
         public boolean containsValue(Object value) {
-            checkNotNullAndContainsNoZeros(value);
-            return ((StringsFilter)delegate).getStringsEndingWith(KEY_VALUE_SEPARATOR + (String)value).iterator().hasNext();
+            if (value instanceof String) {
+                checkNotNullAndContainsNoZeros(value);
+                return ((StringsFilter)delegate).getStringsEndingWith(KEY_VALUE_SEPARATOR + (String)value).iterator().hasNext();
+            }
+            Iterator<Entry<String, Set<String>>> i = entrySet().iterator();
+            while (i.hasNext()) {
+                Entry<String, Set<String>> e = i.next();
+                if (value.equals(e.getValue()))
+                    return true;
+            }
+            return false;
         }
 
         @Override
@@ -1429,7 +1532,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         public int size() {
             if (size < 0) {
                 int s = 0;
-                for (Iterator<String> it = DAWGMapOfStringSets.this.uniqueKeysIterator(false); it.hasNext(); it.next())
+                for (Iterator<String> it = uniqueKeysIterator(false); it.hasNext(); it.next())
                     s++;
                 if (dawg.isImmutable())
                     size = s;

@@ -42,7 +42,8 @@ public class DAWGMapOfStringSetsTest {
         data.put("b", another);
         ModifiableDAWGMapOfStringSets map = new ModifiableDAWGMapOfStringSets();
         map.putAll(data);
-        assertEquals(6, map.size());
+        assertEquals(6, map.flatSize());
+        assertEquals(2, map.size());
         assertEquals(3, map.get("a").size());
         assertEquals(3, map.get("b").size());
         assertEquals(0, map.get("c").size());
