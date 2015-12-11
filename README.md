@@ -2,14 +2,14 @@
 **MDAG** (Minimalistic Directed Acyclic Graph) is a **Java library** capable of constructing character-sequence-storing, directed acyclic graphs of minimal size.
 
 The library is small, deceptively simple, fast, and powerful. It differs from other libraries capable of creating minimal directed acyclic graphs
-(also known as **MA-FSA** (Minimal Acyclic Finite State Automata) or **DAWG**s (directed acyclic word graphs)) in the following ways:
+(also known as **MAFSA** (Minimal Acyclic Finite State Automaton) or **DAWG** ([Directed Acyclic Word Graph](https://en.wikipedia.org/wiki/Directed_acyclic_word_graph)), or **DAFSA** ([Deterministic Acyclic Finite State Automaton](https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton))) in the following ways:
 
 - Graphs are constructed directly from input (instead of from a preliminarily constructed trie)
 - Graphs can be constructed from unsorted input
 - Graphs can be constructed from either files or collections
 - Graphs can be modified on the fly (words can be added and/or removed from the represented lexicon)
-- Graphs can be "simplified" in to an array for even more space-savings
-- Out of the box convenience methods are provided for perusing the graph:
+- Graphs can be compressed to an array for even more space-savings
+- Out of the box convenience methods are provided for perusing the graph
 
 The code well structured, easy to follow, and extensively commented for the
 benefit of developers seeking to understand the data structure, as well as
@@ -17,52 +17,72 @@ developers seeking to add homogeneous, functionality-extending code with ease.
 
 The code has also been fully tested for correct functionality and performance.
 
+Additions in this fork:
+
+- Methods to draw the structure in GraphViz
+- Map class
+- MultiMap class
+- NavigableSet and NavigableMap implementations
+- Various optimizations
+- Better compression for small alphabets
+- Raw int array representation of a compressed DAWG
+- Inverse links between nodes for fast suffix search
+- Slight bug fixes (like empty strings support)
+
+Beware: this fork isn't API compatible with the original library. Also, it requires Java 8 but still no additional dependencies.
+
 ##How to use
 
-    MDAG myMDAG = new MDAG(new ArrayList<String>()); //Overriden constructor also accepts a file
+    ModifiableDAWGSet dawg = new ModifiableDAWGSet();
     
     //Add a single String to the lexicon
-    myMDAG.addString("str0");
+    dawg.add("str0");
     
     //Add a collection of Strings to the lexicon
-    myMDAG.addStrings(Arrays.asList(new String[]{"str1", "str2", "str3"}));
+    dawg.addAll(Arrays.asList("str1", "str2", "str3"));
     
     //Remove a String from the lexicon
-    myMDAG.removeString("str0");
+    dawg.remove("str0");
     
-    //Deterine if the lexicon contains a given String (O(n) based on input)
-    boolean doesContain = myMDAG.contains("str0"); //false
+    //Determine if the lexicon contains a given String, O(1)
+    //Here and further O(1) means that time does not depend on DAWG size
+    //But it linearly depends on input length
+    boolean doesContain = dawg.contains("str0"); //false
     
-    //Get all Strings starting with "str1" (O(n) based on input)
-    NavigableSet<String> startingWithSet = myMDAG.getStringsStartingWith("str1"); //{"str1"}
+    //Get all Strings starting with "str1", O(1) - returns lazy Iterable.
+    //Iteration would take O(output quantity)
+    Iterable<String> startingWithSet = dawg.getStringsStartingWith("str1"); //{"str1"}
 
-    //Get all String ending with "2" (O(n) based on dictionary)
-    NavigableSet<String> endingWithSet = myMDAG.geStringsEndingWith("2"); //{"str2"}
+    //Get all String ending with "2", O(output quantity) for iteration
+    Iterable<String> endingWithSet = dawg.geStringsEndingWith("2"); //{"str2"}
     
-    //Get all String containing "r3" (O(n) based on dictionary)
-    NavigableSet<String> containingSet = myMDAG.getStringsWithSubstring("r3"); //{"str3"}
+    //Get all String containing "r3", O(DAWG size) for iteration in worst case
+    //But this method is optimized not to check each value against the filter condition
+    //If a string containing a given substring is found then all child nodes would match
+    Iterable<String> containingSet = dawg.getStringsWithSubstring("r3"); //{"str3"}
     
-    //Get all Strings
-    NavigableSet<String> entireSet = myMDAG.getAllStrings(); //{"str1", "str2", "str3"}
+    //Get all Strings, O(DAWG size) for iteration
+    Iterable<String> entireSet = dawg.getAllStrings(); //{"str1", "str2", "str3"}
     
-    //Simpify graph structure in to an array (further space reduction)
-    myMDAG.simplify();
-    
-##Repo contents
-- **src**: Contains source code for unit & integration tests as well as modified MDAG source code with exclusive debugging methods and permissive access modifiers on existing methods to facilitate testing
-- **dist**: Contains test library and test suite jars
-- **final**: Contains src and dist folders housing production-ready MDAG source and jar files respectively
-- **words.txt**: Lexicon (/usr/share/dict/words)
-- **words_unsorted.txt**: Shuffled lexicon (/usr/share/dict/words)
+    //Compress graph structure to an array (further space reduction)
+    dawg.compress();
+
+Further plans:
+
+- Better format of compression for large alphabets
+- Lower the requirements to Java 6
+- Optimize nodes traversal via `TreeSet.subSet` methods
+- Replace SemiNavigableMap (internal class) with NavigableMap (for API publication)
+- Public API for graph traversal
+- Implement NavigableSet for values() in DAWGSetValuedMap
+- Implement Apache Commons Collections interfaces (Trie, MultiValuedMap etc.)
+- Add API documentation, examples and javadoc
 
 ##Licensing and usage information
 
 MDAG is licensed under the Apache License, Version 2.0.
 
-Informally, It'd be great to be notified of any derivatives or forks (or even better, issues or refactoring points that may inspire one)!
-
-More informally, it'd **really** be great to be notified any uses in open-source, educational, or (if granted a license) commercial contexts.
-Help me build my portfolio, if you found the library helpful it only takes an e-mail!
+[Original repository](https://github.com/klawson88/MDAG)
 
 ##Reference material
 
