@@ -28,6 +28,8 @@ Additions in this fork:
 - Raw int array representation of a compressed DAWG
 - Inverse links between nodes for fast suffix search
 - Slight bug fixes (like empty strings support)
+- Issues of original repository resolved
+- Pull requests included
 
 Beware: this fork isn't API compatible with the original library. Also, it requires Java 8 but still no additional dependencies.
 
@@ -65,7 +67,8 @@ Beware: this fork isn't API compatible with the original library. Also, it requi
     Iterable<String> entireSet = dawg.getAllStrings(); //{"str1", "str2", "str3"}
     
     //Compress graph structure to an array (further space reduction)
-    dawg.compress();
+    //cdawg is immutable, unmodifiable and serializable
+    CompressedDAWGSet cdawg = dawg.compress();
 
 Further plans:
 
