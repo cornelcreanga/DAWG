@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public abstract class LookaheadIterator<E> implements Iterator<E> {
+    public static final NoSuchElementException NO_SUCH_ELEMENT_EXCEPTION = new NoSuchElementException();
+    
     private E current;
     private boolean called;
     private boolean ableToRemove;
