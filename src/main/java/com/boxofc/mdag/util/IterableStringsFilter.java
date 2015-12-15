@@ -3,7 +3,6 @@ package com.boxofc.mdag.util;
 import com.boxofc.mdag.StringsFilter;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 
 public class IterableStringsFilter implements StringsFilter {
@@ -36,7 +35,7 @@ public class IterableStringsFilter implements StringsFilter {
                             if (ret != null && check.test(ret))
                                 return ret;
                         }
-                        throw new NoSuchElementException();
+                        throw NO_SUCH_ELEMENT_EXCEPTION;
                     }
 
                     @Override
