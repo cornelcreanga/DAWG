@@ -56,7 +56,7 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
     /**
      * CompressedDAWGNode from which all others in the structure are reachable (will be defined if this ModifiableDAWGSet is simplified)
      */
-    private transient CompressedDAWGNode sourceNode;
+    transient CompressedDAWGNode sourceNode;
     
     private transient CompressedDAWGNode endNode;
     

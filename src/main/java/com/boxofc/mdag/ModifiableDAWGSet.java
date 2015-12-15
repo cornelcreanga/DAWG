@@ -624,10 +624,10 @@ public class ModifiableDAWGSet extends DAWGSet {
         return addTransitionPath(sourceNode.transition(prefixString), suffixString);
     }
     
-    private int createCompressedOutgoingTransitionsData(int data[], ModifiableDAWGNode node, int currentNodeIndex, int onePastLastCreatedTransitionSetIndex, int compressedNodeSize, Map<Character, Integer> lettersIndex) {
+    private int createCompressedOutgoingTransitionsDataSmall(int data[], ModifiableDAWGNode node, int currentNodeIndex, int onePastLastCreatedTransitionSetIndex, int compressedNodeSize, Map<Character, Integer> lettersIndex) {
         int pivotIndex = onePastLastCreatedTransitionSetIndex;
         node.setTransitionSetBeginIndex(pivotIndex);
-        currentNodeIndex += 1;
+        currentNodeIndex++;
         onePastLastCreatedTransitionSetIndex += node.getOutgoingTransitionCount() * compressedNodeSize;
 
         //Create a CompressedDAWGNode representing each transition label/target combo in transitionTreeMap, recursively calling this method (if necessary)
@@ -643,7 +643,7 @@ public class ModifiableDAWGSet extends DAWGSet {
             //If targetTransitionNode's outgoing transition set hasn't been inserted in to data yet, call this method on it to do so.
             //After this call returns, transitionTargetNode will contain the index in data that its transition set starts from
             if (transitionTargetNode.getTransitionSetBeginIndex() == -1)
-                onePastLastCreatedTransitionSetIndex = createCompressedOutgoingTransitionsData(data, transitionTargetNode, pivotIndex, onePastLastCreatedTransitionSetIndex, compressedNodeSize, lettersIndex);
+                onePastLastCreatedTransitionSetIndex = createCompressedOutgoingTransitionsDataSmall(data, transitionTargetNode, pivotIndex, onePastLastCreatedTransitionSetIndex, compressedNodeSize, lettersIndex);
             else
                 System.arraycopy(transitionTargetNode.getTransitionSetLetters(), 0, data, pivotIndex + 1, compressedNodeSize - 1);
             
@@ -654,6 +654,26 @@ public class ModifiableDAWGSet extends DAWGSet {
         }
         node.setTransitionSetLetters(Arrays.copyOfRange(data, currentNodeIndex, currentNodeIndex + compressedNodeSize - 1));
         return onePastLastCreatedTransitionSetIndex;
+    }
+    
+    private void createCompressedOutgoingTransitionsDataLarge(int data[], ModifiableDAWGNode node, int nodeStart, char letter, int childrenStart, int nextFreeIndex[]) {
+        data[nodeStart] = letter;
+        data[nodeStart + 1] = childrenStart | (node.isAcceptNode() ? CompressedDAWGNode.ACCEPT_NODE_MASK : 0);
+        data[nodeStart + 2] = node.getOutgoingTransitionCount();
+        nextFreeIndex[0] = Math.max(nextFreeIndex[0], childrenStart + node.getOutgoingTransitionCount() * CompressedDAWGSetLargeAlphabet.OUTGOING_TRANSITION_SIZE_IN_INTS);
+        node.setTransitionSetBeginIndex(nodeStart);
+        for (Map.Entry<Character, ModifiableDAWGNode> e : node.getOutgoingTransitions().entrySet()) {
+            char c = e.getKey();
+            ModifiableDAWGNode child = e.getValue();
+            if (child.getTransitionSetBeginIndex() == -1) {
+                createCompressedOutgoingTransitionsDataLarge(data, child, childrenStart, c, nextFreeIndex[0], nextFreeIndex);
+                childrenStart += CompressedDAWGSetLargeAlphabet.OUTGOING_TRANSITION_SIZE_IN_INTS;
+            } else {
+                data[childrenStart++] = c;
+                data[childrenStart++] = data[child.getTransitionSetBeginIndex() + 1] | (child.isAcceptNode() ? CompressedDAWGNode.ACCEPT_NODE_MASK : 0);
+                data[childrenStart++] = child.getOutgoingTransitionCount();
+            }
+        }
     }
     
     private void createCompressedIncomingTransitionsData(int incomingData[], ModifiableDAWGNode node, int nodeStart, char letter, int childrenStart, int nextFreeIndex[]) {
@@ -677,6 +697,18 @@ public class ModifiableDAWGSet extends DAWGSet {
         }
     }
     
+    private void compressOutgoingSmallAlphabet(CompressedDAWGSet compressed) {
+        int compressedNodeSize = compressed.getOutgoingTransitionSizeInInts();
+        compressed.outgoingData[0] = compressedNodeSize;
+        if (sourceNode.isAcceptNode())
+            compressed.outgoingData[0] |= CompressedDAWGNode.ACCEPT_NODE_MASK;
+        createCompressedOutgoingTransitionsDataSmall(compressed.outgoingData, sourceNode, 0, compressedNodeSize, compressedNodeSize, compressed.getLettersIndex());
+    }
+    
+    private void compressOutgoingLargeAlphabet(CompressedDAWGSet compressed) {
+        createCompressedOutgoingTransitionsDataLarge(compressed.outgoingData, sourceNode, 0, '\0', CompressedDAWGSetLargeAlphabet.OUTGOING_TRANSITION_SIZE_IN_INTS, new int[]{CompressedDAWGSetLargeAlphabet.OUTGOING_TRANSITION_SIZE_IN_INTS});
+    }
+    
     /**
      * Creates a space-saving version of the ModifiableDAWGSet in the form of an array.
      * Once the ModifiableDAWGSet is simplified, Strings can no longer be added to or removed from it.
@@ -684,7 +716,8 @@ public class ModifiableDAWGSet extends DAWGSet {
      */
     public CompressedDAWGSet compress() {
         optimizeLetters();
-        CompressedDAWGSet compressed = new CompressedDAWGSet();
+        boolean largeAlphabet = alphabet.size() > 64;
+        CompressedDAWGSet compressed = largeAlphabet ? new CompressedDAWGSetLargeAlphabet() : new CompressedDAWGSet();
         compressed.size = size();
         compressed.maxLength = getMaxLength();
         compressed.alphabet = getAlphabet();
@@ -695,10 +728,10 @@ public class ModifiableDAWGSet extends DAWGSet {
         compressed.calculateCachedValues();
         int compressedNodeSize = compressed.getOutgoingTransitionSizeInInts();
         compressed.outgoingData = new int[(transitionCount + 1) * compressedNodeSize];
-        compressed.outgoingData[0] = compressedNodeSize;
-        if (sourceNode.isAcceptNode())
-            compressed.outgoingData[0] |= CompressedDAWGNode.ACCEPT_NODE_MASK;
-        createCompressedOutgoingTransitionsData(compressed.outgoingData, sourceNode, 0, compressedNodeSize, compressedNodeSize, compressed.getLettersIndex());
+        if (largeAlphabet)
+            compressOutgoingLargeAlphabet(compressed);
+        else
+            compressOutgoingSmallAlphabet(compressed);
         //Clear all transition begin indexes.
         Deque<ModifiableDAWGNode> stack = new ArrayDeque<>();
         stack.add(sourceNode);

@@ -21,7 +21,6 @@ import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.NavigableSet;
-import java.util.NoSuchElementException;
 
 public abstract class DAWGSet extends AbstractSet<String> implements NavigableSet<String>, StringsFilter {
     /**
@@ -270,7 +269,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                             while (true) {
                                 DAWGNode node = stack.pollLast();
                                 if (node == null)
-                                    throw new NoSuchElementException();
+                                    throw NO_SUCH_ELEMENT_EXCEPTION;
                                 int level = levelsStack.pollLast();
                                 int currentCharPos = buffer.length - level;
                                 if (level > suffixString.length()) {
@@ -441,7 +440,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                         while (true) {
                             DAWGNode node = stack.pollLast();
                             if (node == null)
-                                throw new NoSuchElementException();
+                                throw NO_SUCH_ELEMENT_EXCEPTION;
                             int level = levelsStack.pollLast();
                             if (level >= prefixStr.length()) {
                                 char c = charsStack.pollLast();

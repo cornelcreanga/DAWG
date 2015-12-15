@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
@@ -170,7 +169,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
                                         checkNotNullAndContainsNoZeros(key);
                                         it = ((Set<String>)e.getValue()).iterator();
                                     } else
-                                        throw new NoSuchElementException();
+                                        throw NO_SUCH_ELEMENT_EXCEPTION;
                                 }
                                 if (it.hasNext()) {
                                     String value = it.next();
@@ -374,7 +373,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
                     if (current == null || !current.equals(next))
                         return current = next;
                 }
-                throw new NoSuchElementException();
+                throw NO_SUCH_ELEMENT_EXCEPTION;
             }
 
             @Override
@@ -429,7 +428,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
                         return new MapEntry(currentKey, get(currentKey, desc));
                     }
                 }
-                throw new NoSuchElementException();
+                throw NO_SUCH_ELEMENT_EXCEPTION;
             }
 
             @Override
@@ -489,7 +488,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
                     if (currentKey == null || !currentKey.equals(nextKey))
                         return get(currentKey = nextKey, desc);
                 }
-                throw new NoSuchElementException();
+                throw NO_SUCH_ELEMENT_EXCEPTION;
             }
 
             @Override

@@ -72,7 +72,7 @@ Beware: this fork isn't API compatible with the original library. Also, it requi
 
 Further plans:
 
-- Better format of compression for large alphabets
+- ~~Better format of compression for large alphabets~~ (finished)
 - Lower the requirements to Java 6
 - Optimize nodes traversal via `TreeSet.subSet` methods
 - Replace SemiNavigableMap (internal class) with NavigableMap (for API publication)
@@ -80,6 +80,7 @@ Further plans:
 - Implement NavigableSet for values() in DAWGSetValuedMap
 - Implement Apache Commons Collections interfaces (Trie, MultiValuedMap etc.)
 - Add API documentation, examples and javadoc
+- Add benchmarks and features comparison with other data structures
 
 ##Licensing and usage information
 

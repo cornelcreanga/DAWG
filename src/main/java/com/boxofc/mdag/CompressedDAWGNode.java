@@ -24,7 +24,6 @@ package com.boxofc.mdag;
 
 import com.boxofc.mdag.util.LookaheadIterator;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 /**
  * The class capable of representing a DAWG node, its transition set, and one of its incoming transitions;
@@ -39,9 +38,9 @@ class CompressedDAWGNode extends DAWGNode {
     //The int denoting the size of this node's outgoing transition set
     private int transitionSetSize = -1;
     
-    private final int index;
+    final int index;
     
-    private final CompressedDAWGSet graph;
+    final CompressedDAWGSet graph;
     
     /**
      * Constructs a CompressedDAWGNode.
@@ -114,7 +113,7 @@ class CompressedDAWGNode extends DAWGNode {
                             childrenIdx += transitionSizeInInts;
                             return child;
                         } else
-                            throw new NoSuchElementException();
+                            throw NO_SUCH_ELEMENT_EXCEPTION;
                     }
                 };
             }
@@ -148,10 +147,10 @@ class CompressedDAWGNode extends DAWGNode {
                     @Override
                     public CompressedDAWGNode nextElement() {
                         if (pos < 0 || pos >= to)
-                            throw new NoSuchElementException();
+                            throw NO_SUCH_ELEMENT_EXCEPTION;
                         char letter = (char)graph.incomingData[pos];
                         if (letter != c)
-                            throw new NoSuchElementException();
+                            throw NO_SUCH_ELEMENT_EXCEPTION;
                         CompressedDAWGNode ret = graph.incomingData[pos + 2] == 0 ? graph.getSourceNode() : new CompressedDAWGNode(graph, pos);
                         pos += CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS;
                         return ret;
