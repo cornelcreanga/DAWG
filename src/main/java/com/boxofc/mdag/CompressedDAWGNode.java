@@ -27,7 +27,7 @@ import java.util.Iterator;
 
 /**
  * The class capable of representing a DAWG node, its transition set, and one of its incoming transitions;
- * objects of this class are used to represent a DAWG after its been simplified in order to save space.
+ * objects of this class are used to represent a DAWG after its been compressed in order to save space.
  
  * @author Kevin
  */

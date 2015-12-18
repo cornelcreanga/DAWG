@@ -60,7 +60,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     
     private final boolean withIncomingTransitions;
     
-    //ModifiableDAWGNode from which all others in the structure are reachable (all manipulation and non-simplified ModifiableDAWGSet search operations begin from this).
+    //ModifiableDAWGNode from which all others in the structure are reachable
     private final ModifiableDAWGNode sourceNode;
     
     private final ModifiableDAWGNode endNode;
@@ -711,7 +711,8 @@ public class ModifiableDAWGSet extends DAWGSet {
     
     /**
      * Creates a space-saving version of the ModifiableDAWGSet in the form of an array.
-     * Once the ModifiableDAWGSet is simplified, Strings can no longer be added to or removed from it.
+     * The result is an unmodifiable, immutable and serializable version of DAWG containing all strings that
+     * this ModifiableDAWGSet contains at the moment of compression.
      * @return an instance of {@link CompressedDAWGSet} containing all the words added to this DAWG
      */
     public CompressedDAWGSet compress() {

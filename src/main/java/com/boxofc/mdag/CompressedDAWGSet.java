@@ -54,7 +54,7 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
     private transient int transitionSizeInInts;
     
     /**
-     * CompressedDAWGNode from which all others in the structure are reachable (will be defined if this ModifiableDAWGSet is simplified)
+     * CompressedDAWGNode from which all others in the structure are reachable
      */
     transient CompressedDAWGNode sourceNode;
     

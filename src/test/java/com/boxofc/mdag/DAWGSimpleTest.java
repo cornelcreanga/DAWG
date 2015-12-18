@@ -55,7 +55,13 @@ public class DAWGSimpleTest {
         dawg.addAll(words);
         CompressedDAWGSet cdawg = dawg.compress();
         if (cdawg instanceof CompressedDAWGSetLargeAlphabet) {
-            // TODO: add comparison.
+            assertArrayEquals(new int[]{
+                '\0', 3,                                        2,
+                'a',  9  | CompressedDAWGNode.ACCEPT_NODE_MASK, 1,
+                'x',  12,                                       1,
+                's',  12 | CompressedDAWGNode.ACCEPT_NODE_MASK, 0,
+                'e',  9  | CompressedDAWGNode.ACCEPT_NODE_MASK, 1
+            }, cdawg.outgoingData);
         } else {
             assertArrayEquals(new int[]{
                 2,                                       9,
@@ -109,15 +115,22 @@ public class DAWGSimpleTest {
         Arrays.sort(words);
         CompressedDAWGSet cdawg = dawg.compress();
         if (cdawg instanceof CompressedDAWGSetLargeAlphabet) {
-            // TODO: add comparison.
+            assertArrayEquals(new int[]{
+                '\0', 3,                                        2,
+                'a',  9  | CompressedDAWGNode.ACCEPT_NODE_MASK, 0,
+                'x',  9,                                        2,
+                'e',  15 | CompressedDAWGNode.ACCEPT_NODE_MASK, 1,
+                's',  9  | CompressedDAWGNode.ACCEPT_NODE_MASK, 0,
+                's',  9  | CompressedDAWGNode.ACCEPT_NODE_MASK, 0
+            }, cdawg.outgoingData);
         } else {
             assertArrayEquals(new int[]{
                 2,                                        9,
-                6 | CompressedDAWGNode.ACCEPT_NODE_MASK,  0,
+                6  | CompressedDAWGNode.ACCEPT_NODE_MASK, 0,
                 6,                                        6,
                 10 | CompressedDAWGNode.ACCEPT_NODE_MASK, 4,
-                6 | CompressedDAWGNode.ACCEPT_NODE_MASK,  0,
-                6 | CompressedDAWGNode.ACCEPT_NODE_MASK,  0
+                6  | CompressedDAWGNode.ACCEPT_NODE_MASK, 0,
+                6  | CompressedDAWGNode.ACCEPT_NODE_MASK, 0
             }, cdawg.outgoingData);
         }
         assertEquals(cdawg, dawg.compress());

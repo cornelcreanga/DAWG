@@ -79,7 +79,7 @@ Further plans:
 - Public API for graph traversal
 - Implement NavigableSet for values() in DAWGSetValuedMap
 - Implement Apache Commons Collections interfaces (Trie, MultiValuedMap etc.)
-- Add API documentation, examples and javadoc
+- Add API documentation, internal structure description, usage examples and javadoc
 - Add benchmarks and features comparison with other data structures
 
 ##Licensing and usage information

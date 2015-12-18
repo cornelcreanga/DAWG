@@ -47,7 +47,7 @@ class ModifiableDAWGNode extends DAWGNode {
     //The int representing this node's incoming transition node count
     private int incomingTransitionCount;
     
-    //The int denoting index in a simplified mdag data array that this node's transition set begins at
+    //The int denoting index in a compressed DAWG data array that this node's transition set begins at
     private int transitionSetBeginIndex = -1;
     
     private int transitionSetLetters[];
