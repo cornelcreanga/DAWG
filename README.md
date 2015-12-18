@@ -1,8 +1,10 @@
 ##About
 **DAWG** (Directed Acyclic Word Graph) is a **Java library** capable of constructing character-sequence-storing, directed acyclic graphs of minimal size.
 
-The library is small, deceptively simple, fast, and powerful. It differs from other libraries capable of creating minimal directed acyclic graphs
-(also known as **MAFSA** (Minimal Acyclic Finite State Automaton), **MDAG** (Minimalistic Directed Acyclic Graph), **DAWG** ([Directed Acyclic Word Graph](https://en.wikipedia.org/wiki/Directed_acyclic_word_graph)), or **DAFSA** ([Deterministic Acyclic Finite State Automaton](https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton))) in the following ways:
+This is an absolutely new version of a [MDAG](https://github.com/klawson88/MDAG) library initially started by [Kevin Lawson](https://github.com/klawson88). This fork was renamed to simplify googling.
+
+The library is small, deceptively simple, fast and powerful. It differs from other libraries capable of creating minimal directed acyclic graphs
+(also known as **MAFSA** (Minimal Acyclic Finite State Automaton), **MDAG** (Minimalistic Directed Acyclic Graph), **DAWG** ([Directed Acyclic Word Graph](https://en.wikipedia.org/wiki/Directed_acyclic_word_graph)) or **DAFSA** ([Deterministic Acyclic Finite State Automaton](https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton))) in the following ways:
 
 - Graphs are constructed directly from input (instead of from a preliminarily constructed trie)
 - Graphs can be constructed from unsorted input
