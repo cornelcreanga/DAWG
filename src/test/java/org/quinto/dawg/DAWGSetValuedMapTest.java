@@ -1,7 +1,5 @@
 package org.quinto.dawg;
 
-import org.quinto.dawg.CompressedDAWGSetValuedMap;
-import org.quinto.dawg.ModifiableDAWGSetValuedMap;
 import org.quinto.dawg.util.Serializer;
 import java.io.IOException;
 import java.util.Set;
@@ -14,7 +12,7 @@ import static org.junit.Assert.assertTrue;
 
 public class DAWGSetValuedMapTest {
     private static Set<String> asSet(String... values) {
-        return new TreeSet<>(Arrays.asList(values));
+        return new TreeSet<String>(Arrays.asList(values));
     }
     
     @Test

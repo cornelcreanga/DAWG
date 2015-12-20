@@ -8,7 +8,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -16,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.TreeSet;
+import org.quinto.dawg.util.UnmodifiableNavigableSet;
 
 public class CompressedDAWGSet extends DAWGSet implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -113,7 +113,7 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
         char lastChar = suffixText[suffixText.length - 1];
         Iterable<CompressedDAWGNode> ret = getEndNode().getIncomingTransitions(lastChar);
         for (int i = suffixText.length - 1; i >= 0; i--) {
-            List<CompressedDAWGNode> levelNodes = new ArrayList<>();
+            List<CompressedDAWGNode> levelNodes = new ArrayList<CompressedDAWGNode>();
             char c = suffixText[i];
             for (CompressedDAWGNode node : ret)
                 if (node.getId() != DAWGNode.START)
@@ -133,7 +133,7 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
     
     Map<Character, Integer> getLettersIndex() {
         if (lettersIndex == null) {
-            Map<Character, Integer> ret = new HashMap<>();
+            Map<Character, Integer> ret = new HashMap<Character, Integer>();
             for (int i = 0; i < letters.length; i++)
                 ret.put(letters[i], i);
             lettersIndex = ret;
@@ -194,7 +194,7 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
     
     @Override
     public int getNodeCount() {
-        HashSet<Integer> ids = new HashSet<>();
+        HashSet<Integer> ids = new HashSet<Integer>();
         countNodes(getSourceNode(), ids);
         return ids.size() + 1;
     }
@@ -226,10 +226,10 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
     @Override
     public NavigableSet<Character> getAlphabet() {
         if (alphabet == null) {
-            NavigableSet<Character> lettersSet = new TreeSet<>();
+            NavigableSet<Character> lettersSet = new TreeSet<Character>();
             for (char c : letters)
                 lettersSet.add(c);
-            alphabet = Collections.unmodifiableNavigableSet(lettersSet);
+            alphabet = new UnmodifiableNavigableSet<Character>(lettersSet);
         }
         return alphabet;
     }
@@ -335,7 +335,12 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
                     }
                     currentCharSet ^= charIndex;
                     char letter = letters[currentCharShift + Integer.numberOfTrailingZeros(charIndex)];
-                    return new SimpleEntry<>(letter, node);
+                    return new SimpleEntry<Character, DAWGNode>(letter, node);
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException();
                 }
             };
         }
@@ -387,7 +392,7 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
 
                 @Override
                 public SimpleEntry<Character, Collection<? extends DAWGNode>> next() {
-                    List<DAWGNode> nodes = new ArrayList<>();
+                    List<DAWGNode> nodes = new ArrayList<DAWGNode>();
                     char retLetter = currentLetter;
                     while (hasNext()) {
                         char c = (char)incomingData[current];
@@ -402,7 +407,12 @@ public class CompressedDAWGSet extends DAWGSet implements Serializable {
                         else
                             current += INCOMING_TRANSITION_SIZE_IN_INTS;
                     }
-                    return new SimpleEntry<>(retLetter, nodes);
+                    return new SimpleEntry<Character, Collection<? extends DAWGNode>>(retLetter, nodes);
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException();
                 }
             };
         }

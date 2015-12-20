@@ -23,6 +23,11 @@ public class UnmodifiableIterable<T> implements Iterable<T> {
             public T next() {
                 return it.next();
             }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 }

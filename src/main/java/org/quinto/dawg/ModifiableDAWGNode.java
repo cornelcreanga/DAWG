@@ -69,8 +69,8 @@ class ModifiableDAWGNode extends DAWGNode {
         this.graph = graph;
         this.id = id;
         this.isAcceptNode = isAcceptNode;
-        outgoingTransitionTreeMap = new TreeMap<>();
-        incomingTransitionTreeMap = graph == null || graph.isWithIncomingTransitions() ? new TreeMap<>() : null;
+        outgoingTransitionTreeMap = new TreeMap<Character, ModifiableDAWGNode>();
+        incomingTransitionTreeMap = graph == null || graph.isWithIncomingTransitions() ? new TreeMap<Character, Map<Integer, ModifiableDAWGNode>>() : null;
     }
     
     /**
@@ -84,8 +84,8 @@ class ModifiableDAWGNode extends DAWGNode {
         this.id = id;
         graph = node.graph;
         isAcceptNode = node.isAcceptNode;
-        outgoingTransitionTreeMap = new TreeMap<>(node.outgoingTransitionTreeMap);
-        incomingTransitionTreeMap = graph == null || graph.isWithIncomingTransitions() ? new TreeMap<>() : null;
+        outgoingTransitionTreeMap = new TreeMap<Character, ModifiableDAWGNode>(node.outgoingTransitionTreeMap);
+        incomingTransitionTreeMap = graph == null || graph.isWithIncomingTransitions() ? new TreeMap<Character, Map<Integer, ModifiableDAWGNode>>() : null;
         
         //Loop through the nodes in this node's outgoing transition set, incrementing the number of
         //incoming transitions of each by 1 (to account for this newly created node's outgoing transitions)
@@ -97,7 +97,7 @@ class ModifiableDAWGNode extends DAWGNode {
         if (graph == null || graph.isWithIncomingTransitions()) {
             Map<Integer, ModifiableDAWGNode> letterIncomingTransitions = incomingTransitionTreeMap.get(letter);
             if (letterIncomingTransitions == null)
-                incomingTransitionTreeMap.put(letter, letterIncomingTransitions = new HashMap<>());
+                incomingTransitionTreeMap.put(letter, letterIncomingTransitions = new HashMap<Integer, ModifiableDAWGNode>());
             if (letterIncomingTransitions.put(node.getId(), node) != node)
                 incomingTransitionCount++;
         } else
@@ -267,7 +267,7 @@ class ModifiableDAWGNode extends DAWGNode {
      *                  denoted by {@code str}, in the order they are encountered in during transitioning
      */
     public Deque<ModifiableDAWGNode> getTransitionPathNodes(String str) {
-        Deque<ModifiableDAWGNode> nodeStack = new ArrayDeque<>();
+        Deque<ModifiableDAWGNode> nodeStack = new ArrayDeque<ModifiableDAWGNode>();
         
         ModifiableDAWGNode currentNode = this;
         int numberOfChars = str.length();

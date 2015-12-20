@@ -12,10 +12,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
+import org.quinto.dawg.util.ExtraMethodsMap;
+import org.quinto.dawg.util.Objects;
 
 class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
     private transient Integer size;
@@ -113,7 +114,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         return ret;
     }
     
-    public boolean putAll(String key, Iterable<? extends String> values) {
+    public boolean putAll(final String key, final Iterable<? extends String> values) {
         checkNotNullAndContainsNoZeros(key);
         return dawg.addAll(new Iterable<String>() {
             @Override
@@ -132,6 +133,11 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
                     public boolean hasNext() {
                         return it.hasNext();
                     }
+
+                    @Override
+                    public void remove() {
+                        throw new UnsupportedOperationException();
+                    }
                 };
             }
         });
@@ -144,7 +150,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
     }
     
     boolean putAll(Iterable c) {
-        Iterator entryIt = c.iterator();
+        final Iterator entryIt = c.iterator();
         if (!entryIt.hasNext())
             return false;
         Entry entry = (Entry)entryIt.next();
@@ -201,6 +207,11 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
                         @Override
                         public boolean hasNext() {
                             return entryIt.hasNext();
+                        }
+
+                        @Override
+                        public void remove() {
+                            throw new UnsupportedOperationException();
                         }
                     };
                 }
@@ -361,7 +372,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         return uniqueKeysIterator(dawg, desc);
     }
     
-    private Iterator<String> uniqueKeysIterator(NavigableSet<String> set, boolean desc) {
+    private Iterator<String> uniqueKeysIterator(final NavigableSet<String> set, final boolean desc) {
         return new LookaheadIterator<String>() {
             private final Iterator<String> delegate = desc ? set.descendingIterator() : set.iterator();
             private String current;
@@ -388,7 +399,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         return flatKeysIterator(dawg, desc);
     }
     
-    private Iterator<String> flatKeysIterator(NavigableSet<String> set, boolean desc) {
+    private Iterator<String> flatKeysIterator(final NavigableSet<String> set, final boolean desc) {
         return new Iterator<String>() {
             private final Iterator<String> delegate = desc ? set.descendingIterator() : set.iterator();
             
@@ -413,8 +424,8 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         return entryWithSetValuesIterator(dawg);
     }
     
-    private Iterator<Entry<String, Set<String>>> entryWithSetValuesIterator(NavigableSet<String> set) {
-        boolean desc = set.comparator() != null;
+    private Iterator<Entry<String, Set<String>>> entryWithSetValuesIterator(final NavigableSet<String> set) {
+        final boolean desc = set.comparator() != null;
         return new LookaheadIterator<Entry<String, Set<String>>>() {
             private final Iterator<String> delegate = set.iterator();
             private String currentKey;
@@ -443,7 +454,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         return entryWithStringValuesIterator(dawg);
     }
     
-    private Iterator<Entry<String, String>> entryWithStringValuesIterator(NavigableSet<String> set) {
+    private Iterator<Entry<String, String>> entryWithStringValuesIterator(final NavigableSet<String> set) {
         return new Iterator<Entry<String, String>>() {
             private final Iterator<String> delegate = set.iterator();
             
@@ -475,8 +486,8 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         return valueSetsIterator(dawg);
     }
     
-    private Iterator<Set<String>> valueSetsIterator(NavigableSet<String> set) {
-        boolean desc = set.comparator() != null;
+    private Iterator<Set<String>> valueSetsIterator(final NavigableSet<String> set) {
+        final boolean desc = set.comparator() != null;
         return new LookaheadIterator<Set<String>>() {
             private final Iterator<String> delegate = set.iterator();
             private String currentKey;
@@ -503,7 +514,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         return flatValuesIterator(dawg);
     }
     
-    private Iterator<String> flatValuesIterator(NavigableSet<String> set) {
+    private Iterator<String> flatValuesIterator(final NavigableSet<String> set) {
         return new Iterator<String>() {
             private final Iterator<String> delegate = set.iterator();
             
@@ -630,7 +641,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         }
 
         @Override
-        public boolean addAll(Collection<? extends String> c) {
+        public boolean addAll(final Collection<? extends String> c) {
             return dawg.addAll(new Iterable<String>() {
                 @Override
                 public Iterator<String> iterator() {
@@ -647,6 +658,11 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
                         @Override
                         public boolean hasNext() {
                             return it.hasNext();
+                        }
+
+                        @Override
+                        public void remove() {
+                            throw new UnsupportedOperationException();
                         }
                     };
                 }
@@ -869,7 +885,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
             String key = (String)e.getKey();
             Object value = e.getValue();
             if (value instanceof String)
-                return map.remove(key, (String)value);
+                return ((ExtraMethodsMap)map).remove(key, (String)value);
             else {
                 Set<String> contained = map.get(key);
                 if (contained.equals(value))
@@ -1019,7 +1035,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
             Set<String> set = map.get((String)o);
             Iterator<String> i = set.iterator();
             if (i.hasNext())
-                return map.remove(o, i.next());
+                return ((ExtraMethodsMap)map).remove(o, i.next());
             return false;
         }
         
@@ -1136,7 +1152,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
             if (!(o instanceof Entry))
                 return false;
             Entry<String, String> e = (Entry<String, String>)o;
-            return map.remove(e.getKey(), e.getValue());
+            return ((ExtraMethodsMap)map).remove(e.getKey(), e.getValue());
         }
 
         @Override
@@ -1167,7 +1183,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         }
     }
     
-    private class SubMap extends AbstractMap<String, Set<String>> implements NavigableMap<String, Set<String>> {
+    private class SubMap extends AbstractMap<String, Set<String>> implements NavigableMap<String, Set<String>>, ExtraMethodsMap<String, Set<String>> {
         private final NavigableSet<String> delegate;
         private final boolean desc;
         private int size = -1;
@@ -1424,7 +1440,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
         }
 
         @Override
-        public Set<String> put(String key, Set<String> value) {
+        public Set<String> put(final String key, final Set<String> value) {
             Set<String> ret = get(key);
             if (ret.isEmpty())
                 ret = null;
@@ -1447,6 +1463,11 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
                         public boolean hasNext() {
                             return it.hasNext();
                         }
+
+                        @Override
+                        public void remove() {
+                            throw new UnsupportedOperationException();
+                        }
                     };
                 }
 
@@ -1464,7 +1485,7 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
             return delegate.add(key + KEY_VALUE_SEPARATOR + value);
         }
     
-        private boolean putAll(Collection<? extends Entry<String, String>> c) {
+        private boolean putAll(final Collection<? extends Entry<String, String>> c) {
             return delegate.addAll(new AbstractCollection<String>() {
                 private final Iterator entryIt = c.iterator();
                 
@@ -1484,6 +1505,11 @@ class DAWGMapOfStringSets extends AbstractDAWGMap<Set<String>> {
                         @Override
                         public boolean hasNext() {
                             return entryIt.hasNext();
+                        }
+
+                        @Override
+                        public void remove() {
+                            throw new UnsupportedOperationException();
                         }
                     };
                 }

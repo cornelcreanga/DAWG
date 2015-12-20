@@ -3,7 +3,6 @@ package org.quinto.dawg.util;
 import org.quinto.dawg.StringsFilter;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.function.Predicate;
 
 public class IterableStringsFilter implements StringsFilter {
     private final Iterable<String> delegate;
@@ -21,7 +20,7 @@ public class IterableStringsFilter implements StringsFilter {
         return delegate;
     }
 
-    private Iterable<String> getStringsByFilter(Predicate<String> check) {
+    private Iterable<String> getStringsByFilter(final Predicate<String> check) {
         return new Iterable<String>() {
             @Override
             public Iterator<String> iterator() {
@@ -48,23 +47,43 @@ public class IterableStringsFilter implements StringsFilter {
     }
 
     @Override
-    public Iterable<String> getStringsStartingWith(String prefix) {
+    public Iterable<String> getStringsStartingWith(final String prefix) {
         if (prefix == null)
             return delegate;
-        return getStringsByFilter(ret -> ret.startsWith(prefix));
+        return getStringsByFilter(new Predicate<String>() {
+            @Override
+            public boolean test(String ret) {
+                return ret.startsWith(prefix);
+            }
+        });
     }
 
     @Override
-    public Iterable<String> getStringsWithSubstring(String substring) {
+    public Iterable<String> getStringsWithSubstring(final String substring) {
         if (substring == null)
             return delegate;
-        return getStringsByFilter(ret -> ret.contains(substring));
+        return getStringsByFilter(new Predicate<String>() {
+            @Override
+            public boolean test(String ret) {
+                return ret.contains(substring);
+            }
+        });
     }
 
     @Override
-    public Iterable<String> getStringsEndingWith(String suffix) {
+    public Iterable<String> getStringsEndingWith(final String suffix) {
         if (suffix == null)
             return delegate;
-        return getStringsByFilter(ret -> ret.endsWith(suffix));
+        return getStringsByFilter(new Predicate<String>() {
+            @Override
+            public boolean test(String ret) {
+                return ret.endsWith(suffix);
+            }
+        });
+    }
+    
+    // TODO: replace by Java 8 class.
+    private static interface Predicate<T> {
+        public boolean test(T value);
     }
 }

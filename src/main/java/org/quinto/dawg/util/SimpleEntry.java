@@ -1,7 +1,6 @@
 package org.quinto.dawg.util;
 
 import java.util.Map.Entry;
-import java.util.Objects;
 
 public class SimpleEntry<K, V> implements Entry<K, V> {
     private final K key;

@@ -46,6 +46,7 @@ import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.TreeSet;
+import org.quinto.dawg.util.UnmodifiableNavigableSet;
 
 /**
  * A minimalistic directed acyclical graph suitable for storing a set of Strings.
@@ -68,10 +69,10 @@ public class ModifiableDAWGSet extends DAWGSet {
     //HashMap which contains the DAWGNodes collectively representing the all unique equivalence classes in the ModifiableDAWGSet.
     //Uniqueness is defined by the types of transitions allowed from, and number and type of nodes reachable
     //from the node of interest. Since there are no duplicate nodes in an ModifiableDAWGSet, # of equivalence classes == # of nodes.
-    private final HashMap<ModifiableDAWGNode, ModifiableDAWGNode> equivalenceClassNodeHashMap = new HashMap<>();
+    private final HashMap<ModifiableDAWGNode, ModifiableDAWGNode> equivalenceClassNodeHashMap = new HashMap<ModifiableDAWGNode, ModifiableDAWGNode>();
     
     //NavigableSet which will contain the set of unique characters used as transition labels in the ModifiableDAWGSet
-    private final NavigableSet<Character> alphabet = new TreeSet<>();
+    private final NavigableSet<Character> alphabet = new TreeSet<Character>();
     
     //An int denoting the total number of transitions between the nodes of the ModifiableDAWGSet
     private int transitionCount;
@@ -135,9 +136,24 @@ public class ModifiableDAWGSet extends DAWGSet {
      * @throws IOException      if {@code datafile} cannot be opened, or a read operation on it cannot be carried out
      */
     public boolean addAll(File dataFile) throws IOException {
-        try (FileInputStream fis = new FileInputStream(dataFile)) {
-            return addAll(fis);
+        FileInputStream fis = null;
+        IOException ex = null;
+        boolean ret = false;
+        try {
+            fis = new FileInputStream(dataFile);
+            ret = addAll(fis);
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    ex = e;
+                }
+            }
         }
+        if (ex != null)
+            throw ex;
+        return ret;
     }
     
     /**
@@ -150,45 +166,74 @@ public class ModifiableDAWGSet extends DAWGSet {
      */
     public boolean addAll(InputStream dataFile) throws IOException {
         final IOException exceptionToThrow[] = new IOException[1];
-        try (InputStreamReader isr = new InputStreamReader(dataFile);
-            final BufferedReader br = new BufferedReader(isr)) {
-            return addAll(new Iterable<String>() {
-                @Override
-                public Iterator<String> iterator() {
-                    return new Iterator<String>() {
-                        private String nextLine;
+        InputStreamReader isr = null;
+        boolean ret = false;
+        try {
+            isr = new InputStreamReader(dataFile);
+            final BufferedReader br = new BufferedReader(isr);
+            try {
+                ret = addAll(new Iterable<String>() {
+                    @Override
+                    public Iterator<String> iterator() {
+                        return new Iterator<String>() {
+                            private String nextLine;
 
-                        @Override
-                        public boolean hasNext() {
-                            if (nextLine == null) {
-                                try {
-                                    nextLine = br.readLine();
-                                    return nextLine != null;
-                                } catch (IOException e) {
-                                    exceptionToThrow[0] = e;
-                                    throw new RuntimeException(e);
-                                }
-                            } else
-                                return true;
-                        }
+                            @Override
+                            public boolean hasNext() {
+                                if (nextLine == null) {
+                                    try {
+                                        nextLine = br.readLine();
+                                        return nextLine != null;
+                                    } catch (IOException e) {
+                                        exceptionToThrow[0] = e;
+                                        throw new RuntimeException(e);
+                                    }
+                                } else
+                                    return true;
+                            }
 
-                        @Override
-                        public String next() {
-                            if (nextLine != null || hasNext()) {
-                                String line = nextLine;
-                                nextLine = null;
-                                return line;
-                            } else
-                                throw new NoSuchElementException();
-                        }
-                    };
+                            @Override
+                            public String next() {
+                                if (nextLine != null || hasNext()) {
+                                    String line = nextLine;
+                                    nextLine = null;
+                                    return line;
+                                } else
+                                    throw new NoSuchElementException();
+                            }
+
+                            @Override
+                            public void remove() {
+                                throw new UnsupportedOperationException();
+                            }
+                        };
+                    }
+                });
+            } finally {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    if (exceptionToThrow[0] == null)
+                        exceptionToThrow[0] = e;
                 }
-            });
+            }
         } catch (RuntimeException e) {
             if (e.getCause() == exceptionToThrow[0] && exceptionToThrow[0] != null)
                 throw exceptionToThrow[0];
             throw e;
+        } finally {
+            if (isr != null) {
+                try {
+                    isr.close();
+                } catch (IOException e) {
+                    if (exceptionToThrow[0] == null)
+                        exceptionToThrow[0] = e;
+                }
+            }
         }
+        if (exceptionToThrow[0] != null)
+            throw exceptionToThrow[0];
+        return ret;
     }
     
     /**
@@ -434,7 +479,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         
         //Create a HashMap containing the index of the last char in the substring corresponding
         //to the transitoin path to the confluence node, as well as the actual confluence node
-        HashMap<String, Object> confluenceNodeDataHashMap = new HashMap<>(2);
+        HashMap<String, Object> confluenceNodeDataHashMap = new HashMap<String, Object>(2);
         confluenceNodeDataHashMap.put("toConfluenceNodeTransitionCharIndex", noConfluenceNode ? null : currentIndex);
         confluenceNodeDataHashMap.put("confluenceNode", noConfluenceNode ? null : currentNode);
 
@@ -734,7 +779,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         else
             compressOutgoingSmallAlphabet(compressed);
         //Clear all transition begin indexes.
-        Deque<ModifiableDAWGNode> stack = new ArrayDeque<>();
+        Deque<ModifiableDAWGNode> stack = new ArrayDeque<ModifiableDAWGNode>();
         stack.add(sourceNode);
         while (true) {
             ModifiableDAWGNode node = stack.pollLast();
@@ -748,7 +793,7 @@ public class ModifiableDAWGSet extends DAWGSet {
             compressed.incomingData = new int[(transitionCount + endNode.getIncomingTransitionCount() + 1) * CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS];
             createCompressedIncomingTransitionsData(compressed.incomingData, endNode, 0, '\0', CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS, new int[]{CompressedDAWGSet.INCOMING_TRANSITION_SIZE_IN_INTS});
             //Clear all transition begin indexes.
-            stack = new ArrayDeque<>();
+            stack = new ArrayDeque<ModifiableDAWGNode>();
             stack.add(endNode);
             while (true) {
                 ModifiableDAWGNode node = stack.pollLast();
@@ -771,7 +816,7 @@ public class ModifiableDAWGSet extends DAWGSet {
             return Collections.EMPTY_LIST;
         Collection<ModifiableDAWGNode> ret = wordEndings.values();
         for (int i = suffixText.length - 1; i >= 0; i--) {
-            List<ModifiableDAWGNode> levelNodes = new ArrayList<>();
+            List<ModifiableDAWGNode> levelNodes = new ArrayList<ModifiableDAWGNode>();
             char c = suffixText[i];
             for (ModifiableDAWGNode node : ret) {
                 wordEndings = node.getIncomingTransitions().get(c);
@@ -790,7 +835,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     private void optimizeLetters() {
         if (optimized)
             return;
-        NavigableSet<Character> newLetters = new TreeSet<>();
+        NavigableSet<Character> newLetters = new TreeSet<Character>();
         enumerateAllLetters(sourceNode, newLetters);
         alphabet.clear();
         alphabet.addAll(newLetters);
@@ -836,7 +881,7 @@ public class ModifiableDAWGSet extends DAWGSet {
      */
     @Override
     public NavigableSet<Character> getAlphabet() {
-        return Collections.unmodifiableNavigableSet(alphabet);
+        return new UnmodifiableNavigableSet<Character>(alphabet);
     }
     
     private void countNodes(ModifiableDAWGNode originNode, HashSet<Integer> nodeIDHashSet) {
@@ -850,7 +895,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     
     @Override
     public int getNodeCount() {
-        HashSet<Integer> ids = new HashSet<>();
+        HashSet<Integer> ids = new HashSet<Integer>();
         countNodes(sourceNode, ids);
         return ids.size();
     }
@@ -928,7 +973,12 @@ public class ModifiableDAWGSet extends DAWGSet {
                 @Override
                 public SimpleEntry<Character, DAWGNode> next() {
                     Entry<Character, ModifiableDAWGNode> next = it.next();
-                    return new SimpleEntry<>(next.getKey(), next.getValue());
+                    return new SimpleEntry<Character, DAWGNode>(next.getKey(), next.getValue());
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException();
                 }
             };
         }
@@ -968,7 +1018,12 @@ public class ModifiableDAWGSet extends DAWGSet {
                 @Override
                 public SimpleEntry<Character, Collection<? extends DAWGNode>> next() {
                     Entry<Character, Map<Integer, ModifiableDAWGNode>> next = it.next();
-                    return new SimpleEntry<>(next.getKey(), next.getValue().values());
+                    return new SimpleEntry<Character, Collection<? extends DAWGNode>>(next.getKey(), next.getValue().values());
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException();
                 }
             };
         }

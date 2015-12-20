@@ -22,12 +22,6 @@
 
 package org.quinto.dawg;
 
-import org.quinto.dawg.CompressedDAWGNode;
-import org.quinto.dawg.ModifiableDAWGSet;
-import org.quinto.dawg.StringsFilter;
-import org.quinto.dawg.DAWGSet;
-import org.quinto.dawg.CompressedDAWGSet;
-import org.quinto.dawg.CompressedDAWGSetLargeAlphabet;
 import org.quinto.dawg.util.Permutations;
 import org.quinto.dawg.util.Serializer;
 import java.io.FileInputStream;
@@ -99,13 +93,13 @@ public class DAWGSimpleTest {
         assertEquals(0, cdawg.getNodesBySuffix("axes").size());
         assertEquals(0, cdawg.getNodesBySuffix("bxes").size());
         
-        Set<String> expected = new HashSet<>(Arrays.asList("as", "xes"));
-        Set<String> actual = new HashSet<>();
+        Set<String> expected = new HashSet<String>(Arrays.asList("as", "xes"));
+        Set<String> actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith("s"))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith("s"))
             actual.add(word);
         assertEquals(expected, actual);
@@ -166,13 +160,13 @@ public class DAWGSimpleTest {
             assertEquals(wordsXe[i++], word);
 
         String wordsS[] = {"xes", "xs"};
-        Set<String> expected = new HashSet<>(Arrays.asList(wordsS));
-        Set<String> actual = new HashSet<>();
+        Set<String> expected = new HashSet<String>(Arrays.asList(wordsS));
+        Set<String> actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith("s"))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith("s"))
             actual.add(word);
         assertEquals(expected, actual);
@@ -241,7 +235,7 @@ public class DAWGSimpleTest {
             "iez",
             "ions"
         };
-        Set<String> expected = new HashSet<>(Arrays.asList(words));
+        Set<String> expected = new HashSet<String>(Arrays.asList(words));
         for (String w[] : Permutations.from(words)) {
             ModifiableDAWGSet dawg = new ModifiableDAWGSet();
             dawg.addAll(w);
@@ -256,12 +250,12 @@ public class DAWGSimpleTest {
                 assertEquals(words[i++], s);
             assertEquals(words.length, i);
 
-            Set<String> actual = new HashSet<>();
+            Set<String> actual = new HashSet<String>();
             for (String word : dawg.getStringsEndingWith(""))
                 actual.add(word);
             assertEquals(expected, actual);
 
-            actual = new HashSet<>();
+            actual = new HashSet<String>();
             for (String word : cdawg.getStringsEndingWith(""))
                 actual.add(word);
             assertEquals(expected, actual);
@@ -280,13 +274,13 @@ public class DAWGSimpleTest {
             "iez",
             "ions"
         };
-        Set<String> expected = new HashSet<>(Arrays.asList(words));
+        Set<String> expected = new HashSet<String>(Arrays.asList(words));
         String removingWord = words[3];
-        Set<String> expectedRemoveOne = new HashSet<>();
+        Set<String> expectedRemoveOne = new HashSet<String>();
         for (String word : words)
             if (!word.equals(removingWord))
                 expectedRemoveOne.add(word);
-        Set<String> expectedRemoveBlank = new HashSet<>();
+        Set<String> expectedRemoveBlank = new HashSet<String>();
         for (String word : words)
             if (!word.isEmpty())
                 expectedRemoveBlank.add(word);
@@ -299,7 +293,7 @@ public class DAWGSimpleTest {
                 assertEquals(words[i++], s);
             assertEquals(words.length, i);
             
-            List<String> list = new ArrayList<>();
+            List<String> list = new ArrayList<String>();
             for (String s : dawg.getStrings("", null, null, true, null, false, null, false))
                 list.add(s);
             Collections.reverse(list);
@@ -310,12 +304,12 @@ public class DAWGSimpleTest {
                 assertEquals(words[i++], s);
             assertEquals(words.length, i);
 
-            Set<String> actual = new HashSet<>();
+            Set<String> actual = new HashSet<String>();
             for (String word : dawg.getStringsEndingWith(""))
                 actual.add(word);
             assertEquals(expected, actual);
 
-            actual = new HashSet<>();
+            actual = new HashSet<String>();
             for (String word : cdawg.getStringsEndingWith(""))
                 actual.add(word);
             assertEquals(expected, actual);
@@ -339,12 +333,12 @@ public class DAWGSimpleTest {
             }
             assertEquals(words.length, i);
 
-            actual = new HashSet<>();
+            actual = new HashSet<String>();
             for (String word : dawg.getStringsEndingWith(""))
                 actual.add(word);
             assertEquals(expectedRemoveOne, actual);
 
-            actual = new HashSet<>();
+            actual = new HashSet<String>();
             for (String word : cdawg.getStringsEndingWith(""))
                 actual.add(word);
             assertEquals(expectedRemoveOne, actual);
@@ -370,12 +364,12 @@ public class DAWGSimpleTest {
             }
             assertEquals(words.length, i);
 
-            actual = new HashSet<>();
+            actual = new HashSet<String>();
             for (String word : dawg.getStringsEndingWith(""))
                 actual.add(word);
             assertEquals(expectedRemoveBlank, actual);
 
-            actual = new HashSet<>();
+            actual = new HashSet<String>();
             for (String word : cdawg.getStringsEndingWith(""))
                 actual.add(word);
             assertEquals(expectedRemoveBlank, actual);
@@ -401,7 +395,7 @@ public class DAWGSimpleTest {
         for (int desc = 0; desc < 2; desc++) {
             if (desc == 1)
                 Collections.reverse(expected);
-            actual = new ArrayList<>();
+            actual = new ArrayList<String>();
             for (String word : dawg.getStrings("ba", null, null, desc == 1, "bac", true, "bad", true))
                 actual.add(word);
             assertEquals(expected, actual);
@@ -411,7 +405,7 @@ public class DAWGSimpleTest {
         for (int desc = 0; desc < 2; desc++) {
             if (desc == 1)
                 Collections.reverse(expected);
-            actual = new ArrayList<>();
+            actual = new ArrayList<String>();
             for (String word : dawg.getStrings("ba", null, null, desc == 1, "bac", true, "badb", true))
                 actual.add(word);
             assertEquals(expected, actual);
@@ -421,7 +415,7 @@ public class DAWGSimpleTest {
         for (int desc = 0; desc < 2; desc++) {
             if (desc == 1)
                 Collections.reverse(expected);
-            actual = new ArrayList<>();
+            actual = new ArrayList<String>();
             for (String word : dawg.getStrings("ba", null, null, desc == 1, "bacb", true, "badd", true))
                 actual.add(word);
             assertEquals(expected, actual);
@@ -431,7 +425,7 @@ public class DAWGSimpleTest {
         for (int desc = 0; desc < 2; desc++) {
             if (desc == 1)
                 Collections.reverse(expected);
-            actual = new ArrayList<>();
+            actual = new ArrayList<String>();
             for (String word : dawg.getStrings("ba", null, null, desc == 1, "bac", true, "badc", true))
                 actual.add(word);
             assertEquals(expected, actual);
@@ -445,7 +439,7 @@ public class DAWGSimpleTest {
         dawg.addAll(words);
         
         List<String> expected = Collections.EMPTY_LIST;
-        List<String> actual = new ArrayList<>();
+        List<String> actual = new ArrayList<String>();
         for (String word : dawg.getStrings("", null, null, false, "", false, "a", false))
             actual.add(word);
         assertEquals(expected, actual);
@@ -458,7 +452,7 @@ public class DAWGSimpleTest {
         dawg.addAll(words);
         
         List<String> expected = Arrays.asList(words);
-        List<String> actual = new ArrayList<>();
+        List<String> actual = new ArrayList<String>();
         for (String word : dawg.getStrings("", null, null, false, "hdd", false, "hgecc", false))
             actual.add(word);
         assertEquals(expected, actual);
@@ -471,7 +465,7 @@ public class DAWGSimpleTest {
         dawg.addAll(words);
         
         List<String> expected = Arrays.asList(words);
-        List<String> actual = new ArrayList<>();
+        List<String> actual = new ArrayList<String>();
         for (String word : dawg.getStrings("", null, null, true, "bfd", false, "cdgd", false))
             actual.add(word);
         assertEquals(expected, actual);
@@ -480,7 +474,7 @@ public class DAWGSimpleTest {
     @Test
     public void getStringsAll() {
         for (int attempt = 0; attempt < 5; attempt++) {
-            NavigableSet<String> wordsSet = new TreeSet<>();
+            NavigableSet<String> wordsSet = new TreeSet<String>();
             for (int i = 0; i < 625; i++)
                 if (attempt < 2 || RANDOM.nextBoolean() || RANDOM.nextBoolean())
                     wordsSet.add(Integer.toString(i, 5).replace('1', 'b').replace('2', 'd').replace('3', 'f').replace('4', 'h').replace("0", ""));
@@ -490,7 +484,7 @@ public class DAWGSimpleTest {
             ModifiableDAWGSet dawg = new ModifiableDAWGSet(wordsSet);
             CompressedDAWGSet cdawg = dawg.compress();
             
-            NavigableSet<String> patternsSet = new TreeSet<>();
+            NavigableSet<String> patternsSet = new TreeSet<String>();
             while (patternsSet.size() < 4) {
                 int i = RANDOM.nextInt(100000);
                 char s[] = String.valueOf(i).replace("0", "").toCharArray();
@@ -517,7 +511,7 @@ public class DAWGSimpleTest {
                                         for (int desc = 0; desc < 2; desc++) {
                                             boolean descending = desc == 1;
                                             List<String> expected = getStrings(words, prefix, substring, suffix, descending, from, inclF, to, inclT);
-                                            List<String> actual = new ArrayList<>();
+                                            List<String> actual = new ArrayList<String>();
                                             for (String s : dawg.getStrings(prefix, substring, suffix, descending, from, inclF, to, inclT))
                                                 actual.add(s);
                                             // Suffix search returns words with no particular order.
@@ -528,7 +522,7 @@ public class DAWGSimpleTest {
                                             }
                                             assertEquals(/*"Prefix: " + prefix + ", substring: " + substring + ", suffix: " + suffix + ", " + (inclF ? "[ " : "( ") + from + " .. " + to + (inclT ? " ]" : " )") + ", " + (descending ? "desc" : "asc"),*/ expected, actual);
 
-                                            actual = new ArrayList<>();
+                                            actual = new ArrayList<String>();
                                             for (String s : cdawg.getStrings(prefix, substring, suffix, descending, from, inclF, to, inclT))
                                                 actual.add(s);
                                             // Suffix search returns words with no particular order.
@@ -550,7 +544,7 @@ public class DAWGSimpleTest {
     }
     
     private static List<String> getStrings(String words[], String prefix, String substring, String suffix, boolean desc, String from, boolean inclFrom, String to, boolean inclTo) {
-        List<String> ret = new ArrayList<>();
+        List<String> ret = new ArrayList<String>();
         for (String word : words) {
             if (prefix != null && !word.startsWith(prefix) || substring != null && !word.contains(substring) || suffix != null && !word.endsWith(suffix))
                 continue;
@@ -623,25 +617,25 @@ public class DAWGSimpleTest {
             assertEquals(wordsAs[i++], word);
 
         String wordsOns[] = {"assions", "erions", "erons", "ions", "ons"};
-        Set<String> expected = new HashSet<>(Arrays.asList(wordsOns));
-        Set<String> actual = new HashSet<>();
+        Set<String> expected = new HashSet<String>(Arrays.asList(wordsOns));
+        Set<String> actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith("ons"))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith("ons"))
             actual.add(word);
         assertEquals(expected, actual);
 
         String wordsXe[] = {"xe"};
-        expected = new HashSet<>(Arrays.asList(wordsXe));
-        actual = new HashSet<>();
+        expected = new HashSet<String>(Arrays.asList(wordsXe));
+        actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith("xe"))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith("xe"))
             actual.add(word);
         assertEquals(expected, actual);
@@ -652,7 +646,10 @@ public class DAWGSimpleTest {
         assertEquals(25, cdawg.getNodeCount());
         assertEquals(39, cdawg.size());
         
-        int maxLength = Arrays.stream(words).mapToInt(s -> s.length()).max().orElse(0);
+        int maxLength = 0;
+        for (String s : words)
+            if (maxLength < s.length())
+                maxLength = s.length();
         assertEquals(maxLength, cdawg.getMaxLength(cdawg.getSourceNode(), 0));
         
         assertEquals(cdawg, Serializer.serializeAndRead(cdawg));
@@ -660,23 +657,23 @@ public class DAWGSimpleTest {
         ModifiableDAWGSet removed = cdawg.uncompress();
         removed.removeAll(Arrays.asList(wordsOns));
         assertFalse(removed.getStringsEndingWith("ons").iterator().hasNext());
-        expected = new HashSet<>(Arrays.asList(words));
+        expected = new HashSet<String>(Arrays.asList(words));
         expected.removeAll(Arrays.asList(wordsOns));
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : removed)
             actual.add(word);
         assertEquals(expected, actual);
         
         ModifiableDAWGSet retained = cdawg.uncompress();
         retained.retainAll(Arrays.asList(wordsOns));
-        expected = new HashSet<>(Arrays.asList(words));
+        expected = new HashSet<String>(Arrays.asList(words));
         expected.retainAll(Arrays.asList(wordsOns));
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : retained)
             actual.add(word);
         assertEquals(expected, actual);
         expected = actual;
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : retained.getStringsEndingWith("ons"))
             actual.add(word);
         assertEquals(expected, actual);
@@ -694,14 +691,14 @@ public class DAWGSimpleTest {
             dawg = cdawg.uncompress();
             dawg.remove(removingWord);
             assertEquals(words.length - 1, dawg.size());
-            expected = new HashSet<>(Arrays.asList(words));
+            expected = new HashSet<String>(Arrays.asList(words));
             expected.remove(removingWord);
-            actual = new HashSet<>();
+            actual = new HashSet<String>();
             for (String word : dawg)
                 actual.add(word);
             assertEquals(expected, actual);
             
-            actual = new HashSet<>();
+            actual = new HashSet<String>();
             dawg = cdawg.uncompress();
             for (Iterator<String> it = dawg.iterator(); it.hasNext();) {
                 String word = it.next();
@@ -711,7 +708,7 @@ public class DAWGSimpleTest {
                     actual.add(word);
             }
             assertEquals(expected, actual);
-            actual = new HashSet<>();
+            actual = new HashSet<String>();
             for (String word : dawg)
                 actual.add(word);
             assertEquals(expected, actual);
@@ -798,10 +795,23 @@ public class DAWGSimpleTest {
     @Test
     public void file() throws IOException, ClassNotFoundException {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
-        // Source: http://www.mieliestronk.com/wordlist.html
-        try (FileInputStream fis = new FileInputStream("corncob_lowercase.txt")) {
+        FileInputStream fis = null;
+        IOException ex = null;
+        try {
+            // Source: http://www.mieliestronk.com/wordlist.html
+            fis = new FileInputStream("corncob_lowercase.txt");
             dawg.addAll(fis);
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    ex = e;
+                }
+            }
         }
+        if (ex != null)
+            throw ex;
         CompressedDAWGSet cdawg = dawg.compress();
         ModifiableDAWGSet udawg = cdawg.uncompress();
         
@@ -1088,52 +1098,52 @@ public class DAWGSimpleTest {
         assertFalse(cdawg.contains("a"));
         assertTrue(cdawg.contains("add"));
 
-        Set<String> expected = new HashSet<>(Arrays.asList("", "add"));
-        Set<String> actual = new HashSet<>();
+        Set<String> expected = new HashSet<String>(Arrays.asList("", "add"));
+        Set<String> actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
 
         dawg.add("a");
         cdawg = dawg.compress();
-        expected = new HashSet<>(Arrays.asList("", "a", "add"));
-        actual = new HashSet<>();
+        expected = new HashSet<String>(Arrays.asList("", "a", "add"));
+        actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
 
         dawg.add("ad");
         cdawg = dawg.compress();
-        expected = new HashSet<>(Arrays.asList("", "a", "ad", "add"));
-        actual = new HashSet<>();
+        expected = new HashSet<String>(Arrays.asList("", "a", "ad", "add"));
+        actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
         
         dawg.remove("");
         cdawg = dawg.compress();
-        expected = new HashSet<>(Arrays.asList("a", "ad", "add"));
-        actual = new HashSet<>();
+        expected = new HashSet<String>(Arrays.asList("a", "ad", "add"));
+        actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
@@ -1160,13 +1170,13 @@ public class DAWGSimpleTest {
         assertEquals("a", iterator.next());
         assertFalse(iterator.hasNext());
 
-        Set<String> expected = new HashSet<>(Arrays.asList("", "a"));
-        Set<String> actual = new HashSet<>();
+        Set<String> expected = new HashSet<String>(Arrays.asList("", "a"));
+        Set<String> actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
@@ -1229,13 +1239,13 @@ public class DAWGSimpleTest {
         assertEquals("\0", iterator.next());
         assertFalse(iterator.hasNext());
 
-        Set<String> expected = new HashSet<>(Arrays.asList("", "\0"));
-        Set<String> actual = new HashSet<>();
+        Set<String> expected = new HashSet<String>(Arrays.asList("", "\0"));
+        Set<String> actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
@@ -1288,13 +1298,13 @@ public class DAWGSimpleTest {
         assertEquals("tetatet", iterator.next());
         assertFalse(iterator.hasNext());
 
-        Set<String> expected = new HashSet<>(Arrays.asList("tet", "tetatet"));
-        Set<String> actual = new HashSet<>();
+        Set<String> expected = new HashSet<String>(Arrays.asList("tet", "tetatet"));
+        Set<String> actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
@@ -1313,13 +1323,13 @@ public class DAWGSimpleTest {
         assertEquals("tetatet", iterator.next());
         assertFalse(iterator.hasNext());
 
-        expected = new HashSet<>(Arrays.asList("tet", "tetatet"));
-        actual = new HashSet<>();
+        expected = new HashSet<String>(Arrays.asList("tet", "tetatet"));
+        actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith("tet"))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith("tet"))
             actual.add(word);
         assertEquals(expected, actual);
@@ -1392,13 +1402,13 @@ public class DAWGSimpleTest {
         assertEquals("tetra", iterator.next());
         assertFalse(iterator.hasNext());
 
-        Set<String> expected = new HashSet<>(Arrays.asList("tet", "tetra"));
-        Set<String> actual = new HashSet<>();
+        Set<String> expected = new HashSet<String>(Arrays.asList("tet", "tetra"));
+        Set<String> actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith(""))
             actual.add(word);
         assertEquals(expected, actual);
@@ -1417,24 +1427,24 @@ public class DAWGSimpleTest {
         assertEquals("tetra", iterator.next());
         assertFalse(iterator.hasNext());
 
-        expected = new HashSet<>(Arrays.asList("tet"));
-        actual = new HashSet<>();
+        expected = new HashSet<String>(Arrays.asList("tet"));
+        actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith("tet"))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith("tet"))
             actual.add(word);
         assertEquals(expected, actual);
 
-        expected = new HashSet<>(Arrays.asList("tet"));
-        actual = new HashSet<>();
+        expected = new HashSet<String>(Arrays.asList("tet"));
+        actual = new HashSet<String>();
         for (String word : dawg.getStringsEndingWith("t"))
             actual.add(word);
         assertEquals(expected, actual);
         
-        actual = new HashSet<>();
+        actual = new HashSet<String>();
         for (String word : cdawg.getStringsEndingWith("t"))
             actual.add(word);
         assertEquals(expected, actual);
@@ -1512,7 +1522,7 @@ public class DAWGSimpleTest {
     @Test
     public void navigableSet() {
         List<String> words = Arrays.asList("abcd", "beast", "bench", "best", "car");
-        List<String> wordsReversed = new ArrayList<>(words);
+        List<String> wordsReversed = new ArrayList<String>(words);
         Collections.reverse(wordsReversed);
         ModifiableDAWGSet mdawg = new ModifiableDAWGSet(words);
         for (int i = 0; i < 2; i++) {
@@ -1556,7 +1566,7 @@ public class DAWGSimpleTest {
     }
     
     private static List<String> toList(Iterator<String> it) {
-        List<String> ret = new ArrayList<>();
+        List<String> ret = new ArrayList<String>();
         while (it.hasNext())
             ret.add(it.next());
         return ret;
@@ -1566,9 +1576,9 @@ public class DAWGSimpleTest {
     public void descending() {
         ModifiableDAWGSet dawg = new ModifiableDAWGSet();
         dawg.addAll("kex", "kexx", "kexy", "key", "keyx", "keyy", "kez");
-        assertEquals(Arrays.asList("kex", "kexx", "kexy"), new ArrayList<>(dawg.headSet("key", false)));
-        assertEquals(Arrays.asList("kexy", "kexx", "kex"), new ArrayList<>(dawg.descendingSet().tailSet("key", false)));
-        assertEquals(Arrays.asList("kexy", "kexx", "kex"), new ArrayList<>(dawg.headSet("key", false).descendingSet()));
+        assertEquals(Arrays.asList("kex", "kexx", "kexy"), new ArrayList<String>(dawg.headSet("key", false)));
+        assertEquals(Arrays.asList("kexy", "kexx", "kex"), new ArrayList<String>(dawg.descendingSet().tailSet("key", false)));
+        assertEquals(Arrays.asList("kexy", "kexx", "kex"), new ArrayList<String>(dawg.headSet("key", false).descendingSet()));
         assertEquals(Arrays.asList("kexy", "kexx", "kex"), toList(dawg.headSet("key", false).descendingIterator()));
         assertEquals(Arrays.asList("kex", "kexx", "kexy"), toList(dawg.descendingSet().tailSet("key", false).descendingIterator()));
         assertEquals(Arrays.asList("kex", "kexx", "kexy"), toList(dawg.headSet("key", false).descendingSet().descendingIterator()));

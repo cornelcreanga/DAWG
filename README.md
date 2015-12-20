@@ -1,7 +1,7 @@
 ##About
 **DAWG** (Directed Acyclic Word Graph) is a **Java library** capable of constructing character-sequence-storing, directed acyclic graphs of minimal size.
 
-This is an absolutely new version of a [MDAG](https://github.com/klawson88/MDAG) library initially started by [Kevin Lawson](https://github.com/klawson88). This fork was renamed to simplify googling.
+This is a new version of a [MDAG](https://github.com/klawson88/MDAG) library initially started by [Kevin Lawson](https://github.com/klawson88). This fork was renamed to simplify googling.
 
 The library is small, deceptively simple, fast and powerful. It differs from other libraries capable of creating minimal directed acyclic graphs
 (also known as **MAFSA** (Minimal Acyclic Finite State Automaton), **MDAG** (Minimalistic Directed Acyclic Graph), **DAWG** ([Directed Acyclic Word Graph](https://en.wikipedia.org/wiki/Directed_acyclic_word_graph)) or **DAFSA** ([Deterministic Acyclic Finite State Automaton](https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton))) in the following ways:
@@ -33,7 +33,13 @@ Additions in this fork:
 - Issues of original repository resolved
 - Pull requests included
 
-Beware: this fork isn't API compatible with the original library. Also, it requires Java 8 but still no additional dependencies.
+Beware: this fork isn't API compatible with the original library.
+
+Requirements:
+
+- Java 6
+- No additional runtime dependencies
+- JUnit (for tests)
 
 ##How to use
 
@@ -75,12 +81,13 @@ Beware: this fork isn't API compatible with the original library. Also, it requi
 Further plans:
 
 - ~~Better format of compression for large alphabets~~ (finished)
-- Lower the requirements to Java 6
+- ~~Lower the requirements to Java 6~~ (finished)
 - Optimize nodes traversal via `TreeSet.subSet` methods
 - Replace SemiNavigableMap (internal class) with NavigableMap (for API publication)
 - Public API for graph traversal
 - Implement NavigableSet for values() in DAWGSetValuedMap
 - Implement Apache Commons Collections interfaces (Trie, MultiValuedMap etc.)
+- Add and implement NavigableMultiValuedMap interface
 - Add API documentation, internal structure description, usage examples and javadoc
 - Add benchmarks and features comparison with other data structures
 

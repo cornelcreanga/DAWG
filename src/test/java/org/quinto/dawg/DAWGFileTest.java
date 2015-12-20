@@ -22,9 +22,6 @@
 
 package org.quinto.dawg;
 
-import org.quinto.dawg.ModifiableDAWGSet;
-import org.quinto.dawg.ModifiableDAWGNode;
-import org.quinto.dawg.CompressedDAWGSet;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -52,16 +49,38 @@ public class DAWGFileTest {
     
     @BeforeClass
     public static void initClass() throws IOException {
-        wordArrayList = new ArrayList<>(100000);
-        try (FileReader freader = new FileReader("words.txt");
-             BufferedReader breader = new BufferedReader(freader)) {
-            String currentWord;
-            while ((currentWord = breader.readLine()) != null)
-                wordArrayList.add(currentWord);
+        wordArrayList = new ArrayList<String>(100000);
+        FileReader freader = null;
+        IOException ex = null;
+        try {
+            freader = new FileReader("words.txt");
+            BufferedReader breader = new BufferedReader(freader);
+            try {
+                String currentWord;
+                while ((currentWord = breader.readLine()) != null)
+                    wordArrayList.add(currentWord);
+            } finally {
+                try {
+                    breader.close();
+                } catch (IOException e) {
+                    ex = e;
+                }
+            }
+        } finally {
+            if (freader != null) {
+                try {
+                    freader.close();
+                } catch (IOException e) {
+                    if (ex == null)
+                        ex = e;
+                }
+            }
         }
+        if (ex != null)
+            throw ex;
         dawg1 = new ModifiableDAWGSet(wordArrayList);
         
-        ArrayList<String> wordArrayList2 = new ArrayList<>(wordArrayList);
+        ArrayList<String> wordArrayList2 = new ArrayList<String>(wordArrayList);
         Collections.shuffle(wordArrayList2);
         dawg2 = dawg1.compress();
     }
@@ -116,7 +135,7 @@ public class DAWGFileTest {
         int wordArrayListSize = wordArrayList.size();
         
         for (int i = 0; i < numberOfRuns; i++) {
-            ArrayList<String> wordArrayList2 = new ArrayList<>(wordArrayList);
+            ArrayList<String> wordArrayList2 = new ArrayList<String>(wordArrayList);
             Collections.shuffle(wordArrayList2);
             int wordIndex = (int)(Math.random() * wordArrayListSize);
 
@@ -159,7 +178,7 @@ public class DAWGFileTest {
     @Test
     public void removeWord2() {
         for (int interval[] : removeWord2DataProvider()) {
-            ArrayList<String> wordArrayList2 = new ArrayList<>(wordArrayList);
+            ArrayList<String> wordArrayList2 = new ArrayList<String>(wordArrayList);
             Collections.shuffle(wordArrayList2);
             
             int intervalBegin = interval[0];
@@ -185,7 +204,7 @@ public class DAWGFileTest {
     
     @Test
     public void removeWord() {
-        ArrayList<String> wordArrayList2 = new ArrayList<>(wordArrayList);
+        ArrayList<String> wordArrayList2 = new ArrayList<String>(wordArrayList);
         Collections.swap(wordArrayList2, 65958, 65953);
         int intervalBegin = 65948;
         int onePastIntervalEnd = 65968;
@@ -209,10 +228,10 @@ public class DAWGFileTest {
     
     @Test
     public void getAllStringsTest() {
-        NavigableSet<String> wordNavigableSet1 = new TreeSet<>();
+        NavigableSet<String> wordNavigableSet1 = new TreeSet<String>();
         for (String word : dawg1.getAllStrings())
             wordNavigableSet1.add(word);
-        NavigableSet<String> wordNavigableSet2 = new TreeSet<>();
+        NavigableSet<String> wordNavigableSet2 = new TreeSet<String>();
         for (String word : dawg2.getAllStrings())
             wordNavigableSet2.add(word);
         assertTrue(wordNavigableSet1.containsAll(wordArrayList));
@@ -235,27 +254,27 @@ public class DAWGFileTest {
     @Test
     public void getStringsStartingWithTest() {
         for (String prefixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            List<String> controlSet = new ArrayList<>();
+            List<String> controlSet = new ArrayList<String>();
 
             for (String str : wordArrayList) {
                 if (str.startsWith(prefixStr))
                     controlSet.add(str);
             }
             
-            List<String> expectedSet = new ArrayList<>();
+            List<String> expectedSet = new ArrayList<String>();
             for (String word : dawg1.getStringsStartingWith(prefixStr))
                 expectedSet.add(word);
 
             assertEquals(controlSet, expectedSet);
             
-            expectedSet = new ArrayList<>();
+            expectedSet = new ArrayList<String>();
             for (String word : dawg1.getStrings(prefixStr, null, null, true, null, false, null, false))
                 expectedSet.add(word);
             Collections.reverse(expectedSet);
 
             assertEquals(controlSet, expectedSet);
             
-            expectedSet = new ArrayList<>();
+            expectedSet = new ArrayList<String>();
             for (String word : dawg2.getStringsStartingWith(prefixStr))
                 expectedSet.add(word);
             
@@ -266,18 +285,18 @@ public class DAWGFileTest {
     @Test
     public void getStringsWithSubstringTest() {
         for (String substringStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            List<String> controlSet = new ArrayList<>();
+            List<String> controlSet = new ArrayList<String>();
             for (String str : wordArrayList) {
                 if (str.contains(substringStr))
                     controlSet.add(str);
             }
             
-            List<String> actual = new ArrayList<>();
+            List<String> actual = new ArrayList<String>();
             for (String s : dawg1.getStringsWithSubstring(substringStr))
                 actual.add(s);
             assertEquals(controlSet, actual);
             
-            actual = new ArrayList<>();
+            actual = new ArrayList<String>();
             for (String s : dawg2.getStringsWithSubstring(substringStr))
                 actual.add(s);
             assertEquals(controlSet, actual);
@@ -287,18 +306,18 @@ public class DAWGFileTest {
     @Test
     public void getStringsEndingWithTest() {
         for (String suffixStr : new String[]{"ang", "iter", "con", "pro", "nan", "ing", "inter", "ton", "tion" }) {
-            Set<String> controlSet = new HashSet<>();
+            Set<String> controlSet = new HashSet<String>();
             for (String str : wordArrayList) {
                 if (str.endsWith(suffixStr))
                     controlSet.add(str);
             }
 
-            Set<String> actual = new HashSet<>();
+            Set<String> actual = new HashSet<String>();
             for (String s : dawg1.getStringsEndingWith(suffixStr))
                 actual.add(s);
             assertEquals(controlSet, actual);
             
-            actual = new HashSet<>();
+            actual = new HashSet<String>();
             for (String s : dawg2.getStringsEndingWith(suffixStr))
                 actual.add(s);
             assertEquals(controlSet, actual);

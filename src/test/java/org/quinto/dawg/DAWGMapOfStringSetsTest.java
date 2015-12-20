@@ -1,7 +1,5 @@
 package org.quinto.dawg;
 
-import org.quinto.dawg.ModifiableDAWGMapOfStringSets;
-import org.quinto.dawg.CompressedDAWGMapOfStringSets;
 import org.quinto.dawg.util.Serializer;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,13 +29,13 @@ public class DAWGMapOfStringSetsTest {
     
     @Test
     public void putAll() {
-        Map<String, Set<String>> data = new HashMap<>();
-        Set<String> set = new HashSet<>();
+        Map<String, Set<String>> data = new HashMap<String, Set<String>>();
+        Set<String> set = new HashSet<String>();
         set.add("0");
         set.add("1");
         set.add("2");
         data.put("a", set);
-        Set<String> another = new HashSet<>();
+        Set<String> another = new HashSet<String>();
         another.add("3");
         another.add("4");
         another.add("5");
@@ -55,7 +53,7 @@ public class DAWGMapOfStringSetsTest {
     }
     
     private static Set<String> asSet(String... values) {
-        return new TreeSet<>(asList(values));
+        return new TreeSet<String>(asList(values));
     }
     
     @Test
@@ -111,7 +109,7 @@ public class DAWGMapOfStringSetsTest {
     }
     
     private static List<String> concat(Entry<String, Set<String>> e) {
-        List<String> ret = new ArrayList<>();
+        List<String> ret = new ArrayList<String>();
         for (String value : e.getValue())
           ret.add(e.getKey() + '@' + value);
         return ret;
@@ -148,7 +146,7 @@ public class DAWGMapOfStringSetsTest {
         assertEquals(0, prefixed.subMap("key", false, "key1", false).size());
         assertEquals(1, prefixed.subMap("key", false, "key1", true).size());
         assertEquals("key1", prefixed.subMap("key", false, "key1", true).firstKey());
-        assertEquals(Arrays.asList("keyy", "keyx", "key1", "key"), new ArrayList<>(prefixed.descendingMap().keySet()));
+        assertEquals(Arrays.asList("keyy", "keyx", "key1", "key"), new ArrayList<String>(prefixed.descendingMap().keySet()));
         
         assertEquals(asList("key@val0", "key@val1", "key@val2"), concat(dawg.tailMap("key", true).entrySet().iterator().next()));
         assertEquals(asList("key1@val0", "key1@val1", "key1@val2"), concat(dawg.tailMap("key", false).entrySet().iterator().next()));

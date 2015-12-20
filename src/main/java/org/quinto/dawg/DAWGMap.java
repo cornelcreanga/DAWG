@@ -13,6 +13,7 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
+import org.quinto.dawg.util.ExtraMethodsMap;
 
 public class DAWGMap extends AbstractDAWGMap<String> {
     DAWGMap() {
@@ -201,7 +202,7 @@ public class DAWGMap extends AbstractDAWGMap<String> {
         return keyIterator(dawg, desc);
     }
     
-    private Iterator<String> keyIterator(NavigableSet<String> set, boolean desc) {
+    private Iterator<String> keyIterator(final NavigableSet<String> set, final boolean desc) {
         return new Iterator<String>() {
             private final Iterator<String> delegate = desc ? set.descendingIterator() : set.iterator();
             
@@ -226,7 +227,7 @@ public class DAWGMap extends AbstractDAWGMap<String> {
         return entryIterator(dawg);
     }
     
-    private Iterator<Entry<String, String>> entryIterator(NavigableSet<String> set) {
+    private Iterator<Entry<String, String>> entryIterator(final NavigableSet<String> set) {
         return new Iterator<Entry<String, String>>() {
             private final Iterator<String> delegate = set.iterator();
             
@@ -251,7 +252,7 @@ public class DAWGMap extends AbstractDAWGMap<String> {
         return valueIterator(dawg);
     }
     
-    private Iterator<String> valueIterator(NavigableSet<String> set) {
+    private Iterator<String> valueIterator(final NavigableSet<String> set) {
         return new Iterator<String>() {
             private final Iterator<String> delegate = set.iterator();
             
@@ -454,7 +455,7 @@ public class DAWGMap extends AbstractDAWGMap<String> {
             if (!(o instanceof Entry))
                 return false;
             Entry<String, String> e = (Entry<String, String>)o;
-            return map.remove(e.getKey(), e.getValue());
+            return ((ExtraMethodsMap)map).remove(e.getKey(), e.getValue());
         }
 
         @Override
@@ -533,7 +534,7 @@ public class DAWGMap extends AbstractDAWGMap<String> {
         }
     }
     
-    private class SubMap extends AbstractMap<String, String> implements NavigableMap<String, String> {
+    private class SubMap extends AbstractMap<String, String> implements NavigableMap<String, String>, ExtraMethodsMap<String, String> {
         private final NavigableSet<String> delegate;
         private final boolean desc;
 

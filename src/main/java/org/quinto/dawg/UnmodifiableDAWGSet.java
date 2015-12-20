@@ -4,14 +4,10 @@ import org.quinto.dawg.util.SemiNavigableMap;
 import org.quinto.dawg.util.UnmodifiableIterable;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
-import java.util.Spliterator;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
+import org.quinto.dawg.util.UnmodifiableNavigableSet;
 
 class UnmodifiableDAWGSet extends DAWGSet {
     private final DAWGSet delegate;
@@ -19,7 +15,7 @@ class UnmodifiableDAWGSet extends DAWGSet {
     
     public UnmodifiableDAWGSet(DAWGSet delegate) {
         this.delegate = delegate;
-        this.unmodifiableDelegate = Collections.unmodifiableNavigableSet(delegate);
+        this.unmodifiableDelegate = new UnmodifiableNavigableSet<String>(delegate);
     }
 
     @Override
@@ -182,10 +178,10 @@ class UnmodifiableDAWGSet extends DAWGSet {
         return delegate.last();
     }
 
-    @Override
+    /*@Override
     public Spliterator<String> spliterator() {
         return unmodifiableDelegate.spliterator();
-    }
+    }*/
 
     @Override
     public boolean isEmpty() {
@@ -242,7 +238,7 @@ class UnmodifiableDAWGSet extends DAWGSet {
         throw new UnsupportedOperationException();
     }
 
-    @Override
+    /*@Override
     public boolean removeIf(Predicate<? super String> filter) {
         throw new UnsupportedOperationException();
     }
@@ -260,7 +256,7 @@ class UnmodifiableDAWGSet extends DAWGSet {
     @Override
     public void forEach(Consumer<? super String> action) {
         unmodifiableDelegate.forEach(action);
-    }
+    }*/
 
     @Override
     public String toGraphViz(boolean withNodeIds, boolean withIncomingTransitions) {
@@ -279,27 +275,27 @@ class UnmodifiableDAWGSet extends DAWGSet {
 
     @Override
     public Iterable<String> getAllStrings() {
-        return new UnmodifiableIterable<>(delegate.getAllStrings());
+        return new UnmodifiableIterable<String>(delegate.getAllStrings());
     }
 
     @Override
     public Iterable<String> getStringsStartingWith(String prefixStr) {
-        return new UnmodifiableIterable<>(delegate.getStringsStartingWith(prefixStr));
+        return new UnmodifiableIterable<String>(delegate.getStringsStartingWith(prefixStr));
     }
 
     @Override
     public Iterable<String> getStringsWithSubstring(String str) {
-        return new UnmodifiableIterable<>(delegate.getStringsWithSubstring(str));
+        return new UnmodifiableIterable<String>(delegate.getStringsWithSubstring(str));
     }
 
     @Override
     public Iterable<String> getStringsEndingWith(String suffixStr) {
-        return new UnmodifiableIterable<>(delegate.getStringsEndingWith(suffixStr));
+        return new UnmodifiableIterable<String>(delegate.getStringsEndingWith(suffixStr));
     }
 
     @Override
     public Iterable<String> getStrings(String prefixString, String subString, String suffixString, boolean descending, String fromString, boolean inclFrom, String toString, boolean inclTo) {
-        return new UnmodifiableIterable<>(delegate.getStrings(prefixString, subString, suffixString, descending, fromString, inclFrom, toString, inclTo));
+        return new UnmodifiableIterable<String>(delegate.getStrings(prefixString, subString, suffixString, descending, fromString, inclFrom, toString, inclTo));
     }
 
     @Override
@@ -309,7 +305,7 @@ class UnmodifiableDAWGSet extends DAWGSet {
 
     @Override
     public NavigableSet<String> prefixSet(String prefix) {
-        return Collections.unmodifiableNavigableSet(delegate.prefixSet(prefix));
+        return new UnmodifiableNavigableSet<String>(delegate.prefixSet(prefix));
     }
 
     @Override

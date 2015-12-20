@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
 // Implementation source: http://stackoverflow.com/a/14444037/4540645
 // Author: Yevgen Yampolskiy (http://stackoverflow.com/users/1321867/yevgen-yampolskiy)
 // Used here for testing purposes only.
-public class Permutations<E> implements  Iterator<E[]> {
+public class Permutations<E> implements Iterator<E[]> {
     private final E arr[];
     private final int ind[];
     private boolean has_next;
@@ -20,7 +20,7 @@ public class Permutations<E> implements  Iterator<E[]> {
         return new Iterable<E[]>() {
             @Override
             public Iterator<E[]> iterator() {
-                return new Permutations<>( arr );
+                return new Permutations<E>( arr );
             }
         };
     }
@@ -28,7 +28,7 @@ public class Permutations<E> implements  Iterator<E[]> {
     private Permutations( E arr[] ) {
         this.arr = arr.clone();
         ind = new int[arr.length];
-        Map<E, Integer> hm = new HashMap<>();
+        Map<E, Integer> hm = new HashMap<E, Integer>();
         for (int i = 0; i < arr.length; i++) {
             Integer n = hm.get(arr[i]);
             if (n == null) {

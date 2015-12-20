@@ -4,9 +4,10 @@ import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableMap;
-import java.util.Objects;
+import org.quinto.dawg.util.ExtraMethodsMap;
+import org.quinto.dawg.util.Objects;
 
-abstract class AbstractDAWGMap<V> extends AbstractMap<String, V> implements NavigableMap<String, V> {
+abstract class AbstractDAWGMap<V> extends AbstractMap<String, V> implements NavigableMap<String, V>, ExtraMethodsMap<String, V> {
     static final char KEY_VALUE_SEPARATOR = '\0';
     static final char KEY_VALUE_SEPARATOR_EXCLUSIVE = '\1';
     DAWGSet dawg;

@@ -1,7 +1,5 @@
 package org.quinto.dawg;
 
-import org.quinto.dawg.CompressedDAWGMap;
-import org.quinto.dawg.ModifiableDAWGMap;
 import org.quinto.dawg.util.Serializer;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -79,7 +77,7 @@ public class DAWGMapTest {
         assertEquals(0, prefixed.subMap("key", false, "key1", false).size());
         assertEquals(1, prefixed.subMap("key", false, "key1", true).size());
         assertEquals("key1", prefixed.subMap("key", false, "key1", true).firstKey());
-        assertEquals(Arrays.asList("keyy", "keyx", "key1", "key"), new ArrayList<>(prefixed.descendingMap().keySet()));
+        assertEquals(Arrays.asList("keyy", "keyx", "key1", "key"), new ArrayList<String>(prefixed.descendingMap().keySet()));
         
         assertEquals("key@val2", concat(dawg.tailMap("key", true).entrySet().iterator().next()));
         assertEquals("key1@val2", concat(dawg.tailMap("key", false).entrySet().iterator().next()));
@@ -97,7 +95,7 @@ public class DAWGMapTest {
     
     @Test
     public void putTreeMap() {
-        NavigableMap<String, String> dawg = new TreeMap<>();
+        NavigableMap<String, String> dawg = new TreeMap<String, String>();
         for (String key : new String[]{"kex", "kex1", "kexx", "kexy", "key", "key1", "keyx", "keyy", "kez"}) {
             for (String value : new String[]{"val0", "val1", "val2"}) {
                 dawg.put(key, value);

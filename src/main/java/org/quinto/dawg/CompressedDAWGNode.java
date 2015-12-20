@@ -120,7 +120,7 @@ class CompressedDAWGNode extends DAWGNode {
         };
     }
     
-    public Iterable<CompressedDAWGNode> getIncomingTransitions(char c) {
+    public Iterable<CompressedDAWGNode> getIncomingTransitions(final char c) {
         return new Iterable<CompressedDAWGNode>() {
             private final int from;
             private final int to;

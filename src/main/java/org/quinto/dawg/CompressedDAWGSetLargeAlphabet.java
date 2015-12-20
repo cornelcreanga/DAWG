@@ -73,7 +73,12 @@ class CompressedDAWGSetLargeAlphabet extends CompressedDAWGSet {
                         current -= OUTGOING_TRANSITION_SIZE_IN_INTS;
                     else
                         current += OUTGOING_TRANSITION_SIZE_IN_INTS;
-                    return new SimpleEntry<>(c, node);
+                    return new SimpleEntry<Character, DAWGNode>(c, node);
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException();
                 }
             };
         }

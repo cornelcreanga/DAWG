@@ -1,16 +1,12 @@
 package org.quinto.dawg;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import org.quinto.dawg.util.SemiNavigableMap;
 import org.quinto.dawg.util.LookaheadIterator;
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
 import java.util.AbstractSet;
 import java.util.BitSet;
 import java.util.Collection;
@@ -19,10 +15,13 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.ArrayDeque;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Map;
 import java.util.NavigableSet;
 
 public abstract class DAWGSet extends AbstractSet<String> implements NavigableSet<String>, StringsFilter {
+    private static final SimpleDateFormat dotFileNameDateFormat = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+    
     /**
      * Folder where to save images when {@link #saveAsImage} is called. Default is the relative directory named "temp".
      */
@@ -65,7 +64,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
         dot.append("graph [rankdir=LR, ratio=fill];\n");
         dot.append("node [fontsize=14, shape=circle];\n");
         dot.append("edge [fontsize=12];\n");
-        Deque<DAWGNode> stack = new ArrayDeque<>();
+        Deque<DAWGNode> stack = new ArrayDeque<DAWGNode>();
         BitSet visited = new BitSet();
         stack.add(getSourceNode());
         visited.set(getSourceNode().getId());
@@ -115,19 +114,41 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
 
     public void saveAsImage(boolean withNodeIds, boolean withIncomingTransitions) throws IOException {
         String graphViz = toGraphViz(withNodeIds, withIncomingTransitions);
-        Path dotFile = Files.createTempFile("dawg", ".dot");
-        Files.write(dotFile, graphViz.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
-        Path dir = Paths.get(imagesPath);
-        if (!Files.exists(dir))
-            dir = Files.createDirectory(dir);
-        Path imageFile = Files.createTempFile(dir, "dawg" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssn")), ".png");
-        ProcessBuilder pb = new ProcessBuilder(dotExecutablePath, "-Tpng", dotFile.toFile().getAbsolutePath(), "-o", imageFile.toFile().getAbsolutePath());
+        File dotFile = File.createTempFile("dawg", ".dot");
+        byte bytes[] = graphViz.getBytes("UTF-8");
+        FileOutputStream fos = null;
+        IOException ex = null;
+        try {
+            fos = new FileOutputStream(dotFile);
+            int len = bytes.length;
+            int rem = len;
+            while (rem > 0) {
+                int n = Math.min(rem, 8192);
+                fos.write(bytes, len - rem, n);
+                rem -= n;
+            }
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    ex = e;
+                }
+            }
+        }
+        if (ex != null)
+            throw ex;
+        File dir = new File(imagesPath);
+        if (!dir.exists())
+            dir.mkdirs();
+        File imageFile = File.createTempFile("dawg" + dotFileNameDateFormat.format(new Date()) + (System.nanoTime() % 1000000L), ".png", dir);
+        ProcessBuilder pb = new ProcessBuilder(dotExecutablePath, "-Tpng", dotFile.getAbsolutePath(), "-o", imageFile.getAbsolutePath());
         try {
             pb.start().waitFor();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
-            Files.deleteIfExists(dotFile);
+            dotFile.delete();
         }
     }
     
@@ -228,7 +249,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
     
     abstract int getMaxLength();
     
-    public Iterable<String> getStrings(String prefixString, String subString, String suffixString, boolean descending, String fromString, boolean inclFrom, String toString, boolean inclTo) {
+    public Iterable<String> getStrings(final String prefixString, final String subString, final String suffixString, final boolean descending, final String fromString, final boolean inclFrom, final String toString, final boolean inclTo) {
         if (suffixString != null && !suffixString.isEmpty() && isWithIncomingTransitions() && (prefixString == null || prefixString.isEmpty())) {
             // Suffix search.
             return new Iterable<String>() {
@@ -239,7 +260,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                         private Deque<Character> charsStack;
                         private Deque<Integer> levelsStack;
                         private Deque<Boolean> checkSubStack;
-                        private final Deque<DAWGNode> stack = new ArrayDeque<>();
+                        private final Deque<DAWGNode> stack = new ArrayDeque<DAWGNode>();
                         private char from[];
                         private char to[];
                         private char sub[];
@@ -250,11 +271,11 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                                 buffer = new char[getMaxLength()];
                                 System.arraycopy(suffixString.toCharArray(), 0, buffer, buffer.length - suffixString.length(), suffixString.length());
                                 stack.addAll(originNodes);
-                                checkSubStack = new ArrayDeque<>();
+                                checkSubStack = new ArrayDeque<Boolean>();
                                 checkSubStack.addAll(Collections.nCopies(originNodes.size(), true));
-                                levelsStack = new ArrayDeque<>();
+                                levelsStack = new ArrayDeque<Integer>();
                                 levelsStack.addAll(Collections.nCopies(originNodes.size(), suffixString.length()));
-                                charsStack = new ArrayDeque<>();
+                                charsStack = new ArrayDeque<Character>();
                                 if (subString != null && !subString.isEmpty() && !suffixString.contains(subString))
                                     sub = subString.toCharArray();
                                 if (fromString != null && (!inclFrom || !fromString.isEmpty()))
@@ -367,7 +388,7 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                         String fromStr = fromString;
                         String toStr = toString;
                         String subStr = subString;
-                        stack = new ArrayDeque<>();
+                        stack = new ArrayDeque<DAWGNode>();
                         //attempt to transition down the path denoted by prefixStr
                         DAWGNode originNode = getSourceNode().transition(prefixStr);
                         if (originNode != null && fromStr != null) {
@@ -406,10 +427,10 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
                             buffer = new char[getMaxLength()];
                             System.arraycopy(prefixStr.toCharArray(), 0, buffer, 0, prefixStr.length());
                             stack.add(originNode);
-                            levelsStack = new ArrayDeque<>();
+                            levelsStack = new ArrayDeque<Integer>();
                             levelsStack.add(prefixStr.length() - 1);
-                            charsStack = new ArrayDeque<>();
-                            flagsStack = new ArrayDeque<>();
+                            charsStack = new ArrayDeque<Character>();
+                            flagsStack = new ArrayDeque<Integer>();
                             flagsStack.add(encodeFlags(true, true, true));
                             if (fromStr != null && (!inclFrom || !fromStr.isEmpty()))
                                 from = fromStr.toCharArray();
