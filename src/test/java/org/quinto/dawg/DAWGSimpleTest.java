@@ -22,8 +22,6 @@
 
 package org.quinto.dawg;
 
-import org.quinto.dawg.util.Permutations;
-import org.quinto.dawg.util.Serializer;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,6 +40,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import org.quinto.dawg.util.Permutations;
+import org.quinto.dawg.util.Serializer;
 
 public class DAWGSimpleTest {
     private static final Random RANDOM = new Random(System.nanoTime());
@@ -791,6 +791,68 @@ public class DAWGSimpleTest {
         CompressedDAWGSet cdawg = dawg.compress();
         cdawg.clear();
     }
+    
+    @Test
+    public void sequence() throws IOException, ClassNotFoundException {
+        ModifiableDAWGSet dawg = new ModifiableDAWGSet();
+        dawg.add("ac1");
+        dawg.add("abc1");
+        dawg.add("ac17");
+        dawg.remove("ac1");
+        dawg.add("ac5");
+        dawg.remove("ac17");
+        dawg.compress();
+    }
+    
+    @Test
+    public void sequenceMap() throws IOException, ClassNotFoundException {
+        ModifiableDAWGMap dawg = new ModifiableDAWGMap();
+        dawg.put("a", "1");
+        dawg.put("ab", "1");
+        dawg.put("a", "17");
+        dawg.put("a", "5");
+        CompressedDAWGMap cdawg = dawg.compress();
+        ModifiableDAWGMap udawg = cdawg.uncompress();
+        
+        int i = 0;
+        for (String word : dawg.keySet())
+            i++;
+        assertEquals(2, i);
+        
+        i = 0;
+        for (String word : cdawg.keySet())
+            i++;
+        assertEquals(2, i);
+        
+        i = 0;
+        for (String word : udawg.keySet())
+            i++;
+        assertEquals(2, i);
+
+        i = 0;
+        for (String word : dawg.getUnderlyingSet().getStringsEndingWith(""))
+            i++;
+        assertEquals(2, i);
+
+        i = 0;
+        for (String word : cdawg.getUnderlyingSet().getStringsEndingWith(""))
+            i++;
+        assertEquals(2, i);
+
+        i = 0;
+        for (String word : udawg.getUnderlyingSet().getStringsEndingWith(""))
+            i++;
+        assertEquals(2, i);
+        
+        CompressedDAWGMap serialized = Serializer.serializeAndRead(cdawg);
+        assertEquals(cdawg, serialized);
+        
+        for (DAWGMap d : Arrays.asList(cdawg, udawg, serialized)) {
+            assertEquals(dawg.getUnderlyingSet().getNodeCount(), d.getUnderlyingSet().getNodeCount());
+            assertEquals(dawg.getUnderlyingSet().getTransitionCount(), d.getUnderlyingSet().getTransitionCount());
+            assertEquals(dawg.getUnderlyingSet().getAlphabet(), d.getUnderlyingSet().getAlphabet());
+        }
+    }
 
     @Test
     public void file() throws IOException, ClassNotFoundException {
@@ -847,6 +909,12 @@ public class DAWGSimpleTest {
         
         CompressedDAWGSet serialized = Serializer.serializeAndRead(cdawg);
         assertEquals(cdawg, serialized);
+        
+        for (DAWGSet d : Arrays.asList(cdawg, udawg, serialized)) {
+            assertEquals(dawg.getNodeCount(), d.getNodeCount());
+            assertEquals(dawg.getTransitionCount(), d.getTransitionCount());
+            assertEquals(dawg.getAlphabet(), d.getAlphabet());
+        }
     }
 
     @Test

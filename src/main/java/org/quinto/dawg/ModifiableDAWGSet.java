@@ -594,7 +594,7 @@ public class ModifiableDAWGSet extends DAWGSet {
     private void cloneTransitionPath(ModifiableDAWGNode pivotConfluenceNode, String transitionStringToPivotNode, String str) {
         ModifiableDAWGNode lastTargetNode = pivotConfluenceNode.transition(str);      //Will store the last node which was used as the base of a cloning operation
         ModifiableDAWGNode lastClonedNode = null;                                     //Will store the last cloned node
-        char lastTransitionLabelChar = '\0';                                //Will store the char which labels the transition to lastTargetNode from its parent node in the prefixString's transition path
+        char lastTransitionLabelChar = str.isEmpty() ? '\0' : str.charAt(str.length() - 1); //Will store the char which labels the transition to lastTargetNode from its parent node in the prefixString's transition path
 
         //Loop backwards through the indices of str, using each as a boundary to create substrings of str of decreasing length
         //which will be used to transition to, and duplicate the nodes in the transition path of str from pivotConfluenceNode.
@@ -649,7 +649,7 @@ public class ModifiableDAWGSet extends DAWGSet {
         //in the transition path from sourceNode corresponding to prefixString.
         HashMap<String, Object> firstConfluenceNodeDataHashMap = getTransitionPathFirstConfluenceNodeData(sourceNode, prefixString);
         ModifiableDAWGNode firstConfluenceNodeInPrefix = (ModifiableDAWGNode)firstConfluenceNodeDataHashMap.get("confluenceNode");
-        Integer toFirstConfluenceNodeTransitionCharIndex = (Integer) firstConfluenceNodeDataHashMap.get("toConfluenceNodeTransitionCharIndex");
+        Integer toFirstConfluenceNodeTransitionCharIndex = (Integer)firstConfluenceNodeDataHashMap.get("toConfluenceNodeTransitionCharIndex");
         
         //Remove the register entries of all the nodes in the prefixString transition path up to the first confluence node
         //(those past the confluence node will not need to be removed since they will be cloned and unaffected by the
