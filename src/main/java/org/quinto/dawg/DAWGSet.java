@@ -90,7 +90,13 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
             dot.append("];\n");
             for (Map.Entry<Character, DAWGNode> e : getOutgoingTransitions(node)) {
                 DAWGNode nextNode = e.getValue();
-                dot.append('n').append(node.getId()).append(" -> n").append(nextNode.getId()).append(" [label=\"").append(e.getKey()).append("\"];\n");
+                dot.append('n').append(node.getId()).append(" -> n").append(nextNode.getId()).append(" [label=\"");
+                char label = e.getKey();
+                if (label < 32)
+                  dot.append('<').append((int)label).append('>');
+                else
+                  dot.append(label);
+                dot.append("\"];\n");
                 if (!visited.get(nextNode.getId())) {
                     stack.addLast(nextNode);
                     visited.set(nextNode.getId());
@@ -99,7 +105,13 @@ public abstract class DAWGSet extends AbstractSet<String> implements NavigableSe
             if (withIncomingTransitions) {
                 for (Map.Entry<Character, Collection<? extends DAWGNode>> e : getIncomingTransitions(node)) {
                     for (DAWGNode prevNode : e.getValue()) {
-                        dot.append('n').append(node.getId()).append(" -> n").append(prevNode.getId()).append(" [label=\"").append(e.getKey()).append("\", style=dashed];\n");
+                        dot.append('n').append(node.getId()).append(" -> n").append(prevNode.getId()).append(" [label=\"");
+                        char label = e.getKey();
+                        if (label < 32)
+                            dot.append('<').append((int)label).append('>');
+                        else
+                            dot.append(label);
+                        dot.append("\", style=dashed];\n");
                         if (!visited.get(prevNode.getId())) {
                             stack.addLast(prevNode);
                             visited.set(prevNode.getId());
