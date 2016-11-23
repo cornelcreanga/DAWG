@@ -43,40 +43,42 @@ Requirements:
 
 ##How to use
 
-    ModifiableDAWGSet dawg = new ModifiableDAWGSet();
-    
-    //Add a single String to the lexicon
-    dawg.add("str0");
-    
-    //Add a collection of Strings to the lexicon
-    dawg.addAll(Arrays.asList("str1", "str2", "str3"));
-    
-    //Remove a String from the lexicon
-    dawg.remove("str0");
-    
-    //Determine if the lexicon contains a given String, O(1)
-    //Here and further O(1) means that time does not depend on DAWG size
-    //But it linearly depends on input length
-    boolean doesContain = dawg.contains("str0"); //false
-    
-    //Get all Strings starting with "str1", O(1) - returns lazy Iterable.
-    //Iteration would take O(output quantity)
-    Iterable<String> startingWithSet = dawg.getStringsStartingWith("str1"); //{"str1"}
+```java
+ModifiableDAWGSet dawg = new ModifiableDAWGSet();
 
-    //Get all String ending with "2", O(output quantity) for iteration
-    Iterable<String> endingWithSet = dawg.geStringsEndingWith("2"); //{"str2"}
-    
-    //Get all String containing "r3", O(DAWG size) for iteration in worst case
-    //But this method is optimized not to check each value against the filter condition
-    //If a string containing a given substring is found then all child nodes would match
-    Iterable<String> containingSet = dawg.getStringsWithSubstring("r3"); //{"str3"}
-    
-    //Get all Strings, O(DAWG size) for iteration
-    Iterable<String> entireSet = dawg.getAllStrings(); //{"str1", "str2", "str3"}
-    
-    //Compress graph structure to an array (further space reduction)
-    //cdawg is immutable, unmodifiable and serializable
-    CompressedDAWGSet cdawg = dawg.compress();
+//Add a single String to the lexicon
+dawg.add("str0");
+
+//Add a collection of Strings to the lexicon
+dawg.addAll(Arrays.asList("str1", "str2", "str3"));
+
+//Remove a String from the lexicon
+dawg.remove("str0");
+
+//Determine if the lexicon contains a given String, O(1)
+//Here and further O(1) means that time does not depend on DAWG size
+//But it linearly depends on input length
+boolean doesContain = dawg.contains("str0"); //false
+
+//Get all Strings starting with "str1", O(1) - returns lazy Iterable.
+//Iteration would take O(output quantity)
+Iterable<String> startingWithSet = dawg.getStringsStartingWith("str1"); //{"str1"}
+
+//Get all String ending with "2", O(output quantity) for iteration
+Iterable<String> endingWithSet = dawg.geStringsEndingWith("2"); //{"str2"}
+
+//Get all String containing "r3", O(DAWG size) for iteration in worst case
+//But this method is optimized not to check each value against the filter condition
+//If a string containing a given substring is found then all child nodes would match
+Iterable<String> containingSet = dawg.getStringsWithSubstring("r3"); //{"str3"}
+
+//Get all Strings, O(DAWG size) for iteration
+Iterable<String> entireSet = dawg.getAllStrings(); //{"str1", "str2", "str3"}
+
+//Compress graph structure to an array (further space reduction)
+//cdawg is immutable, unmodifiable and serializable
+CompressedDAWGSet cdawg = dawg.compress();
+```
 
 Further plans:
 
